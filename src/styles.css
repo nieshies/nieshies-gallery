@@ -150,8 +150,17 @@ body {
 
 /* --- Photo Card --- */
 
+[data-photo-card="true"] {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
 [data-photo-card="true"] img {
   transition: filter 400ms ease;
+}
+
+[data-photo-card="true"]:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }
 
 [data-photo-card="true"]:hover img {

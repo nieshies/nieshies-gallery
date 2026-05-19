@@ -3,6 +3,14 @@ import { useRef, useState, useEffect } from "react";
 
 export default function useInView({ threshold = 0.1, repeat = false } = {}) {
   const ref = useRef(null);
+  const [, forceUpdate] = useState(0);
+
+  const setRef = (el) => {
+    if (ref.current === el) return;
+    ref.current = el;
+    forceUpdate((n) => n + 1);
+  };
+
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
@@ -21,7 +29,9 @@ export default function useInView({ threshold = 0.1, repeat = false } = {}) {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [threshold, repeat]);
+    // ref.current changes trigger re-render via forceUpdate
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threshold, repeat, ref.current]);
 
-  return [ref, inView];
+  return [setRef, inView];
 }

@@ -143,7 +143,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="lg:pl-20">
+      <div>
         <HeroSection photos={headers} />
         <FilmStrip photos={vertSections[0]} onPhotoClick={handlePhotoClick} />
         <StackStory photos={vertSections[1]} onPhotoClick={handlePhotoClick} />
