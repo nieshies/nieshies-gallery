@@ -14,22 +14,40 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [navVisible, setNavVisible] = useState(false);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 300);
+    const t = setTimeout(() => setLoaded(true), 300);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    const container = document.getElementById("gallery-scroll");
+    if (!container || !container.querySelector("[data-hero]")) {
+      setNavVisible(true);
+      return;
+    }
+    const hero = container.querySelector("[data-hero]");
+    const observer = new IntersectionObserver(
+      ([entry]) => setNavVisible(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
+  const desktopVisible = loaded && navVisible;
 
   return (
     <>
       <nav
-        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden lg:block dotnav ${visible ? "visible" : ""}`}
-        style={{ pointerEvents: "auto" }}
+        className={`fixed top-6 right-6 z-40 hidden lg:block transition-all duration-500 ease-out ${desktopVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}
+        style={{ pointerEvents: desktopVisible ? "auto" : "none" }}
       >
         <div className="glass-panel shadow-glass rounded-2xl py-4 px-3">
           <div className="mb-4 px-1">
@@ -70,7 +88,7 @@ export default function Sidebar() {
 
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className={`fixed top-4 left-4 z-50 lg:hidden glass-panel shadow-glass rounded-xl w-10 h-10 flex items-center justify-center dotnav-mobile ${visible ? "visible" : ""}`}
+        className={`fixed top-4 left-4 z-50 lg:hidden glass-panel shadow-glass rounded-xl w-10 h-10 flex items-center justify-center dotnav-mobile ${loaded ? "visible" : ""}`}
       >
         <div className="space-y-1">
           <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "rotate-45 translate-y-[3.5px]" : ""}`} />

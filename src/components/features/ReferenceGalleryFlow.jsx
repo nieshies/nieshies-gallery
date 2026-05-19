@@ -64,6 +64,7 @@ export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nies
   return (
     <div
       ref={containerRef}
+      id="gallery-scroll"
       style={{
         height: "100vh",
         overflowY: "scroll",
@@ -72,7 +73,7 @@ export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nies
         position: "relative",
       }}
     >
-      <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
+      <div data-snap data-hero style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
         <HeroSection photos={resolvedHeroPhotos} title={title} />
       </div>
 
