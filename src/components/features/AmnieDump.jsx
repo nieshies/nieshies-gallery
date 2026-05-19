@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import usePaginatedMemories from "@/hooks/usePaginatedMemories";
 import useAmnieAchievements from "@/hooks/useAmnieAchievements";
@@ -14,9 +14,13 @@ function formatPrettyDate(value) {
   return date.toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" });
 }
 
+const ROTATIONS = [-3, 2, -1, 4, -2, 1, -4, 3, -1, 2, -3, 0];
+const MARGIN_LEFT = [0, -32, -28, 24, -24, -36, 28, -30, -26, 22, -34, -22];
+const MARGIN_TOP = [0, 16, -6, 22, 8, 18, -2, 28, 4, 30, 12, 36];
+
 function AddMemoryModal({ onClose, onAdd }) {
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -33,30 +37,40 @@ function AddMemoryModal({ onClose, onAdd }) {
   }, [onClose]);
 
   const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setPhotoPreview(reader.result);
-    reader.readAsDataURL(file);
+    const selected = Array.from(e.target.files || []);
+    if (!selected.length) return;
+    setFiles((prev) => [...prev, ...selected]);
+    selected.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = () => setPreviews((prev) => [...prev, reader.result]);
+      reader.readAsDataURL(f);
+    });
+  };
+
+  const removeFile = (i) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviews((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const handleSubmit = async () => {
-    if (!photoFile) return;
+    if (!files.length) return;
     setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("photo", photoFile);
-      if (description.trim()) formData.append("description", description.trim());
-      const res = await fetch("/api/amnie", { method: "POST", body: formData });
-      if (res.ok) {
-        const data = await res.json();
-        onAdd(data.memory);
-      }
-      onClose();
-    } finally {
-      setUploading(false);
+    let done = 0;
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append("photo", file);
+        if (description.trim()) formData.append("description", description.trim());
+        const res = await fetch("/api/amnie", { method: "POST", body: formData });
+        if (res.ok) {
+          const data = await res.json();
+          onAdd(data.memory);
+          done++;
+        }
+      } catch {}
     }
+    if (done) onClose();
+    setUploading(false);
   };
 
   return (
@@ -78,26 +92,38 @@ function AddMemoryModal({ onClose, onAdd }) {
         <p className="mb-5 text-xs uppercase tracking-[0.3em] text-rose-200/70">new memory</p>
         <div className="space-y-4">
           <label className="block cursor-pointer rounded-[1.5rem] border border-dashed border-rose-100/20 bg-white/[0.03] p-5 text-center">
-            {photoPreview ? (
-              <img src={photoPreview} alt="" className="mx-auto max-h-56 rounded-[1.25rem] object-contain" />
+            {previews.length ? (
+              <div className="flex flex-wrap gap-2 justify-center max-h-40 overflow-y-auto">
+                {previews.map((src, i) => (
+                  <div key={i} className="relative group">
+                    <img src={src} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 text-white/60 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <p className="text-sm text-white/48">Choose a sweet memory photo</p>
+              <p className="text-sm text-white/48">Choose memories</p>
             )}
-            <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+            <input type="file" accept="image/*" multiple onChange={handleFile} className="hidden" />
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="Little note for this memory..."
+            placeholder="Little note for these memories..."
             className="w-full rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none placeholder:text-white/26"
           />
           <button
             onClick={handleSubmit}
-            disabled={!photoFile || uploading}
+            disabled={!files.length || uploading}
             className="w-full rounded-full bg-[linear-gradient(135deg,#fca5a5,#fb7185)] px-4 py-3 text-sm uppercase tracking-[0.22em] text-white transition disabled:opacity-40"
           >
-            {uploading ? "saving..." : "add memory"}
+            {uploading ? "saving..." : `add memory${files.length > 1 ? "ies" : ""}`}
           </button>
         </div>
       </motion.div>
@@ -212,8 +238,6 @@ function AddAchievementModal({ onClose, onAdd }) {
   );
 }
 
-
-
 function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
   return (
     <section className="px-6 py-16 sm:px-10 lg:pl-28 lg:pr-12">
@@ -221,9 +245,9 @@ function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
         <div className="mb-8 flex items-end justify-between gap-6">
           <div>
             <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-rose-300/72">future dentist</p>
-              <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
-                achievements
-              </h2>
+            <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
+              achievements
+            </h2>
           </div>
           <button
             onClick={onAddClick}
@@ -238,7 +262,6 @@ function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
         ) : achievements.length === 0 ? (
           <div className="rounded-[2rem] border border-rose-200/12 bg-white/[0.03] px-8 py-12 text-center">
             <p className="text-lg uppercase tracking-[0.22em] text-white/56">No achievements yet</p>
-            <p className="mt-3 text-sm text-white/40">Start with her first proud moment and build the collection from there.</p>
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -280,91 +303,98 @@ function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
   );
 }
 
-function MemoriesSection({ memories, onView, onAddClick, loaderRef, loading, loadingMore, hasMore }) {
-  const lead = memories[0];
-  const rest = memories.slice(1);
+function MemoriesSection({ memories, onView, onDelete, onAddClick, loaderRef, loading, loadingMore, hasMore }) {
+  const [hovered, setHovered] = useState(null);
+
+  if (loading && memories.length === 0) {
+    return (
+      <section className="px-6 pb-32 pt-12 sm:px-10 lg:pl-28 lg:pr-12">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-sm text-white/38">Loading memories...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (memories.length === 0) {
+    return (
+      <section className="px-6 pb-32 pt-12 sm:px-10 lg:pl-28 lg:pr-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex items-end justify-between gap-6 mb-8">
+            <div>
+              <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-rose-300/72">our memories</p>
+              <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">memories</h2>
+            </div>
+            <button onClick={onAddClick}
+              className="rounded-full border border-rose-200/20 bg-white/[0.04] px-5 py-2 text-[11px] uppercase tracking-[0.2em] text-rose-100 transition hover:border-rose-200/36 hover:bg-white/[0.08]">
+              Add memory
+            </button>
+          </div>
+          <div className="rounded-[2rem] border border-rose-200/12 bg-white/[0.03] px-8 py-12 text-center">
+            <p className="text-lg uppercase tracking-[0.22em] text-white/56">No memories yet</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="px-6 pb-32 pt-12 sm:px-10 lg:pl-28 lg:pr-12">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-end justify-between gap-6">
+        <div className="flex items-end justify-between gap-6 mb-12">
           <div>
             <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-rose-300/72">our memories</p>
-              <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
-                memories
-              </h2>
+            <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">memories</h2>
           </div>
-          <button
-            onClick={onAddClick}
-            className="rounded-full border border-rose-200/20 bg-white/[0.04] px-5 py-2 text-[11px] uppercase tracking-[0.2em] text-rose-100 transition hover:border-rose-200/36 hover:bg-white/[0.08]"
-          >
+          <button onClick={onAddClick}
+            className="rounded-full border border-rose-200/20 bg-white/[0.04] px-5 py-2 text-[11px] uppercase tracking-[0.2em] text-rose-100 transition hover:border-rose-200/36 hover:bg-white/[0.08]">
             Add memory
           </button>
         </div>
 
-        {loading && memories.length === 0 ? (
-          <p className="text-sm text-white/38">Loading memories...</p>
-        ) : memories.length === 0 ? (
-          <div className="rounded-[2rem] border border-rose-200/12 bg-white/[0.03] px-8 py-12 text-center">
-            <p className="text-lg uppercase tracking-[0.22em] text-white/56">No memories yet</p>
-            <p className="mt-3 text-sm text-white/40">Upload the first memory and this page will start blooming.</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-              {lead ? (
+        <div className="flex flex-wrap justify-center">
+          {memories.map((memory, i) => (
+            <div
+              key={memory.id}
+              className="shrink-0 relative"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                marginLeft: `${MARGIN_LEFT[i % 12]}px`,
+                marginTop: `${MARGIN_TOP[i % 12]}px`,
+                rotate: `${ROTATIONS[i % 12]}deg`,
+                zIndex: hovered === i ? 100 : memories.length - i,
+                transition: "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), z-index 0s",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onView(memory)}
+                className="group relative overflow-hidden rounded-[1.8rem] border border-rose-200/12 bg-white/[0.03] shadow-[0_18px_56px_rgba(0,0,0,0.22)] block w-52 sm:w-56 lg:w-60"
+                style={{
+                  transform: hovered === i ? "translateY(-14px) scale(1.06)" : "scale(1)",
+                  transition: "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+                }}
+              >
+                <div className="aspect-[4/5] overflow-hidden rounded-[1.8rem]">
+                  <img src={memory.photoUrl} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
+                </div>
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(0,0,0,0.18))]" />
+              </button>
+
+              {hovered === i && (
                 <button
-                  type="button"
-                  onClick={() => onView(lead)}
-                  className="group relative overflow-hidden rounded-[2.4rem] border border-rose-200/12 bg-white/[0.03] text-left shadow-[0_24px_90px_rgba(0,0,0,0.28)]"
+                  onClick={(e) => { e.stopPropagation(); onDelete(memory.id); }}
+                  className="absolute -top-2 -right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-xs text-white/70 backdrop-blur-md transition hover:bg-red-500/80 hover:text-white"
                 >
-                  <div className="aspect-[4/5] overflow-hidden">
-                    <img src={lead.photoUrl} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
-                  </div>
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))]" />
+                  &times;
                 </button>
-              ) : null}
-
-              <div className="grid auto-rows-[15rem] gap-5 sm:grid-cols-2">
-                {rest.slice(0, 4).map((memory, index) => (
-                  <button
-                    type="button"
-                    key={memory.id}
-                    onClick={() => onView(memory)}
-                    className={`group relative overflow-hidden rounded-[1.9rem] border border-rose-200/12 bg-white/[0.03] shadow-[0_20px_60px_rgba(0,0,0,0.24)] ${index === 1 ? "sm:translate-y-10" : ""} ${index === 2 ? "sm:-translate-y-6" : ""}`}
-                  >
-                    <img src={memory.photoUrl} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
-                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(0,0,0,0.2))]" />
-                  </button>
-                ))}
-              </div>
+              )}
             </div>
+          ))}
+        </div>
 
-            {rest.length > 4 ? (
-              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {rest.slice(4).map((memory, index) => (
-                  <motion.button
-                    type="button"
-                    key={memory.id}
-                    onClick={() => onView(memory)}
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-80px" }}
-                    transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.2) }}
-                    className="group relative overflow-hidden rounded-[1.8rem] border border-rose-200/12 bg-white/[0.03] shadow-[0_18px_56px_rgba(0,0,0,0.22)]"
-                  >
-                    <div className="aspect-[4/5] overflow-hidden">
-                      <img src={memory.photoUrl} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
-                    </div>
-                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(0,0,0,0.18))]" />
-                  </motion.button>
-                ))}
-              </div>
-            ) : null}
-          </>
-        )}
-
-        <div ref={loaderRef} className="mt-8 flex h-12 items-center justify-center">
+        <div ref={loaderRef} className="mt-16 flex h-12 items-center justify-center">
           {loadingMore ? (
             <span className="text-[11px] uppercase tracking-[0.24em] text-white/28">loading more...</span>
           ) : !hasMore && memories.length ? (
@@ -481,6 +511,7 @@ export default function AmnieDump() {
         <MemoriesSection
           memories={memories}
           onView={(memory) => setViewing({ raw: memory, src: memory.photoUrl, caption: memory.description || "" })}
+          onDelete={deleteMemory}
           onAddClick={() => setShowAddMemory(true)}
           loaderRef={loaderRef}
           loading={loading}
