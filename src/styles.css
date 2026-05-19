@@ -87,17 +87,6 @@ body {
   100% { transform: translateX(120%) scale(0.9); opacity: 0; }
 }
 
-@keyframes xp-bar-fill {
-  0% { width: var(--xp-start); }
-  100% { width: var(--xp-end); }
-}
-
-@keyframes badge-pop {
-  0% { transform: scale(0); }
-  60% { transform: scale(1.3); }
-  100% { transform: scale(1); }
-}
-
 .noise-overlay {
   position: fixed;
   inset: 0;
@@ -159,40 +148,19 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
-/* --- Tilt Card --- */
+/* --- Photo Card --- */
 
-.tilt-card {
-  position: relative;
-}
-
-.tilt-card-inner {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.tilt-card:hover .tilt-card-inner {
-  transform: scale(1.03);
-}
-
-.tilt-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-.tilt-card:hover .tilt-glow {
-  opacity: 1;
-}
-
-.tilt-card img {
+[data-photo-card="true"] img {
   transition: filter 400ms ease;
-  will-change: transform;
 }
 
-.tilt-card:hover img {
+[data-photo-card="true"]:hover img {
   filter: brightness(1.25) saturate(1.1);
+}
+
+[data-photo-card="true"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* --- Hero Section --- */

@@ -1,35 +1,29 @@
 "use client";
 import useInView from "@/lib/useInView";
-import TiltCard from "@/components/features/TiltCard";
+import PhotoCard from "@/components/features/PhotoCard";
 
 export default function HorizontalJourney({ photos, onPhotoClick }) {
-  const [ref, inView] = useInView({ threshold: 0.1 });
-
+  const [ref, inView] = useInView({ threshold: 0.05 });
   if (photos.length === 0) return null;
 
   return (
-    <section ref={ref} className="relative py-8 overflow-hidden">
-      <div className="flex gap-4 px-4 overflow-x-auto scrollbar-none snap-x snap-mandatory">
-        {photos.map((photo, i) => (
-          <div
-            key={photo.id}
-            className="flex-shrink-0 w-52 snap-center"
-            style={{
-              opacity: inView ? 1 : 0,
-              transform: inView ? "translateX(0)" : "translateX(60px)",
-              transition: `opacity 0.5s ${i * 0.05}s ease, transform 0.5s ${i * 0.05}s ease`,
-            }}
-          >
-            <TiltCard
-              className="rounded-xl overflow-hidden cursor-pointer"
-              onClick={() => onPhotoClick?.(photo)}
+    <section ref={ref} className="relative py-20 overflow-hidden">
+      <div className="mx-auto max-w-6xl px-6 md:px-10 space-y-6">
+        <div className="flex flex-wrap gap-4 justify-center">
+          {photos.map((photo, i) => (
+            <div
+              key={photo.id}
+              style={{
+                width: "min(32rem, 90vw)",
+                opacity: inView ? 1 : 0,
+                transform: inView ? "translateY(0)" : "translateY(40px)",
+                transition: `opacity 0.5s ${i * 0.06}s ease, transform 0.5s ${i * 0.06}s ease`,
+              }}
             >
-              <div className="aspect-[3/4]">
-                <img src={`${photo.url}?t=${photo.uploadedAt}`} alt="" className="w-full h-full object-cover" style={{ objectPosition: "center 30%" }} loading="lazy" draggable={false} />
-              </div>
-            </TiltCard>
-          </div>
-        ))}
+              <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/3" />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

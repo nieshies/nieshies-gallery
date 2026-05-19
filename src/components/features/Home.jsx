@@ -3,14 +3,16 @@ import { useEffect, useState, useCallback } from "react";
 import usePhotos from "@/hooks/usePhotos";
 import useHeaders from "@/hooks/useHeaders";
 import slicePhotos from "@/lib/slicePhotos";
+import detectOrientation from "@/lib/detectOrientation";
 import HeroSection from "@/components/sections/HeroSection";
+import FilmStrip from "@/components/sections/FilmStrip";
+import StackStory from "@/components/sections/StackStory";
 import ParallaxLayers from "@/components/sections/ParallaxLayers";
 import FloatingCloud from "@/components/sections/FloatingCloud";
 import HorizontalJourney from "@/components/sections/HorizontalJourney";
-import StackStory from "@/components/sections/StackStory";
 import CollageGrid from "@/components/sections/CollageGrid";
 import CinematicViewer from "@/components/sections/CinematicViewer";
-import FooterSection from "@/components/sections/FooterSection";
+import MemoryWall from "@/components/sections/MemoryWall";
 import StoryLightbox from "@/components/features/StoryLightbox";
 
 function UploadLightbox({ onClose, onUpload }) {
@@ -72,10 +74,7 @@ function UploadLightbox({ onClose, onUpload }) {
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 lightbox-overlay ${closing ? "closing" : "open"}`}
       onClick={handleBgClick}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative max-w-lg w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl"
-      >
+      <div onClick={(e) => e.stopPropagation()} className="relative max-w-lg w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl">
         <button onClick={() => { setClosing(true); setTimeout(onClose, 200); }} className="absolute top-4 right-4 text-white/40 hover:text-white text-lg">&times;</button>
         <p className="text-white/60 text-lg font-display uppercase tracking-widest mb-6">ADD PHOTOS</p>
         <div className="space-y-4">
@@ -139,19 +138,21 @@ export default function Home() {
   const lightboxIndex = lightboxPhoto ? photos.findIndex((p) => p.id === lightboxPhoto.id) : -1;
   const lightboxOpen = lightboxIndex >= 0;
 
-  const sections = slicePhotos(photos, 6);
+  const { horizontal, vertical } = detectOrientation(photos);
+  const vertSections = slicePhotos(vertical, 5);
 
   return (
     <>
       <div className="lg:pl-20">
         <HeroSection photos={headers} />
-        <ParallaxLayers photos={sections[0]} onPhotoClick={handlePhotoClick} />
-        <FloatingCloud photos={sections[1]} onPhotoClick={handlePhotoClick} />
-        <HorizontalJourney photos={sections[2]} onPhotoClick={handlePhotoClick} />
-        <StackStory photos={sections[3]} onPhotoClick={handlePhotoClick} />
-        <CollageGrid photos={sections[4]} onPhotoClick={handlePhotoClick} />
-        <CinematicViewer photos={sections[5]} onPhotoClick={handlePhotoClick} />
-        <FooterSection />
+        <FilmStrip photos={vertSections[0]} onPhotoClick={handlePhotoClick} />
+        <StackStory photos={vertSections[1]} onPhotoClick={handlePhotoClick} />
+        <ParallaxLayers photos={vertSections[2]} onPhotoClick={handlePhotoClick} />
+        <FloatingCloud photos={vertSections[3]} onPhotoClick={handlePhotoClick} />
+        <HorizontalJourney photos={horizontal} onPhotoClick={handlePhotoClick} />
+        <CollageGrid photos={vertSections[4]} onPhotoClick={handlePhotoClick} />
+        <CinematicViewer photos={photos.slice(0, 1)} onPhotoClick={handlePhotoClick} />
+        <MemoryWall photos={photos} onPhotoClick={handlePhotoClick} />
       </div>
 
       <button

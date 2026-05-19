@@ -29,6 +29,8 @@ export async function POST(request) {
         filename: result.filename,
         url: result.url,
         sizeBytes: result.sizeBytes,
+        width: result.width,
+        height: result.height,
       },
     });
 

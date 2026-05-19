@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import sizeOf from "image-size";
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
@@ -24,6 +25,14 @@ export async function saveUpload(file, bucket = "uploads") {
   const ext = file.name.split(".").pop() || "jpg";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+  let width = null;
+  let height = null;
+  try {
+    const dim = sizeOf(buffer);
+    width = dim.width;
+    height = dim.height;
+  } catch {}
+
   const contentType = file.type || EXT_MAP[file.name?.split(".").pop()?.toLowerCase()] || "image/jpeg";
   const { error } = await supabase.storage
     .from(bucket)
@@ -42,6 +51,8 @@ export async function saveUpload(file, bucket = "uploads") {
     url: urlData.publicUrl,
     filename,
     sizeBytes: buffer.length,
+    width,
+    height,
   };
 }
 

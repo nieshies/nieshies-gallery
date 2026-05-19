@@ -36,7 +36,6 @@ export default function HeroSection({ photos }) {
           el.style.opacity = op;
           if (titleEl) titleEl.style.transform = `scale(${scale}) translateY(${yOffset}px)`;
           if (headerEl) headerEl.style.opacity = isNaN(hOp) ? 0 : hOp;
-
           ticking = false;
         });
         ticking = true;
@@ -59,7 +58,7 @@ export default function HeroSection({ photos }) {
             src={p.url}
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "center 30%", opacity: i === idx ? 1 : 0, transition: "opacity 1s" }}
+            style={{ opacity: i === idx ? 1 : 0, transition: "opacity 1s" }}
           />
         ))}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/60" />
