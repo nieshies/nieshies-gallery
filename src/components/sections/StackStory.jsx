@@ -18,7 +18,7 @@ export default function StackStory({ photos }) {
             className="relative overflow-hidden rounded-2xl shadow-xl"
             style={{
               width: "min(600px, 88vw)",
-              aspectRatio: "4/3",
+              aspectRatio: "3/4",
               transform: `rotateX(${2 * (photos.length - i)}deg)`,
               zIndex: photos.length - i,
             }}

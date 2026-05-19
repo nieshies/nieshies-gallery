@@ -37,7 +37,7 @@ export default function FilmStrip({ photos }) {
             <div
               key={`${photo.id}-${i}`}
               className="relative flex-shrink-0 overflow-hidden rounded-xl"
-              style={{ width: "68vw", height: "42vh" }}
+              style={{ width: "min(52vw, 360px)", aspectRatio: "3/4" }}
             >
               <img
                 src={`${photo.url}?t=${photo.uploadedAt}`}

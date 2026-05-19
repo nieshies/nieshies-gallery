@@ -14,7 +14,7 @@ export default function CollageGrid({ photos }) {
     <section className="content-section relative py-16 overflow-hidden">
       <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">collage</p>
       <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-12 auto-rows-[44px] gap-3">
+        <div className="grid grid-cols-12 auto-rows-[64px] gap-3">
           {photos.map((photo, i) => {
             const s = SPANS[i % SPANS.length];
             return (

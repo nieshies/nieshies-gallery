@@ -19,7 +19,7 @@ export default function CinematicViewer({ photos }) {
         {photos.length > 1 && (
           <button onClick={prev} className="flex-shrink-0 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white/70 transition-colors text-lg">&#8592;</button>
         )}
-        <div className="relative overflow-hidden rounded-2xl" style={{ width: "min(94vw, 30rem)", aspectRatio: "4/3" }}>
+        <div className="relative overflow-hidden rounded-2xl" style={{ width: "min(94vw, 30rem)", aspectRatio: "3/4" }}>
           <AnimatePresence mode="wait">
             <motion.img
               key={photo.id}

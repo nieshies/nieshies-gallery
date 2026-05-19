@@ -20,7 +20,7 @@ export default function HorizontalJourney({ photos }) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.06, duration: 0.5 }}
               className="relative flex-shrink-0 overflow-hidden rounded-2xl"
-              style={{ width: "56vw", height: "74svh", aspectRatio: "4/3" }}
+              style={{ width: "56vw", height: "74svh", aspectRatio: "3/4" }}
             >
               <img
                 src={`${photo.url}?t=${photo.uploadedAt}`}
