@@ -48,21 +48,21 @@ function TiltCard({ photo, index, onClick }) {
       style={{ transformStyle: "preserve-3d" }}
     >
       <div
-        className="relative rounded-2xl overflow-hidden border border-white/10 bg-[rgba(13,13,26,0.9)] transition-all duration-200"
+        className="relative rounded-2xl overflow-hidden border border-white/10 bg-[rgba(10,10,10,0.9)] transition-all duration-200"
         style={{
           transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          boxShadow: `0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(123,47,255,0.15)`,
+          boxShadow: `0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(244,140,54,0.15)`,
         }}
       >
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
           style={{
-            background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(255,58,242,0.12) 0%, transparent 60%)`,
+            background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(244,140,54,0.12) 0%, transparent 60%)`,
           }}
         />
         <div className="relative overflow-hidden bg-white/[0.02]">
           {!loaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(13,13,26,0.8)]">
+            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(10,10,10,0.8)]">
               <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-a2 animate-spin" />
             </div>
           )}
@@ -101,7 +101,7 @@ function TiltCard({ photo, index, onClick }) {
 
           {photo.favorite && (
             <div className="absolute top-3 right-3 z-20">
-              <span className="text-a1 text-sm drop-shadow-lg">&#10029;</span>
+              <span className="text-accent text-sm drop-shadow-lg">&#10029;</span>
             </div>
           )}
         </div>

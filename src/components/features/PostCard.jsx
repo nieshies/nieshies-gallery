@@ -15,10 +15,10 @@ export default function PostCard({ upload, index = 0 }) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: (index % 10) * 0.04 }}
-      className="break-inside-avoid mb-4 border-2 border-white/27 rounded-2xl bg-[rgba(14,11,26,.92)] p-2.5 shadow-[0_14px_26px_rgba(0,0,0,0.35),0_0_22px_rgba(123,47,255,0.25)]"
+      className="break-inside-avoid mb-4 border-2 border-white/27 rounded-2xl bg-[rgba(10,10,10,0.92)] p-2.5 shadow-[0_14px_26px_rgba(0,0,0,0.35),0_0_22px_rgba(244,140,54,0.25)]"
     >
       <div className="flex items-center gap-2 px-1 mb-2">
-        <div className="w-8 h-8 rounded-full bg-a5/50 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+        <div className="w-8 h-8 rounded-full bg-accent/50 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
           {upload.profile?.image ? (
             <img src={upload.profile.image} alt="" className="w-full h-full object-cover" />
           ) : (

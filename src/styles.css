@@ -37,6 +37,11 @@ body {
   --color-bg: #0a0a0a;
   --color-accent: #f48c36;
   --color-accent-dim: rgba(244, 140, 54, 0.15);
+  --color-a1: #f48c36;
+  --color-a2: #f48c36;
+  --color-a3: #f48c36;
+  --color-a4: #f48c36;
+  --color-a5: #f48c36;
   --animate-shift: shift 4s linear infinite;
   --font-sans: "Inter", sans-serif;
   --font-display: "Plus Jakarta Sans", sans-serif;

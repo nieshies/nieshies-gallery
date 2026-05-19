@@ -45,7 +45,7 @@ function PolaroidCard({ memory, index, onClick }) {
         onClick={() => onClick(memory)}
         className="relative overflow-hidden transition-all duration-300"
         style={{
-          width: "min(220px, 42vw)",
+          width: "min(180px, 46vw)",
           background: "var(--glass)",
           backdropFilter: "blur(12px)",
           borderRadius: 16,
@@ -231,23 +231,23 @@ function ViewMemoryModal({ memory, onClose, onDelete }) {
         className="relative"
         style={{ maxWidth: 500, width: "100%" }}
       >
-        <button
-          onClick={onClose}
-          className="absolute -top-10 right-0 text-white/50 hover:text-white z-10 text-sm font-mono transition-colors"
-        >
-          &#10005; close
-        </button>
-
         <div className="overflow-hidden rounded-2xl glass-panel shadow-glass"
           style={{ padding: "8px" }}
         >
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white text-sm font-mono transition-colors"
+          >
+            &#10005;
+          </button>
+
           {memory.photoUrl && (
             <div className="relative overflow-hidden rounded-xl bg-black/20">
               <img
                 src={memory.photoUrl}
                 alt=""
                 className="w-full object-contain"
-                style={{ maxHeight: "60vh" }}
+                style={{ maxHeight: "50vh" }}
               />
             </div>
           )}
@@ -340,7 +340,7 @@ export default function AmnieDump() {
 
   return (
     <div className="min-h-screen relative">
-      <div className="pt-24 pb-24 px-4 max-w-6xl mx-auto">
+      <div className="pt-20 sm:pt-24 pb-24 px-3 sm:px-4 max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -395,7 +395,7 @@ export default function AmnieDump() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setShowAdd(true)}
-        className="fixed bottom-8 right-8 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl text-white text-2xl"
+        className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-2xl text-white text-xl sm:text-2xl"
         style={{ background: "var(--accent)" }}
       >
         +

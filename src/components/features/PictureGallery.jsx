@@ -35,16 +35,16 @@ function TiltCard({ photo, index, onClick }) {
       style={{ transformStyle: "preserve-3d" }}
     >
       <div
-        className="relative rounded-2xl overflow-hidden border-2 border-white/15 bg-[rgba(13,13,26,0.9)] transition-all duration-200"
+        className="relative rounded-2xl overflow-hidden border-2 border-white/15 bg-[rgba(10,10,10,0.9)] transition-all duration-200"
         style={{
           transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          boxShadow: `0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(123,47,255,0.15)`,
+          boxShadow: `0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(244,140,54,0.15)`,
         }}
       >
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
           style={{
-            background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(255,58,242,0.12) 0%, transparent 60%)`,
+            background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(244,140,54,0.12) 0%, transparent 60%)`,
           }}
         />
         <div className="relative overflow-hidden">
@@ -61,7 +61,7 @@ function TiltCard({ photo, index, onClick }) {
             <p className="text-white/50 text-xs mt-1 line-clamp-1">{photo.caption}</p>
           )}
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-a1 text-xs">{photo.favorite ? "♥" : "♡"}</span>
+            <span className="text-accent text-xs">{photo.favorite ? "♥" : "♡"}</span>
             <span className="text-white/30 text-[10px] font-mono">
               {new Date(photo.uploadedAt).toLocaleDateString()}
             </span>

@@ -13,9 +13,9 @@ export default function SoundToggle() {
       onClick={toggleMute}
       className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full flex items-center justify-center text-xs cursor-pointer border backdrop-blur-md transition-all duration-300"
       style={{
-        backgroundColor: muted ? "rgba(255,255,255,0.04)" : "rgba(0,255,43,0.08)",
-        borderColor: muted ? "rgba(255,255,255,0.12)" : "rgba(0,255,43,0.25)",
-        color: muted ? "rgba(255,255,255,0.35)" : "rgba(0,255,43,0.8)",
+        backgroundColor: muted ? "rgba(255,255,255,0.04)" : "rgba(244,140,54,0.08)",
+        borderColor: muted ? "rgba(255,255,255,0.12)" : "rgba(244,140,54,0.25)",
+        color: muted ? "rgba(255,255,255,0.35)" : "rgba(244,140,54,0.8)",
       }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}

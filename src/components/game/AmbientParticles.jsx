@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 
-const COLORS = ["#BC13FE", "#00FF2B", "#00FFFF", "#7DF9FF", "#FF3AF2"];
+const COLORS = ["#f48c36", "#ffb347", "#ffd700", "#e67e22", "#f39c12"];
 
 export default function AmbientParticles({ count = 20 }) {
   const canvasRef = useRef(null);

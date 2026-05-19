@@ -232,9 +232,9 @@ export default function Home() {
   const smooth = useSpring(scrollYProgress, { stiffness: 80, damping: 20, mass: 0.6 });
 
   const stats = [
-    { label: "PHOTOS", value: photos.length, color: "#BC13FE" },
-    { label: "FAVORITES", value: photos.filter((p) => p.favorite).length, color: "#00FFFF" },
-    { label: "MEMORY", value: `${((photos.reduce((a, b) => a + (b.sizeBytes || 0), 0)) / (1024 * 1024)).toFixed(1)} MB`, color: "#00FF2B" },
+    { label: "PHOTOS", value: photos.length, color: "var(--accent)" },
+    { label: "FAVORITES", value: photos.filter((p) => p.favorite).length, color: "var(--accent-light, #f4a050)" },
+    { label: "MEMORY", value: `${((photos.reduce((a, b) => a + (b.sizeBytes || 0), 0)) / (1024 * 1024)).toFixed(1)} MB`, color: "var(--accent-dim, #c0702a)" },
   ];
 
   return (
@@ -257,7 +257,7 @@ export default function Home() {
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.6 }}
           className="text-white/25 max-w-lg text-base md:text-lg leading-relaxed mb-12">
-          A cosmic collection of moments — surreal, playful, and alive.
+          A curated collection of moments — warm, real, and alive.
           Every photo tells a story waiting to be discovered.
         </motion.p>
 
@@ -282,7 +282,7 @@ export default function Home() {
 
         <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
           className="m-0 font-display uppercase text-[clamp(2.5rem,7vw,5rem)] leading-[.92] text-white text-center">
-          A DIGITAL GALLERY<br /><span className="text-a1">BEYOND THE ORDINARY</span>
+          A DIGITAL GALLERY<br /><span className="text-a1">WARM &amp; REAL</span>
         </motion.h2>
 
         <FadeIn delay={0.2} className="mt-6 max-w-xl text-center">
@@ -413,7 +413,7 @@ export default function Home() {
 
         <FadeIn delay={0.5} className="mt-16">
           <div className="text-center">
-            <p className="text-white/15 text-xs font-mono tracking-wider">NIESHIES GALLERY &mdash; A COSMIC COLLECTION OF MOMENTS</p>
+            <p className="text-white/15 text-xs font-mono tracking-wider">NIESHIES GALLERY &mdash; A CURATED COLLECTION OF MOMENTS</p>
             <div className="w-8 h-px bg-white/10 mx-auto mt-4" />
           </div>
         </FadeIn>

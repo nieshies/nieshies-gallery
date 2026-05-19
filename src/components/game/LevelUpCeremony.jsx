@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGame } from "@/lib/ExperienceContext";
 
-const COLORS = ["#BC13FE", "#00FF2B", "#00FFFF", "#7DF9FF", "#FF3AF2", "#FFD700", "#FF6B35"];
+const COLORS = ["#f48c36", "#ffb347", "#ffd700", "#e67e22", "#f39c12", "#ff6b35", "#d35400"];
 
 function ConfettiCanvas({ level }) {
   const canvasRef = useRef(null);
@@ -106,14 +106,14 @@ export default function LevelUpCeremony() {
             >
               <motion.p
                 className="text-[10px] font-display uppercase tracking-[0.4em] mb-3"
-                style={{ color: "rgba(0,255,43,0.5)" }}
+                style={{ color: "rgba(244,140,54,0.5)" }}
               >
                 Level Up
               </motion.p>
               <motion.p
                 className="font-display font-black text-[clamp(4rem,15vw,10rem)] leading-none"
                 style={{
-                  background: "linear-gradient(135deg, #00FF2B, #00FFFF, #BC13FE)",
+                  background: "linear-gradient(135deg, #f48c36, #ffb347, #ffd700)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                 }}

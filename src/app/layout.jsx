@@ -5,7 +5,7 @@ import DailyMission from "@/components/game/DailyMission";
 
 export const metadata = {
   title: "nieshies gallery",
-  description: "A cosmic gallery of moments — surreal, playful, alive",
+  description: "A warm gallery of moments — curated, real, and alive",
 };
 
 export default function RootLayout({ children }) {

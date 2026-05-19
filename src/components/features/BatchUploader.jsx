@@ -91,7 +91,7 @@ export default function BatchUploader({ onUploaded }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="border border-white/10 rounded-2xl bg-[rgba(13,13,26,0.75)] backdrop-blur-sm shadow-lg p-5"
+      className="border border-white/10 rounded-2xl bg-[rgba(10,10,10,0.75)] backdrop-blur-sm shadow-lg p-5"
     >
       <div className="flex items-center gap-3 mb-4">
         <span className="text-lg">&#x1F4E4;</span>
@@ -103,7 +103,7 @@ export default function BatchUploader({ onUploaded }) {
       <div
         className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-all cursor-pointer ${
           dragOver
-            ? "border-a2 bg-a2/10 scale-[1.01]"
+            ? "border-accent bg-accent/10 scale-[1.01]"
             : "border-white/15 hover:border-white/30 bg-white/[0.02]"
         }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -160,7 +160,7 @@ export default function BatchUploader({ onUploaded }) {
                           background:
                             entry.status === "error"
                               ? "#ff4444"
-                              : "linear-gradient(90deg, #BC13FE, #00FFFF)",
+                              : "linear-gradient(90deg, #f48c36, #ffb347)",
                           width: `${progress[entry.id] || 0}%`,
                         }}
                         initial={{ width: 0 }}
@@ -198,7 +198,7 @@ export default function BatchUploader({ onUploaded }) {
           <button
             onClick={startUpload}
             disabled={uploading}
-            className="min-h-10 px-5 rounded-full border border-a2/40 bg-a2/10 text-a2 text-xs font-display uppercase tracking-wider hover:bg-a2/20 disabled:opacity-40 transition-all"
+            className="min-h-10 px-5 rounded-full border border-accent/40 bg-accent/10 text-accent text-xs font-display uppercase tracking-wider hover:bg-accent/20 disabled:opacity-40 transition-all"
           >
             {uploading
               ? `Uploading ${Object.keys(progress).length}/${files.length}...`
@@ -209,7 +209,7 @@ export default function BatchUploader({ onUploaded }) {
 
       {allDone && (
         <div className="flex justify-between items-center mt-4">
-          <span className="text-[10px] text-a2/60 font-mono">
+          <span className="text-[10px] text-accent/60 font-mono">
             {files.filter((f) => f.status === "done").length} uploaded
             {files.some((f) => f.status === "error")
               ? `, ${files.filter((f) => f.status === "error").length} failed`

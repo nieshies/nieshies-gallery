@@ -32,8 +32,8 @@ export default function GlitchOverlay({ active }) {
             0deg,
             transparent,
             transparent 2px,
-            rgba(0,255,255,0.03) 2px,
-            rgba(0,255,255,0.03) 4px
+            rgba(244,140,54,0.03) 2px,
+            rgba(244,140,54,0.03) 4px
           )`,
           mixBlendMode: "overlay",
         }}
@@ -67,7 +67,7 @@ export default function GlitchOverlay({ active }) {
             background: `linear-gradient(
               180deg,
               transparent 0%,
-              rgba(188,19,254,0.02) 50%,
+              rgba(244,140,54,0.02) 50%,
               transparent 100%
             )`,
             backgroundSize: "100% 4px",

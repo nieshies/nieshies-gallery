@@ -77,7 +77,7 @@ export default function StorageRing() {
 
   if (loading) {
     return (
-      <div className="border border-white/10 rounded-2xl bg-[rgba(13,13,26,0.75)] backdrop-blur-sm shadow-lg p-5">
+      <div className="border border-white/10 rounded-2xl bg-[rgba(10,10,10,0.75)] backdrop-blur-sm shadow-lg p-5">
         <div className="h-4 w-28 rounded bg-white/[0.06] animate-pulse mb-6" />
         <div className="flex justify-center gap-6">
           {[1, 2].map((i) => (
@@ -93,7 +93,7 @@ export default function StorageRing() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="border border-white/10 rounded-2xl bg-[rgba(13,13,26,0.75)] backdrop-blur-sm shadow-lg p-5"
+      className="border border-white/10 rounded-2xl bg-[rgba(10,10,10,0.75)] backdrop-blur-sm shadow-lg p-5"
     >
       <div className="flex items-center gap-3 mb-4">
         <span className="text-lg">&#x1F4E6;</span>
@@ -107,7 +107,7 @@ export default function StorageRing() {
           <RingSegment
             value={stats?.totalBytes || 0}
             max={capacityLimit}
-            color="#BC13FE"
+            color="#f48c36"
             label="Used"
             index={0}
           />
@@ -116,7 +116,7 @@ export default function StorageRing() {
           <RingSegment
             value={bandwidth}
             max={bwLimit}
-            color="#00FFFF"
+            color="#ffb347"
             label="Bandwidth"
             index={1}
           />

@@ -42,10 +42,7 @@ export default function ProductsContent() {
           transition={{ duration: 0.7 }}
         >
           <p
-            className="text-xs font-display uppercase tracking-[0.2em] mb-2"
-            style={{
-              color: theme === "light" ? "#BC13FE" : "var(--color-a2, #00FF2B)",
-            }}
+            className="text-xs font-display uppercase tracking-[0.2em] mb-2 text-accent"
           >
             My Collection
           </p>
@@ -53,7 +50,7 @@ export default function ProductsContent() {
             className="m-0 font-display uppercase text-[clamp(2.2rem,6vw,4.5rem)] leading-[.92]"
             style={{ color: theme === "light" ? "#1a1a1a" : undefined }}
           >
-            Picture <span className="text-a3">Gallery</span>
+            Picture <span className="text-accent">Gallery</span>
           </h1>
           <p
             className="mt-3 max-w-xl"
@@ -71,14 +68,14 @@ export default function ProductsContent() {
       <div
         className="p-[22px] mb-[18px] transition-colors duration-300"
         style={{
-          border: "4px solid rgba(0,255,43,0.3)",
+          border: "4px solid rgba(244,140,54,0.3)",
           borderRadius: "24px",
           background: theme === "light"
             ? "rgba(255,255,255,0.7)"
-            : "rgba(29,18,50,0.82)",
+            : "rgba(10,10,10,0.82)",
           boxShadow: theme === "light"
             ? "0 1px 3px rgba(0,0,0,0.06)"
-            : "0 0 28px rgba(255,58,242,0.35), 10px 10px 0 #ffe600",
+            : "0 0 28px rgba(244,140,54,0.35), 10px 10px 0 rgba(244,140,54,0.3)",
         }}
       >
         {loading ? (

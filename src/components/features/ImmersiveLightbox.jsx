@@ -173,7 +173,7 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
               className="relative rounded-2xl"
               style={{
                 boxShadow: loaded
-                  ? `0 0 60px rgba(188,19,254,0.08), 0 0 120px rgba(0,255,255,0.04)`
+                  ? `0 0 60px rgba(244,140,54,0.08), 0 0 120px rgba(255,179,71,0.04)`
                   : "none",
               }}
             >
@@ -189,7 +189,7 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
                 <div
                   className="absolute -inset-[1px] rounded-2xl opacity-40 pointer-events-none"
                   style={{
-                    background: `radial-gradient(ellipse at ${mouseRef.current.x * 100}% ${mouseRef.current.y * 100}%, rgba(0,255,255,0.06) 0%, transparent 60%)`,
+                    background: `radial-gradient(ellipse at ${mouseRef.current.x * 100}% ${mouseRef.current.y * 100}%, rgba(244,140,54,0.06) 0%, transparent 60%)`,
                     transition: "background 0.3s",
                   }}
                 />
@@ -215,7 +215,7 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
             >
               <div className="flex flex-wrap items-start gap-4 justify-between">
                 <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-20" style={{
-                  background: `linear-gradient(135deg, rgba(188,19,254,0.05) 0%, transparent 50%, rgba(0,255,255,0.05) 100%)`,
+                  background: `linear-gradient(135deg, rgba(244,140,54,0.05) 0%, transparent 50%, rgba(255,179,71,0.05) 100%)`,
                 }} />
                 <div className="space-y-1">
                   {photo.caption && (
@@ -231,7 +231,7 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
                       {photo.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-0.5 rounded-full border border-a1/30 bg-a1/10 text-a1 text-[10px]"
+                          className="px-2 py-0.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-[10px]"
                         >
                           #{tag}
                         </span>

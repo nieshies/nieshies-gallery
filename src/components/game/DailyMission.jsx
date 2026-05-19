@@ -25,15 +25,15 @@ export default function DailyMission() {
         }}
         className="fixed top-6 right-16 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md border transition-all duration-300"
         style={{
-          backgroundColor: isMissionComplete ? "rgba(0,255,43,0.08)" : "rgba(13,13,26,0.7)",
-          borderColor: isMissionComplete ? "rgba(0,255,43,0.2)" : "rgba(255,255,255,0.08)",
+          backgroundColor: isMissionComplete ? "rgba(244,140,54,0.08)" : "rgba(10,10,10,0.7)",
+          borderColor: isMissionComplete ? "rgba(244,140,54,0.2)" : "rgba(255,255,255,0.08)",
         }}
         title={isMissionComplete ? "Mission complete!" : "Daily Mission"}
       >
         <span className="text-xs">{isMissionComplete ? "✓" : "◎"}</span>
         <span
           className="text-[10px] font-display uppercase tracking-wider hidden sm:inline"
-          style={{ color: isMissionComplete ? "rgba(0,255,43,0.7)" : "rgba(255,255,255,0.4)" }}
+          style={{ color: isMissionComplete ? "rgba(244,140,54,0.7)" : "rgba(255,255,255,0.4)" }}
         >
           {isMissionComplete ? "Done" : "Mission"}
         </span>
@@ -53,8 +53,8 @@ export default function DailyMission() {
             transition={{ duration: 0.2 }}
             className="fixed top-16 right-16 z-50 px-4 py-3 rounded-xl backdrop-blur-xl border shadow-xl min-w-[220px]"
             style={{
-              backgroundColor: "rgba(13,13,26,0.92)",
-              borderColor: isMissionComplete ? "rgba(0,255,43,0.15)" : "rgba(255,255,255,0.06)",
+              backgroundColor: "rgba(10,10,10,0.92)",
+              borderColor: isMissionComplete ? "rgba(244,140,54,0.15)" : "rgba(255,255,255,0.06)",
             }}
           >
             <p className="text-[10px] font-display uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>
@@ -67,7 +67,7 @@ export default function DailyMission() {
               <motion.div
                 className="absolute inset-y-0 left-0 rounded-full"
                 style={{
-                  backgroundColor: isMissionComplete ? "rgba(0,255,43,0.5)" : "rgba(188,19,254,0.5)",
+                  backgroundColor: isMissionComplete ? "rgba(244,140,54,0.5)" : "rgba(255,179,71,0.5)",
                 }}
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
@@ -79,7 +79,7 @@ export default function DailyMission() {
                 {dailyProgress}/{mission.need}
               </span>
               {isMissionComplete && (
-                <span className="text-[10px] font-mono" style={{ color: "rgba(0,255,43,0.5)" }}>
+                <span className="text-[10px] font-mono" style={{ color: "rgba(244,140,54,0.5)" }}>
                   +50 XP
                 </span>
               )}

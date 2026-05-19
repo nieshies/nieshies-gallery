@@ -20,13 +20,13 @@ export default function ExperienceBar() {
         onClick={() => setShowDetails((v) => !v)}
         className="fixed bottom-6 left-6 z-50 flex items-center gap-3 px-3 py-2 rounded-full cursor-pointer select-none backdrop-blur-md border transition-all duration-300"
         style={{
-          backgroundColor: "rgba(13,13,26,0.7)",
-          borderColor: "rgba(0,255,43,0.15)",
+          backgroundColor: "rgba(10,10,10,0.7)",
+          borderColor: "rgba(244,140,54,0.15)",
         }}
       >
         <div
           className="flex items-center gap-1.5 text-xs font-display font-bold tracking-wider"
-          style={{ color: "rgba(0,255,43,0.8)" }}
+          style={{ color: "rgba(244,140,54,0.8)" }}
         >
           <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>LV</span>
           <span>{level}</span>
@@ -35,7 +35,7 @@ export default function ExperienceBar() {
         <div className="relative w-20 h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full"
-            style={{ backgroundColor: "rgba(0,255,43,0.6)" }}
+            style={{ backgroundColor: "rgba(244,140,54,0.6)" }}
             initial={{ width: 0 }}
             animate={{ width: `${progress * 100}%` }}
             transition={{ duration: 0.6, ease: "easeOut" }}
@@ -56,7 +56,7 @@ export default function ExperienceBar() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-20 left-6 z-50 px-4 py-3 rounded-xl backdrop-blur-xl border shadow-xl"
             style={{
-              backgroundColor: "rgba(13,13,26,0.92)",
+              backgroundColor: "rgba(10,10,10,0.92)",
               borderColor: "rgba(255,255,255,0.08)",
             }}
           >
@@ -66,7 +66,7 @@ export default function ExperienceBar() {
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between gap-6">
                 <span style={{ color: "rgba(255,255,255,0.4)" }}>XP</span>
-                <span style={{ color: "rgba(0,255,43,0.7)" }}>{xp} / {xpForLevel(level + 1)}</span>
+                <span style={{ color: "rgba(244,140,54,0.7)" }}>{xp} / {xpForLevel(level + 1)}</span>
               </div>
               <div className="flex justify-between gap-6">
                 <span style={{ color: "rgba(255,255,255,0.4)" }}>Level</span>
@@ -74,7 +74,7 @@ export default function ExperienceBar() {
               </div>
               <div className="flex justify-between gap-6">
                 <span style={{ color: "rgba(255,255,255,0.4)" }}>Achievements</span>
-                <span style={{ color: "rgba(0,255,255,0.7)" }}>{unlockedAchievements.length} / {totalAchieved}</span>
+                <span style={{ color: "rgba(255,179,71,0.7)" }}>{unlockedAchievements.length} / {totalAchieved}</span>
               </div>
             </div>
           </motion.div>

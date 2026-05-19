@@ -81,7 +81,7 @@ export default function QuotesWall({ photos = [] }) {
             onClick={() => { setActiveTag(tag); setCurrentIndex(0); }}
             className={`px-4 py-2 rounded-full text-sm font-display font-bold uppercase tracking-wider transition-all ${
               activeTag === tag
-                ? "bg-a2 text-black shadow-[0_0_20px_rgba(0,245,212,0.4)]"
+                ? "bg-accent text-black shadow-[0_0_20px_rgba(244,140,54,0.4)]"
                 : "bg-white/5 text-white/70 border border-white/20 hover:bg-white/10"
             }`}
           >
@@ -111,11 +111,11 @@ export default function QuotesWall({ photos = [] }) {
           )}
 
           <div className="relative z-10 p-8 md:p-12 text-center">
-            <div className="text-4xl text-a1 opacity-50 mb-4">&#10077;</div>
+            <div className="text-4xl text-accent opacity-50 mb-4">&#10077;</div>
             <p className="text-xl md:text-3xl font-display font-bold text-white leading-relaxed mb-6">
               {currentQuote?.text}
             </p>
-            <p className="text-a2 font-display text-sm uppercase tracking-widest">
+            <p className="text-accent font-display text-sm uppercase tracking-widest">
               &mdash; {currentQuote?.author}
             </p>
             <div className="flex items-center justify-center gap-4 mt-8">
@@ -134,7 +134,7 @@ export default function QuotesWall({ photos = [] }) {
                 })}
                 className={`w-12 h-12 rounded-full border text-lg flex items-center justify-center transition-all ${
                   liked.has(currentIndex)
-                    ? "bg-a1/20 border-a1 text-a1 shadow-[0_0_20px_rgba(255,58,242,0.3)]"
+                    ? "bg-accent/20 border-accent text-accent shadow-[0_0_20px_rgba(244,140,54,0.3)]"
                     : "bg-white/10 border-white/20 text-white/70 hover:bg-white/20"
                 }`}
               >
@@ -164,7 +164,7 @@ export default function QuotesWall({ photos = [] }) {
             transition={{ delay: i * 0.05 }}
             className={`text-left p-4 rounded-2xl border transition-all ${
               i === currentIndex
-                ? "border-a3 bg-a3/10 shadow-[0_0_15px_rgba(255,230,0,0.2)]"
+                ? "border-accent/30 bg-accent/10 shadow-[0_0_15px_rgba(244,140,54,0.2)]"
                 : "border-white/10 bg-white/5 hover:bg-white/10"
             }`}
           >

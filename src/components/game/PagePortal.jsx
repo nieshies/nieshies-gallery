@@ -33,7 +33,7 @@ export default function PagePortal({ children }) {
           animate={isFirst ? false : { scale: [1, 1.02, 1], opacity: [0, 0.3, 0] }}
           transition={{ duration: 0.6, times: [0, 0.3, 1] }}
           style={{
-            background: "radial-gradient(ellipse at center, rgba(188,19,254,0.15) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse at center, rgba(244,140,54,0.15) 0%, transparent 70%)",
           }}
         />
         {children}
