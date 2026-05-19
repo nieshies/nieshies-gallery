@@ -1,9 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import usePhotos from "@/hooks/usePhotos";
-import Link from "next/link";
-import GalleryGrid from "./GalleryGrid";
+import ScatteredGallery from "./ScatteredGallery";
 
 function UploadLightbox({ onClose, onUpload }) {
   const [selected, setSelected] = useState(null);
@@ -59,7 +58,7 @@ function UploadLightbox({ onClose, onUpload }) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.85, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative max-w-md w-full p-6 rounded-2xl border border-white/15 bg-[rgba(17,17,17,0.95)] backdrop-blur-xl"
+        className="relative max-w-md w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white text-lg">&#10005;</button>
         <p className="text-white/60 text-lg font-display uppercase tracking-widest mb-6">ADD PHOTO</p>
@@ -91,183 +90,176 @@ function UploadLightbox({ onClose, onUpload }) {
   );
 }
 
-function FadeIn({ children, delay = 0, className = "" }) {
+function PhotoReel({ photos }) {
+  const [paused, setPaused] = useState(false);
+  const trackRef = useRef(null);
+  const animRef = useRef(null);
+  const posRef = useRef(0);
+  const speedRef = useRef(0.6);
+
+  const doubled = [...photos, ...photos];
+
+  useEffect(() => {
+    if (paused || photos.length === 0) {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      return;
+    }
+    const step = () => {
+      if (!trackRef.current) return;
+      const halfW = trackRef.current.scrollWidth / 2;
+      if (halfW <= 0) return;
+      posRef.current -= speedRef.current;
+      if (Math.abs(posRef.current) >= halfW) {
+        posRef.current += halfW;
+      }
+      trackRef.current.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
+      animRef.current = requestAnimationFrame(step);
+    };
+    animRef.current = requestAnimationFrame(step);
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [paused, photos.length]);
+
+  if (photos.length === 0) return null;
+
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay }} className={className}>
-      {children}
-    </motion.div>
+    <div
+      className="relative overflow-hidden cursor-pointer select-none"
+      onClick={() => setPaused((p) => !p)}
+    >
+      <div
+        ref={trackRef}
+        className="flex gap-4"
+        style={{ willChange: "transform" }}
+      >
+        {doubled.map((photo, i) => (
+          <div
+            key={`${photo.id}-${i}`}
+            className="relative flex-shrink-0 overflow-hidden rounded-xl"
+            style={{ width: 280, height: 360 }}
+          >
+            <img
+              src={`${photo.url}?t=${photo.uploadedAt}`}
+              alt=""
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <p className="text-white/80 text-sm font-display leading-tight line-clamp-2">
+                {photo.caption || photo.name || " "}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      {paused && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-10">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-white/60 text-sm font-display uppercase tracking-[0.25em]"
+          >
+            paused  tap to continue
+          </motion.p>
+        </div>
+      )}
+    </div>
   );
 }
 
 export default function Home() {
   const { photos, reload } = usePhotos();
   const [showUpload, setShowUpload] = useState(false);
-  const [bgIdx, setBgIdx] = useState(0);
-  const [loaded, setLoaded] = useState({});
-
-  const bgPhotos = photos.filter((p) => p.url);
-  const hasPhotos = bgPhotos.length > 0;
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const nextBg = useCallback(() => {
-    if (bgPhotos.length < 2) return;
-    setBgIdx((i) => (i + 1) % bgPhotos.length);
-  }, [bgPhotos.length]);
-
-  useEffect(() => {
-    if (bgPhotos.length < 2) return;
-    const id = setInterval(nextBg, 4500);
-    return () => clearInterval(id);
-  }, [nextBg, bgPhotos.length]);
-
-  const currentPhoto = hasPhotos ? bgPhotos[bgIdx] : null;
-  const nextPhoto = hasPhotos && bgPhotos.length > 1
-    ? bgPhotos[(bgIdx + 1) % bgPhotos.length]
-    : null;
-
   return (
     <>
-      <section className="relative w-full h-screen overflow-hidden">
-        {hasPhotos && (
-          <>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentPhoto.id}
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.2, ease: "easeInOut" }}
-                className="absolute inset-0"
+      <section className="relative">
+        <div className="max-w-6xl mx-auto px-4 pt-28 pb-8">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <motion.p
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-white/20 text-xs font-display uppercase tracking-[0.3em] mb-3"
               >
-                <img
-                  src={`${currentPhoto.url}?t=${currentPhoto.uploadedAt}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onLoad={() => setLoaded((prev) => ({ ...prev, [currentPhoto.id]: true }))}
-                />
-              </motion.div>
-            </AnimatePresence>
-            <div className="absolute inset-0 bg-black/50" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/30" />
-          </>
-        )}
-
-        {!hasPhotos && (
-          <div className="absolute inset-0 bg-[#0a0a0a]" />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 text-center">
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-white/25 text-xs font-display uppercase tracking-[0.3em] mb-6"
-          >
-            A curated collection of moments
-          </motion.p>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="m-0 mb-2 font-display uppercase text-[clamp(3.5rem,14vw,10rem)] leading-[.82] tracking-tight"
-          >
-            <span className="block bg-gradient-to-r from-amber-200 via-orange-300 to-amber-400 bg-clip-text text-transparent">
-              nieshies
-            </span>
-            <span className="block text-[clamp(2rem,8vw,5rem)] mt-[-0.06em] text-white/50 font-light">
-              gallery
-            </span>
-          </motion.h1>
+                Random Memories
+              </motion.p>
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="font-display uppercase text-[clamp(2.5rem,8vw,5rem)] leading-[.88] tracking-tight"
+              >
+                <span className="bg-gradient-to-r from-amber-200 via-orange-300 to-amber-400 bg-clip-text text-transparent">
+                  nieshies
+                </span>
+                <span className="block text-white/40 text-[clamp(1.2rem,4vw,2.5rem)] font-light mt-[-0.04em]">
+                  gallery
+                </span>
+              </motion.h1>
+            </div>
+            <motion.button
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              onClick={() => setShowUpload(true)}
+              className="flex-shrink-0 px-5 py-2.5 rounded-full text-xs font-display font-bold uppercase tracking-[0.2em] transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(244,140,54,0.1)",
+                border: "1px solid rgba(244,140,54,0.25)",
+                color: "#f48c36",
+              }}
+            >
+              Add Photos
+            </motion.button>
+          </div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.9 }}
-            className="flex gap-3 flex-wrap justify-center mt-10"
+            transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <Link
-              href="/products"
-              className="px-6 py-2.5 rounded-full text-xs font-display font-bold uppercase tracking-[0.25em] transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(244,140,54,0.12)",
-                border: "1px solid rgba(244,140,54,0.3)",
-                color: "#f48c36",
-              }}
-            >
-              GALLERY
-            </Link>
-            <Link
-              href="/amnie"
-              className="px-6 py-2.5 rounded-full text-xs font-display font-bold uppercase tracking-[0.25em] transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                color: "rgba(255,255,255,0.6)",
-              }}
-            >
-              AMNIE
-            </Link>
-            <Link
-              href="/family"
-              className="px-6 py-2.5 rounded-full text-xs font-display font-bold uppercase tracking-[0.25em] transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                color: "rgba(255,255,255,0.6)",
-              }}
-            >
-              FAMILY
-            </Link>
+            <PhotoReel photos={photos} />
           </motion.div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
-        >
-          <span className="text-white/15 text-xs font-display uppercase tracking-[0.3em]">Scroll to discover</span>
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity }} className="w-px h-6 bg-white/20" />
-        </motion.div>
       </section>
 
-      <section className="relative px-4 py-20">
+      <section className="relative px-4 pb-24">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="font-display uppercase text-[clamp(1.8rem,5vw,3.5rem)] leading-[.92] text-white"
-            >
-              PHOTO <span className="text-accent">COLLECTION</span>
-            </motion.h2>
-            <motion.button
-              initial={{ opacity: 0, scale: 0 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              onClick={() => setShowUpload(true)}
-              className="w-12 h-12 rounded-full border-2 border-white/30 text-white/70 hover:text-white hover:border-accent/50 hover:bg-accent/10 text-2xl flex items-center justify-center transition-all flex-shrink-0"
-              title="Add photo"
-            >
-              +
-            </motion.button>
-          </div>
-
-          <FadeIn delay={0.2}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             {photos.length === 0 ? (
-              <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl">
+              <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
                 <p className="text-white/30 text-lg font-display">No photos yet</p>
                 <p className="text-white/20 text-sm mt-1">Tap + to upload your first capture</p>
               </div>
             ) : (
-              <GalleryGrid photos={photos} />
+              <ScatteredGallery photos={photos} />
             )}
-          </FadeIn>
+          </motion.div>
+
+          {photos.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center mt-16"
+            >
+              <p className="text-white/15 text-xs font-mono tracking-wider">
+                more memories soon.
+              </p>
+              <div className="w-8 h-px bg-white/10 mx-auto mt-4" />
+            </motion.div>
+          )}
         </div>
       </section>
 
