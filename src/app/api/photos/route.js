@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { prisma } from "@/lib/prisma";
 import { saveUpload, validateFile } from "@/lib/upload";
-import { loadDb, saveDb, normalizePhoto } from "@/lib/db";
 
 export async function GET() {
-  return NextResponse.json({ photos: loadDb().photos });
+  const photos = await prisma.galleryPhoto.findMany({
+    orderBy: { uploadedAt: "desc" },
+  });
+  return NextResponse.json({
+    photos: photos.map((p) => ({ ...p, uploadedAt: p.uploadedAt.getTime() })),
+  });
 }
 
 export async function POST(request) {
@@ -17,25 +21,20 @@ export async function POST(request) {
     if (error) return NextResponse.json({ error }, { status: 400 });
 
     const result = await saveUpload(file, "uploads");
-    const uploadedAt = Date.now();
 
-    const db = loadDb();
-    const photo = normalizePhoto({
-      id: randomUUID(),
-      name: name || file.name,
-      filename: result.filename,
-      url: result.url,
-      uploadedAt,
-      sizeBytes: result.sizeBytes,
-      caption: "",
-      tags: [],
-      favorite: false,
+    const photo = await prisma.galleryPhoto.create({
+      data: {
+        name: name || file.name,
+        filename: result.filename,
+        url: result.url,
+        sizeBytes: result.sizeBytes,
+      },
     });
 
-    db.photos.push(photo);
-    saveDb(db);
-
-    return NextResponse.json({ ok: true, photo }, { status: 201 });
+    return NextResponse.json(
+      { ok: true, photo: { ...photo, uploadedAt: photo.uploadedAt.getTime() } },
+      { status: 201 }
+    );
   } catch (err) {
     return NextResponse.json({ error: err.message || "Failed to upload image" }, { status: 400 });
   }

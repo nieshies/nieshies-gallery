@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getPhotos } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -7,12 +6,10 @@ export async function GET() {
   const start = new Date(year, 0, 1);
   const end = new Date(year + 1, 0, 1);
 
-  const photoDates = getPhotos()
-    .filter((p) => {
-      const d = new Date(p.uploadedAt);
-      return d >= start && d < end;
-    })
-    .map((p) => new Date(p.uploadedAt).toISOString().slice(0, 10));
+  const photoDates = await prisma.galleryPhoto.findMany({
+    where: { uploadedAt: { gte: start, lt: end } },
+    select: { uploadedAt: true },
+  });
 
   let prismaDates = [];
   try {
@@ -23,7 +20,11 @@ export async function GET() {
     prismaDates = uploads.map((u) => u.createdAt.toISOString().slice(0, 10));
   } catch {}
 
-  const allDates = [...photoDates, ...prismaDates];
+  const allDates = [
+    ...photoDates.map((p) => p.uploadedAt.toISOString().slice(0, 10)),
+    ...prismaDates,
+  ];
+
   const counts = {};
   for (const d of allDates) {
     counts[d] = (counts[d] || 0) + 1;

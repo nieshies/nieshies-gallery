@@ -78,6 +78,20 @@ model FamilyMemory {
   updatedAt   DateTime @updatedAt
 }
 
+model GalleryPhoto {
+  id         String   @id @default(cuid())
+  name       String
+  filename   String
+  url        String
+  uploadedAt DateTime @default(now())
+  sizeBytes  Int      @default(0)
+  caption    String   @default("")
+  tags       String[] @default([])
+  favorite   Boolean  @default(false)
+  visibility String   @default("public")
+  token      String?
+}
+
 model StatusUpdate {
   id        String   @id @default(cuid())
   content   String

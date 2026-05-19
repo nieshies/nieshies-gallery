@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import { loadDb, saveDb, normalizePhoto, PICTURES_DIR } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
+import { deleteUpload } from "@/lib/upload";
 
 export async function PATCH(request) {
   try {
@@ -11,43 +10,40 @@ export async function PATCH(request) {
       return NextResponse.json({ error: "No ids provided" }, { status: 400 });
     }
 
-    const db = loadDb();
     let changed = 0;
 
     for (const id of ids) {
-      const idx = db.photos.findIndex((p) => p.id === id);
-      if (idx < 0) continue;
-
-      const photo = db.photos[idx];
+      const data = {};
       switch (action) {
         case "set-favorite":
-          photo.favorite = Boolean(value);
+          data.favorite = Boolean(value);
           break;
         case "add-tags": {
+          const photo = await prisma.galleryPhoto.findUnique({ where: { id }, select: { tags: true } });
+          if (!photo) continue;
           const newTags = Array.isArray(value) ? value.map((t) => String(t).trim()).filter(Boolean) : [];
-          const merged = [...new Set([...photo.tags, ...newTags])];
-          photo.tags = merged.slice(0, 8);
+          data.tags = [...new Set([...photo.tags, ...newTags])].slice(0, 8);
           break;
         }
         case "set-visibility":
           if (["public", "unlisted", "private"].includes(value)) {
-            photo.visibility = value;
+            data.visibility = value;
             if (value === "unlisted") {
+              const existing = await prisma.galleryPhoto.findUnique({ where: { id }, select: { token: true } });
               const { randomUUID } = await import("crypto");
-              photo.token = photo.token || randomUUID().slice(0, 12);
+              data.token = existing?.token || randomUUID().slice(0, 12);
             } else {
-              photo.token = null;
+              data.token = null;
             }
           }
           break;
         default:
           return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
       }
-      db.photos[idx] = normalizePhoto(photo);
+      await prisma.galleryPhoto.update({ where: { id }, data });
       changed++;
     }
 
-    saveDb(db);
     return NextResponse.json({ ok: true, changed });
   } catch {
     return NextResponse.json({ error: "Batch operation failed" }, { status: 400 });
@@ -61,23 +57,18 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "No ids provided" }, { status: 400 });
     }
 
-    const db = loadDb();
-    const remaining = [];
-    let removed = 0;
+    const photos = await prisma.galleryPhoto.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, url: true },
+    });
 
-    for (const photo of db.photos) {
-      if (ids.includes(photo.id)) {
-        const filePath = path.join(PICTURES_DIR, photo.filename);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        removed++;
-      } else {
-        remaining.push(photo);
-      }
-    }
+    await prisma.galleryPhoto.deleteMany({
+      where: { id: { in: ids } },
+    });
 
-    db.photos = remaining;
-    saveDb(db);
-    return NextResponse.json({ ok: true, removed });
+    await Promise.all(photos.map((p) => deleteUpload(p.url, "uploads")));
+
+    return NextResponse.json({ ok: true, removed: photos.length });
   } catch {
     return NextResponse.json({ error: "Batch delete failed" }, { status: 400 });
   }

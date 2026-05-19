@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { getPhotos } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const photos = getPhotos();
+  const photos = await prisma.galleryPhoto.findMany({
+    select: { sizeBytes: true, favorite: true },
+  });
+
   const totalBytes = photos.reduce((sum, p) => sum + p.sizeBytes, 0);
   const favoriteCount = photos.filter((p) => p.favorite).length;
 
