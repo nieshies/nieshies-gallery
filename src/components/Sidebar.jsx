@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,93 +14,68 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 300);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <>
-      <motion.aside
-        initial={{ x: -220, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-0 left-0 h-full z-50 hidden lg:flex flex-col"
-        style={{
-          width: "220px",
-          background: "#0a0a0a",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
-          padding: "2rem 1.5rem",
-          gap: "2rem",
-        }}
+      <nav
+        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden lg:block dotnav ${visible ? "visible" : ""}`}
+        style={{ pointerEvents: "auto" }}
       >
-        <div>
-          <p className="text-[10px] font-display font-bold uppercase tracking-[0.24em] text-accent">
-            nieshies
-          </p>
-          <div className="w-6 h-[1px] bg-accent/40 mt-1.5" />
-        </div>
+        <div className="glass-panel shadow-glass rounded-2xl py-4 px-3">
+          <div className="mb-4 px-1">
+            <p className="text-[10px] font-display font-bold uppercase tracking-[0.24em] text-accent">
+              nieshies
+            </p>
+            <div className="w-6 h-[1px] bg-accent/40 mt-1.5 mx-auto" />
+          </div>
 
-        <nav className="flex flex-col gap-1">
-          {links.map((link, i) => {
-            const isActive = pathname === link.href;
-            return (
-              <motion.div
-                key={link.href}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + i * 0.08, duration: 0.4, ease: "easeOut" }}
-              >
+          <div className="space-y-1">
+            {links.map((link) => {
+              const isActive = pathname === link.href;
+              return (
                 <Link
+                  key={link.href}
                   href={link.href}
-                  className="block relative pl-3 py-1.5 text-[11px] font-display font-bold uppercase tracking-[0.18em] transition-all duration-200"
-                  style={{
-                    color: isActive ? "#fff" : "rgba(255,255,255,0.5)",
-                    borderLeft: isActive ? "2px solid rgba(255,255,255,0.8)" : "2px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.color = "#fff";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.color = "rgba(255,255,255,0.5)";
-                  }}
+                  className={`block px-2.5 py-1.5 rounded-lg text-[11px] font-display font-bold uppercase tracking-[0.18em] transition-all duration-200 ${
+                    isActive ? "text-accent" : "text-white/40 hover:text-white/70"
+                  }`}
+                  style={{ background: isActive ? "rgba(244,140,54,0.1)" : "transparent" }}
                 >
                   {link.label}
                 </Link>
-              </motion.div>
-            );
-          })}
-        </nav>
+              );
+            })}
+          </div>
 
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.4 }}
-          onClick={() => setShowUpload(true)}
-          className="text-left text-[11px] font-display font-bold uppercase tracking-[0.18em] text-accent/70 hover:text-accent transition-colors"
-        >
-          + Add Photos
-        </motion.button>
-      </motion.aside>
+          <div className="mt-4 px-1 pt-3 border-t border-white/6">
+            <button
+              onClick={() => setShowUpload(true)}
+              className="block w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-display font-bold uppercase tracking-[0.18em] text-accent/60 hover:text-accent hover:bg-accent-dim/30 transition-all duration-200"
+            >
+              + Add Photos
+            </button>
+          </div>
+        </div>
+      </nav>
 
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="fixed top-4 left-4 z-50 flex lg:hidden items-center justify-center w-10 h-10 rounded-xl"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
+        className={`fixed top-4 left-4 z-50 lg:hidden glass-panel shadow-glass rounded-xl w-10 h-10 flex items-center justify-center dotnav-mobile ${visible ? "visible" : ""}`}
       >
         <div className="space-y-1">
-          <span
-            className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "rotate-45 translate-y-[3.5px]" : ""}`}
-          />
-          <span
-            className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "opacity-0" : ""}`}
-          />
-          <span
-            className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "-rotate-45 -translate-y-[3.5px]" : ""}`}
-          />
+          <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "rotate-45 translate-y-[3.5px]" : ""}`} />
+          <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "opacity-0" : ""}`} />
+          <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "-rotate-45 -translate-y-[3.5px]" : ""}`} />
         </div>
       </button>
 
@@ -118,11 +93,7 @@ export default function Sidebar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute left-0 top-0 bottom-0 w-56 p-6 pt-16"
-              style={{
-                background: "#0a0a0a",
-                borderRight: "1px solid rgba(255,255,255,0.06)",
-              }}
+              className="absolute left-0 top-0 bottom-0 w-56 glass-panel shadow-glass p-6 pt-16"
             >
               <div className="space-y-2">
                 {links.map((link) => {
@@ -132,11 +103,9 @@ export default function Sidebar() {
                       key={link.href}
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
-                      className="block px-3 py-2 text-sm font-display font-bold uppercase tracking-[0.18em] transition-all"
-                      style={{
-                        color: isActive ? "#fff" : "rgba(255,255,255,0.5)",
-                        borderLeft: isActive ? "2px solid rgba(255,255,255,0.8)" : "2px solid transparent",
-                      }}
+                      className={`block px-3 py-2 rounded-xl text-sm font-display font-bold uppercase tracking-[0.18em] transition-all ${
+                        isActive ? "text-accent bg-accent-dim" : "text-white/50 hover:text-white/80"
+                      }`}
                     >
                       {link.label}
                     </Link>
@@ -144,7 +113,7 @@ export default function Sidebar() {
                 })}
                 <button
                   onClick={() => { setMobileOpen(false); setShowUpload(true); }}
-                  className="block px-3 py-2 text-sm font-display font-bold uppercase tracking-[0.18em] text-accent/70 hover:text-accent transition-colors"
+                  className="block w-full text-left px-3 py-2 rounded-xl text-sm font-display font-bold uppercase tracking-[0.18em] text-accent/60 hover:text-accent transition-all"
                 >
                   + Add Photos
                 </button>

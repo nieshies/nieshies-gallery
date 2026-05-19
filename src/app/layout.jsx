@@ -1,5 +1,5 @@
 import "./../styles.css";
-import ClientLayout from "@/components/ClientLayout";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata = {
   title: "nieshies gallery",
@@ -15,10 +15,8 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <div className="noise-overlay" />
-        <div className="ambient-glow" />
-        <div className="vignette-overlay" />
-        <ClientLayout>{children}</ClientLayout>
+        <Sidebar />
+        {children}
       </body>
     </html>
   );

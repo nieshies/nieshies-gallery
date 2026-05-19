@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
+import ScatteredHero from "./ScatteredHero";
+import PhotoSection from "./PhotoSection";
 
 export default function ScrollGallery({ photos }) {
   const containerRef = useRef(null);
@@ -44,7 +44,13 @@ export default function ScrollGallery({ photos }) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [scrollTo]);
 
-  const total = photos.length;
+  if (!photos?.length) {
+    return (
+      <div style={{ height: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: "0.8rem", letterSpacing: "0.2em" }}>
+        no memories yet
+      </div>
+    );
+  }
 
   return (
     <>
@@ -54,118 +60,14 @@ export default function ScrollGallery({ photos }) {
           height: "100vh",
           overflowY: "scroll",
           scrollSnapType: "y mandatory",
-          scrollBehavior: "smooth",
           background: "#000",
+          position: "relative",
         }}
       >
-        <section
-          style={{
-            scrollSnapAlign: "start",
-            height: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#000",
-            color: "#fff",
-            position: "relative",
-          }}
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            style={{ fontSize: "clamp(2rem, 8vw, 6rem)", fontWeight: 300, letterSpacing: "0.1em" }}
-          >
-            nieshies&apos; dump
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            transition={{ delay: 1.2, duration: 1 }}
-            style={{ marginTop: "2rem", fontSize: "0.9rem", letterSpacing: "0.3em", textTransform: "uppercase" }}
-          >
-            scroll
-          </motion.p>
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-            style={{ marginTop: "1rem", opacity: 0.4, fontSize: "1.2rem" }}
-          >
-            ↓
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.3 }}
-            transition={{ delay: 2.5, duration: 1 }}
-            style={{
-              position: "absolute",
-              bottom: "2.5rem",
-              fontSize: "0.75rem",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-            }}
-          >
-            Tap anywhere to continue
-          </motion.p>
-        </section>
+        <ScatteredHero photos={photos} />
 
         {photos.map((photo, i) => (
-          <section
-            key={photo.id}
-            style={{
-              scrollSnapAlign: "start",
-              height: "100vh",
-              position: "relative",
-              background: "#000",
-              overflow: "hidden",
-            }}
-            className="scroll-gallery-section"
-          >
-            <Image
-              src={photo.url}
-              alt={photo.caption || `Memory ${i + 1}`}
-              fill
-              style={{ objectFit: "cover" }}
-              priority={i < 3}
-              sizes="100vw"
-            />
-            <div className="scroll-grain" />
-            {photo.caption ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                viewport={{ once: false, amount: 0.8 }}
-                style={{
-                  position: "absolute",
-                  bottom: "2.5rem",
-                  left: "2.5rem",
-                  color: "#fff",
-                  fontSize: "0.95rem",
-                  fontWeight: 300,
-                  letterSpacing: "0.05em",
-                  textShadow: "0 1px 8px rgba(0,0,0,0.8)",
-                  maxWidth: "60%",
-                }}
-              >
-                {photo.caption}
-              </motion.div>
-            ) : null}
-            <div
-              style={{
-                position: "absolute",
-                bottom: "2.5rem",
-                right: "2.5rem",
-                color: "rgba(255,255,255,0.3)",
-                fontSize: "0.8rem",
-                letterSpacing: "0.1em",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {String(i + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-            </div>
-          </section>
+          <PhotoSection key={photo.id} photo={photo} index={i} total={photos.length} />
         ))}
 
         <section
@@ -178,16 +80,19 @@ export default function ScrollGallery({ photos }) {
             justifyContent: "center",
             background: "#000",
             color: "#fff",
+            flexShrink: 0,
           }}
         >
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 0.5 }}
-            transition={{ duration: 1 }}
-            style={{ fontSize: "0.9rem", letterSpacing: "0.3em", textTransform: "uppercase" }}
+          <p
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              fontSize: "0.9rem",
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+            }}
           >
             more memories soon
-          </motion.p>
+          </p>
         </section>
       </div>
 
