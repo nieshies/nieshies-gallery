@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import useInView from "@/lib/useInView";
 import PhotoCard from "@/components/features/PhotoCard";
 
@@ -11,6 +12,7 @@ const POSITIONS = [
 
 export default function FloatingCloud({ photos, onPhotoClick }) {
   const [ref, inView] = useInView({ threshold: 0.1 });
+  const [hovered, setHovered] = useState(null);
   if (photos.length === 0) return null;
 
   return (
@@ -22,14 +24,21 @@ export default function FloatingCloud({ photos, onPhotoClick }) {
             <div
               key={photo.id}
               className="absolute"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
               style={{
                 top: `${pos.y}%`,
                 left: `${pos.x}%`,
-                width: "min(18rem, 42vw)",
+                width: "min(20rem, 44vw)",
                 rotate: `${pos.r}deg`,
+                zIndex: hovered === i ? 120 : i + 1,
                 opacity: inView ? 1 : 0,
-                transform: inView ? "translateY(0)" : "translateY(36px)",
-                transition: `opacity 0.5s ${i * 0.1}s ease, transform 0.5s ${i * 0.1}s ease`,
+                transform: inView
+                  ? hovered === i
+                    ? "translateY(-18px) scale(1.06)"
+                    : "translateY(0) scale(1)"
+                  : "translateY(36px) scale(0.95)",
+                transition: `opacity 0.5s ${i * 0.1}s ease, transform 0.34s cubic-bezier(0.23, 1, 0.32, 1)`,
               }}
             >
               <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/5" />

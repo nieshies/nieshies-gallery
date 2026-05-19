@@ -12,9 +12,10 @@ import CollageGrid from "@/components/sections/CollageGrid";
 import CinematicViewer from "@/components/sections/CinematicViewer";
 import MemoryWall from "@/components/sections/MemoryWall";
 
-export default function ReferenceGalleryFlow({ photos, title = "nishi's dump", onPhotoClick, topAction }) {
+export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nishi's dump", onPhotoClick, topAction }) {
   const { horizontal, vertical } = detectOrientation(photos);
   const verticalSections = slicePhotos(vertical, 5);
+  const resolvedHeroPhotos = heroPhotos?.length ? heroPhotos : photos.slice(0, 6);
 
   return (
     <div className="relative">
@@ -24,7 +25,7 @@ export default function ReferenceGalleryFlow({ photos, title = "nishi's dump", o
         </div>
       ) : null}
 
-      <HeroSection photos={photos.slice(0, 6)} title={title} />
+      <HeroSection photos={resolvedHeroPhotos} title={title} />
       <FilmStrip photos={verticalSections[0] || []} onPhotoClick={onPhotoClick} />
       <StackStory photos={verticalSections[1] || []} onPhotoClick={onPhotoClick} />
       <ParallaxLayers photos={verticalSections[2] || []} onPhotoClick={onPhotoClick} />

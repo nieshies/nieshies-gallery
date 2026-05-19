@@ -32,11 +32,11 @@ export default function CollageGrid({ photos, onPhotoClick }) {
                 rotate: `${ROTATIONS[i % 12]}deg`,
                 zIndex: hovered === i ? 100 : 12 - i,
                 opacity: inView ? 1 : 0,
-                transform: inView && hovered !== i ? "scale(1)" : hovered === i ? "scale(1.06)" : "scale(0.92)",
-                transition: "opacity 0.5s ease, transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), z-index 0s",
+                transform: inView && hovered !== i ? "translateY(0) scale(1)" : hovered === i ? "translateY(-18px) scale(1.08)" : "scale(0.92)",
+                transition: "opacity 0.5s ease, transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), z-index 0s",
               }}
             >
-              <div className="w-48 sm:w-52 lg:w-56">
+              <div className="w-52 sm:w-56 lg:w-60">
                 <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/5" tilt={false} />
               </div>
             </div>

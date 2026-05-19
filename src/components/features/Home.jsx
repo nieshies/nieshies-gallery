@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import usePhotos from "@/hooks/usePhotos";
+import useHeaders from "@/hooks/useHeaders";
 import StoryLightbox from "@/components/features/StoryLightbox";
 import ReferenceGalleryFlow from "@/components/features/ReferenceGalleryFlow";
 
@@ -133,6 +134,7 @@ function UploadLightbox({ onClose, onUpload }) {
 
 export default function Home() {
   const { photos, reload } = usePhotos();
+  const { photos: headerPhotos } = useHeaders();
   const [showUpload, setShowUpload] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
@@ -156,6 +158,7 @@ export default function Home() {
     <>
       <ReferenceGalleryFlow
         photos={photos}
+        heroPhotos={headerPhotos}
         title="nishi's dump"
         onPhotoClick={handleItemClick}
         topAction={

@@ -13,23 +13,24 @@ export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt 
     const my = y * 100;
     ref.current.style.setProperty("--mx", `${mx}%`);
     ref.current.style.setProperty("--my", `${my}%`);
-    if (tilt) {
-      const tiltX = (0.5 - y) * 18;
-      const tiltY = (x - 0.5) * 18;
-      ref.current.style.transition = "transform 0.15s cubic-bezier(0.23, 1, 0.32, 1)";
-      ref.current.style.transform = `perspective(600px) translateY(-8px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-    }
+    const shiftX = (x - 0.5) * 20;
+    const shiftY = (y - 0.5) * 20;
+    const rotate = (x - 0.5) * 3;
+    ref.current.style.transition = "transform 0.14s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.22s cubic-bezier(0.23, 1, 0.32, 1)";
+    ref.current.style.transform = tilt
+      ? `perspective(900px) translate3d(${shiftX}px, ${shiftY - 10}px, 0) rotateX(${(0.5 - y) * 10}deg) rotateY(${(x - 0.5) * 10}deg) rotateZ(${rotate}deg) scale(1.03)`
+      : `translate3d(${shiftX}px, ${shiftY - 10}px, 0) rotate(${rotate}deg) scale(1.03)`;
+    ref.current.style.zIndex = "120";
   }, [tilt]);
 
   const handleMouseLeave = useCallback(() => {
     if (!ref.current) return;
     ref.current.style.setProperty("--mx", "50%");
     ref.current.style.setProperty("--my", "50%");
-    if (tilt) {
-      ref.current.style.transition = "";
-      ref.current.style.transform = "";
-    }
-  }, [tilt]);
+    ref.current.style.transition = "transform 0.28s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.28s cubic-bezier(0.23, 1, 0.32, 1)";
+    ref.current.style.transform = "";
+    ref.current.style.zIndex = "";
+  }, []);
 
   return (
     <article
@@ -45,6 +46,7 @@ export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt 
         transformStyle: "preserve-3d",
         "--mx": "50%",
         "--my": "50%",
+        willChange: "transform",
         ...style,
       }}
     >

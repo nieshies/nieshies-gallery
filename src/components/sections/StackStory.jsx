@@ -8,17 +8,17 @@ export default function StackStory({ photos, onPhotoClick }) {
 
   return (
     <section ref={ref} className="relative py-20 overflow-hidden">
-      <div className="mx-auto max-w-xs px-6 space-y-6">
+      <div className="mx-auto max-w-md px-6 space-y-8 md:max-w-lg">
         {photos.map((photo, i) => (
           <div
             key={photo.id}
             style={{
               opacity: inView ? 1 : 0,
-              transform: inView ? "translateY(0)" : "translateY(40px)",
-              transition: `opacity 0.5s ${i * 0.08}s ease, transform 0.5s ${i * 0.08}s ease`,
+              transform: inView ? "translateY(0) scale(1)" : "translateY(60px) scale(0.96)",
+              transition: `opacity 0.56s ${i * 0.08}s ease, transform 0.56s ${i * 0.08}s cubic-bezier(0.23, 1, 0.32, 1)`,
             }}
           >
-            <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/5" />
+            <PhotoCard photo={photo} onClick={onPhotoClick} aspect="9/16" />
           </div>
         ))}
       </div>
