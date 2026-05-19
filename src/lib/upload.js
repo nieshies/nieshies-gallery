@@ -5,9 +5,16 @@ const ALLOWED_TYPES = new Set([
   "image/heic", "image/heif",
 ]);
 
+const EXT_MAP = {
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
+  webp: "image/webp", gif: "image/gif", avif: "image/avif",
+  heic: "image/heic", heif: "image/heif",
+};
+
 export function validateFile(file) {
   if (!file) return "No file provided";
-  if (!ALLOWED_TYPES.has(file.type)) return "Unsupported file type";
+  const mime = file.type || EXT_MAP[file.name?.split(".").pop()?.toLowerCase()] || "";
+  if (!ALLOWED_TYPES.has(mime)) return "Unsupported file type";
   if (file.size > 10 * 1024 * 1024) return "File too large (max 10MB)";
   return null;
 }
@@ -17,10 +24,11 @@ export async function saveUpload(file, bucket = "uploads") {
   const ext = file.name.split(".").pop() || "jpg";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+  const contentType = file.type || EXT_MAP[file.name?.split(".").pop()?.toLowerCase()] || "image/jpeg";
   const { error } = await supabase.storage
     .from(bucket)
     .upload(filename, buffer, {
-      contentType: file.type,
+      contentType,
       upsert: false,
     });
 
