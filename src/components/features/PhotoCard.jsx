@@ -38,7 +38,7 @@ export default function PhotoCard({ photo, onClick, aspect = "4/5", style }) {
     >
       <div
         className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ background: "radial-gradient(circle at var(--mx) var(--my), rgba(255,170,120,0.22), transparent 42%)" }}
+        style={{ background: "radial-gradient(circle at var(--mx) var(--my), rgba(255,170,120,0.28), transparent 50%)" }}
       />
       <div className="relative h-full min-h-[220px] w-full overflow-hidden">
         <img

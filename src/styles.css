@@ -151,16 +151,16 @@ body {
 /* --- Photo Card --- */
 
 [data-photo-card="true"] {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.35s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 [data-photo-card="true"] img {
-  transition: filter 400ms ease;
+  transition: filter 450ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 [data-photo-card="true"]:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.6), 0 0 40px rgba(244, 140, 54, 0.08);
 }
 
 [data-photo-card="true"]:hover img {
