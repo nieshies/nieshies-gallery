@@ -1,7 +1,4 @@
 import "./../styles.css";
-import SoundToggle from "@/components/game/SoundToggle";
-import ExperienceBar from "@/components/game/ExperienceBar";
-import DailyMission from "@/components/game/DailyMission";
 
 export const metadata = {
   title: "nieshies gallery",
@@ -18,9 +15,6 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
-        <DailyMission />
-        <SoundToggle />
-        <ExperienceBar />
       </body>
     </html>
   );

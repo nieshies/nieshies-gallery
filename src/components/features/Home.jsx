@@ -28,17 +28,10 @@ function UploadLightbox({ onClose, onUpload }) {
     if (!selected) return;
     setStatus("Uploading...");
     try {
-      const dataUrl = await new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.onerror = reject;
-        r.readAsDataURL(selected);
-      });
-      const res = await fetch("/api/photos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name || selected.name, dataUrl })
-      });
+      const fd = new FormData();
+      fd.append("file", selected);
+      fd.append("name", name);
+      const res = await fetch("/api/photos", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
       setStatus("Uploaded ✓");
       setTimeout(() => { onUpload(); onClose(); }, 400);

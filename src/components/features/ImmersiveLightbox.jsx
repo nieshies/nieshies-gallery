@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGame } from "@/lib/ExperienceContext";
-import AmbientParticles from "@/components/game/AmbientParticles";
+
 
 function formatBytes(bytes) {
   if (!bytes) return "0 B";
@@ -46,14 +45,11 @@ function MagneticBtn({ children, className = "", ...props }) {
 }
 
 export default function ImmersiveLightbox({ photos, index, onClose }) {
-  const { dispatch } = useGame();
   const [currentIdx, setCurrentIdx] = useState(index);
   const [showMeta, setShowMeta] = useState(false);
   const [showExif, setShowExif] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
-
-  useEffect(() => { dispatch("photo_view"); }, []);
 
   const photo = photos[currentIdx];
   const hasPrev = currentIdx > 0;
@@ -123,7 +119,6 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
         onClick={(e) => e.stopPropagation()}
         className="relative w-full h-full flex flex-col items-center justify-center"
       >
-        <AmbientParticles count={15} />
         <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
           <span className="text-white/30 text-xs font-mono">
             {currentIdx + 1} / {photos.length}

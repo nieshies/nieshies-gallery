@@ -22,7 +22,7 @@ export function normalizePhoto(photo) {
     id: photo.id,
     name: photo.name || photo.filename,
     filename: photo.filename,
-    url: `/pictures/${encodeURIComponent(photo.filename)}`,
+    url: photo.url || `/pictures/${encodeURIComponent(photo.filename)}`,
     uploadedAt: Number(photo.uploadedAt || Date.now()),
     sizeBytes: Number(photo.sizeBytes || 0),
     favorite: Boolean(photo.favorite),
