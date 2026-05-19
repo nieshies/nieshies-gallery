@@ -1,19 +1,10 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+
+import { useEffect, useMemo, useState, useCallback } from "react";
 import usePhotos from "@/hooks/usePhotos";
-import useHeaders from "@/hooks/useHeaders";
-import slicePhotos from "@/lib/slicePhotos";
-import detectOrientation from "@/lib/detectOrientation";
-import HeroSection from "@/components/sections/HeroSection";
-import FilmStrip from "@/components/sections/FilmStrip";
-import StackStory from "@/components/sections/StackStory";
-import ParallaxLayers from "@/components/sections/ParallaxLayers";
-import FloatingCloud from "@/components/sections/FloatingCloud";
-import HorizontalJourney from "@/components/sections/HorizontalJourney";
-import CollageGrid from "@/components/sections/CollageGrid";
-import CinematicViewer from "@/components/sections/CinematicViewer";
-import MemoryWall from "@/components/sections/MemoryWall";
 import StoryLightbox from "@/components/features/StoryLightbox";
+import CinematicGalleryPage from "@/components/features/CinematicGalleryPage";
+import { normalizePhotoItem } from "@/lib/normalizeGalleryItems";
 
 function UploadLightbox({ onClose, onUpload }) {
   const [files, setFiles] = useState([]);
@@ -23,26 +14,40 @@ function UploadLightbox({ onClose, onUpload }) {
   const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") { setClosing(true); setTimeout(onClose, 200); } };
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        setClosing(true);
+        setTimeout(onClose, 200);
+      }
+    };
     document.addEventListener("keydown", handleKey);
     document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", handleKey); document.body.style.overflow = ""; };
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
   }, [onClose]);
 
-  const handleBgClick = () => { setClosing(true); setTimeout(onClose, 200); };
-
-  const handleFile = (e) => {
-    const f = Array.from(e.target.files || []);
-    if (f.length) setFiles((prev) => [...prev, ...f]);
+  const handleBgClick = () => {
+    setClosing(true);
+    setTimeout(onClose, 200);
   };
 
-  const removeFile = (i) => setFiles((prev) => prev.filter((_, idx) => idx !== i));
+  const handleFile = (e) => {
+    const selected = Array.from(e.target.files || []);
+    if (selected.length) setFiles((prev) => [...prev, ...selected]);
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== index));
+  };
 
   const handleUpload = async () => {
-    if (files.length === 0) return;
+    if (!files.length) return;
     setUploading(true);
     let done = 0;
-    let errors = [];
+    const errors = [];
+
     for (const file of files) {
       setStatus(`Uploading ${done + 1}/${files.length}...`);
       try {
@@ -54,57 +59,83 @@ function UploadLightbox({ onClose, onUpload }) {
           const data = await res.json().catch(() => ({}));
           errors.push(`${file.name}: ${data.error || "Failed"}`);
         } else {
-          done++;
+          done += 1;
         }
-      } catch (e) {
-        errors.push(`${file.name}: ${e.message}`);
+      } catch (error) {
+        errors.push(`${file.name}: ${error.message}`);
       }
     }
-    if (errors.length) {
-      setStatus(errors[0]);
-    } else {
+
+    if (errors.length) setStatus(errors[0]);
+    else {
       setStatus(`Uploaded ${done} ✓`);
-      setTimeout(() => { onUpload(); handleBgClick(); }, 400);
+      setTimeout(() => {
+        onUpload();
+        handleBgClick();
+      }, 400);
     }
     setUploading(false);
   };
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 lightbox-overlay ${closing ? "closing" : "open"}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md lightbox-overlay ${closing ? "closing" : "open"}`}
       onClick={handleBgClick}
     >
-      <div onClick={(e) => e.stopPropagation()} className="relative max-w-lg w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl">
-        <button onClick={() => { setClosing(true); setTimeout(onClose, 200); }} className="absolute top-4 right-4 text-white/40 hover:text-white text-lg">&times;</button>
-        <p className="text-white/60 text-lg font-display uppercase tracking-widest mb-6">ADD PHOTOS</p>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg rounded-[1.75rem] border border-white/12 bg-[rgba(10,10,10,0.95)] p-6 backdrop-blur-xl"
+      >
+        <button
+          onClick={() => {
+            setClosing(true);
+            setTimeout(onClose, 200);
+          }}
+          className="absolute right-4 top-4 text-lg text-white/40 hover:text-white"
+        >
+          &times;
+        </button>
+        <p className="mb-6 text-lg uppercase tracking-[0.3em] text-white/62">add photos</p>
         <div className="space-y-4">
           <div>
-            <p className="text-white/30 text-xs font-display uppercase tracking-[0.2em] mb-2">Photos ({files.length})</p>
-            <label className="block w-full border-2 border-dashed border-white/25 rounded-xl p-4 text-center cursor-pointer hover:border-accent/50 transition-colors">
-              {files.length > 0 ? (
-                <div className="flex flex-wrap gap-2 justify-center max-h-32 overflow-y-auto">
-                  {files.map((f, i) => (
-                    <div key={i} className="relative group">
-                      <img src={URL.createObjectURL(f)} className="w-16 h-16 rounded-lg object-cover" alt="" />
-                      <button onClick={() => removeFile(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 text-white/60 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+            <p className="mb-2 text-xs uppercase tracking-[0.22em] text-white/28">Photos ({files.length})</p>
+            <label className="block w-full cursor-pointer rounded-2xl border-2 border-dashed border-white/20 p-4 text-center transition-colors hover:border-accent/50">
+              {files.length ? (
+                <div className="flex max-h-32 flex-wrap justify-center gap-2 overflow-y-auto">
+                  {files.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="group relative">
+                      <img src={URL.createObjectURL(file)} className="h-16 w-16 rounded-lg object-cover" alt="" />
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/80 text-[10px] text-white/60 opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        &times;
+                      </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-white/40 text-sm font-display">Click to select photos</p>
+                <p className="text-sm text-white/40">Click to select photos</p>
               )}
               <input type="file" accept="image/*" multiple onChange={handleFile} className="hidden" />
             </label>
           </div>
           <div>
-            <p className="text-white/30 text-xs font-display uppercase tracking-[0.2em] mb-2">Caption (optional)</p>
-            <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption..."
-              className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-white text-base outline-none focus:border-accent/40 placeholder:text-white/20" />
+            <p className="mb-2 text-xs uppercase tracking-[0.22em] text-white/28">Caption</p>
+            <input
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Add a caption..."
+              className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-base text-white outline-none placeholder:text-white/20 focus:border-accent/40"
+            />
           </div>
-          {status && <p className="text-accent text-sm text-center">{status}</p>}
-          <button onClick={handleUpload} disabled={files.length === 0 || uploading}
-            className="w-full py-3 rounded-xl border border-accent/40 text-accent text-sm font-display uppercase tracking-widest hover:bg-accent/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-            {uploading ? "UPLOADING..." : "UPLOAD ALL"}
+          {status ? <p className="text-center text-sm text-accent">{status}</p> : null}
+          <button
+            onClick={handleUpload}
+            disabled={!files.length || uploading}
+            className="w-full rounded-xl border border-accent/40 py-3 text-sm uppercase tracking-[0.24em] text-accent transition-all hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            {uploading ? "uploading..." : "upload all"}
           </button>
         </div>
       </div>
@@ -114,20 +145,23 @@ function UploadLightbox({ onClose, onUpload }) {
 
 export default function Home() {
   const { photos, reload } = usePhotos();
-  const { photos: headers } = useHeaders();
   const [showUpload, setShowUpload] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [uploadBtnVisible, setUploadBtnVisible] = useState(false);
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-  useEffect(() => { const t = setTimeout(() => setUploadBtnVisible(true), 1000); return () => clearTimeout(t); }, []);
-
-  const handlePhotoClick = useCallback((photo) => {
-    setLightboxPhoto(photo);
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, []);
 
-  const handleLightboxClose = useCallback(() => {
-    setLightboxPhoto(null);
+  useEffect(() => {
+    const timer = setTimeout(() => setUploadBtnVisible(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const normalizedItems = useMemo(() => photos.map((photo) => normalizePhotoItem(photo)), [photos]);
+
+  const handleItemClick = useCallback((item) => {
+    setLightboxPhoto(item.raw);
   }, []);
 
   const handleDelete = useCallback(() => {
@@ -135,44 +169,37 @@ export default function Home() {
     setLightboxPhoto(null);
   }, [reload]);
 
-  const lightboxIndex = lightboxPhoto ? photos.findIndex((p) => p.id === lightboxPhoto.id) : -1;
+  const lightboxIndex = lightboxPhoto ? photos.findIndex((photo) => photo.id === lightboxPhoto.id) : -1;
   const lightboxOpen = lightboxIndex >= 0;
-
-  const { horizontal, vertical } = detectOrientation(photos);
-  const vertSections = slicePhotos(vertical, 5);
 
   return (
     <>
-      <div>
-        <HeroSection photos={headers} />
-        <FilmStrip photos={vertSections[0]} onPhotoClick={handlePhotoClick} />
-        <StackStory photos={vertSections[1]} onPhotoClick={handlePhotoClick} />
-        <ParallaxLayers photos={vertSections[2]} onPhotoClick={handlePhotoClick} />
-        <FloatingCloud photos={vertSections[3]} onPhotoClick={handlePhotoClick} />
-        <HorizontalJourney photos={horizontal} onPhotoClick={handlePhotoClick} />
-        <CollageGrid photos={vertSections[4]} onPhotoClick={handlePhotoClick} />
-        <CinematicViewer photos={photos.slice(0, 1)} onPhotoClick={handlePhotoClick} />
-        <MemoryWall photos={photos} onPhotoClick={handlePhotoClick} />
-      </div>
+      <CinematicGalleryPage
+        items={normalizedItems}
+        eyebrow="nieshies gallery"
+        title="A portrait-led memory sequence."
+        description="Your homepage now flows like one cinematic roll: taller frames, calmer hover motion, and scroll sections that reveal memories in order instead of switching visual systems every few seconds."
+        onItemClick={handleItemClick}
+      />
 
       <button
         onClick={() => setShowUpload(true)}
-        className={`fixed bottom-6 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl text-white text-xl upload-btn ${uploadBtnVisible ? "visible" : ""}`}
+        className={`upload-btn fixed bottom-6 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full text-xl text-white shadow-2xl ${uploadBtnVisible ? "visible" : ""}`}
         style={{ background: "#f48c36" }}
       >
         +
       </button>
 
-      {showUpload && <UploadLightbox onClose={() => setShowUpload(false)} onUpload={() => reload()} />}
+      {showUpload ? <UploadLightbox onClose={() => setShowUpload(false)} onUpload={() => reload()} /> : null}
 
-      {lightboxOpen && (
+      {lightboxOpen ? (
         <StoryLightbox
           photos={photos}
           index={lightboxIndex}
-          onClose={handleLightboxClose}
+          onClose={() => setLightboxPhoto(null)}
           onDelete={handleDelete}
         />
-      )}
+      ) : null}
     </>
   );
 }
