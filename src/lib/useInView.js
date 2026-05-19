@@ -3,7 +3,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 
 export default function useInView({ threshold = 0.1, repeat = false } = {}) {
   const ref = useRef(null);
-  const [inView, setInView] = useState(false);
+  const [inView, setInView] = useState(true);
   const [ready, setReady] = useState(false);
 
   const setRef = useCallback((el) => {

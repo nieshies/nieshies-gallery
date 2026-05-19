@@ -16,7 +16,6 @@ export default function HeroSection({ photos }) {
     const el = ref.current;
     if (!el) return;
     const titleEl = el.querySelector(".hero-title");
-    const headerEl = document.querySelector(".hero-header-bar");
 
     let ticking = false;
     const handleScroll = () => {
@@ -31,11 +30,8 @@ export default function HeroSection({ photos }) {
           const scale = Math.max(0.5, Math.min(1, 1 - (Math.min(progress, 0.3) / 0.3) * 0.5));
           const yOffset = Math.max(-120, Math.min(0, -(Math.min(progress, 0.3) / 0.3) * 120));
           const op = Math.max(0, Math.min(1, 1 - (Math.min(progress, 0.4) / 0.4)));
-          const hOp = Math.max(0, Math.min(1, (Math.min(progress, 0.3) - 0.15) / 0.15));
-
           el.style.opacity = op;
           if (titleEl) titleEl.style.transform = `scale(${scale}) translateY(${yOffset}px)`;
-          if (headerEl) headerEl.style.opacity = isNaN(hOp) ? 0 : hOp;
           ticking = false;
         });
         ticking = true;
@@ -62,19 +58,15 @@ export default function HeroSection({ photos }) {
           />
         ))}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/60" />
-        <div className="absolute bottom-16 left-8 md:left-16 origin-bottom-left hero-title">
+        <div className="absolute inset-0 flex items-center justify-center hero-title">
           <h1
-            className="font-display uppercase text-[clamp(3rem,8vw,8rem)] leading-[0.92] tracking-[-0.03em] text-white"
+            className="font-display uppercase text-[clamp(2rem,5vw,4rem)] leading-[0.92] tracking-[-0.03em] text-white text-center"
             style={{ textShadow: "0 0 26px rgba(255,145,76,0.26)" }}
           >
             nieshies dump
           </h1>
         </div>
       </section>
-
-      <div className="hero-header-bar fixed top-0 left-0 right-0 z-40 h-14 backdrop-blur-md bg-black/60 border-b border-white/10 flex items-center justify-between px-6 lg:pl-24">
-        <span className="font-display uppercase text-base tracking-[-0.03em] text-white">nieshies dump</span>
-      </div>
     </>
   );
 }
