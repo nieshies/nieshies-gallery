@@ -1,21 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReactLenis } from "lenis/react";
 import usePhotos from "@/hooks/usePhotos";
 import useHeaders from "@/hooks/useHeaders";
-import slicePhotos from "@/lib/slicePhotos";
 import HeroSection from "@/components/sections/HeroSection";
-import FilmStrip from "@/components/sections/FilmStrip";
-import HorizontalJourney from "@/components/sections/HorizontalJourney";
-import CameraRoll from "@/components/sections/CameraRoll";
-import FloatingCloud from "@/components/sections/FloatingCloud";
-import StackStory from "@/components/sections/StackStory";
-import CollageGrid from "@/components/sections/CollageGrid";
-import CinematicViewer from "@/components/sections/CinematicViewer";
-import MemoryWall from "@/components/sections/MemoryWall";
-import ParallaxLayers from "@/components/sections/ParallaxLayers";
+import MasonryGrid from "@/components/sections/MasonryGrid";
 import FooterSection from "@/components/sections/FooterSection";
+import ImmersiveLightbox from "@/components/features/ImmersiveLightbox";
 
 function UploadLightbox({ onClose, onUpload }) {
   const [files, setFiles] = useState([]);
@@ -124,25 +116,34 @@ export default function Home() {
   const { photos, reload } = usePhotos();
   const { photos: headers } = useHeaders();
   const [showUpload, setShowUpload] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const sliced = slicePhotos(photos);
+  const handlePhotoClick = useCallback((photo) => {
+    setLightboxPhoto(photo);
+  }, []);
+
+  const handleLightboxClose = useCallback(() => {
+    setLightboxPhoto(null);
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    reload();
+    setLightboxPhoto(null);
+  }, [reload]);
+
+  const lightboxIndex = lightboxPhoto ? photos.findIndex((p) => p.id === lightboxPhoto.id) : -1;
+  const lightboxOpen = lightboxIndex >= 0;
 
   return (
     <>
       <ReactLenis root options={{ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) }}>
-      <HeroSection photos={headers} />
-      <FilmStrip photos={sliced.filmStrip} />
-      <HorizontalJourney photos={sliced.horizontalJourney} />
-      <CameraRoll photos={sliced.cameraRoll} />
-      <FloatingCloud photos={sliced.floatingCloud} />
-      <StackStory photos={sliced.stackStory} />
-      <CollageGrid photos={sliced.collageGrid} />
-      <CinematicViewer photos={sliced.cinematicViewer} />
-      <MemoryWall photos={sliced.memoryWall} />
-      <ParallaxLayers photos={sliced.parallaxLayers} />
-      <FooterSection />
+        <div className="lg:pl-20">
+          <HeroSection photos={headers} />
+          <MasonryGrid photos={photos} onPhotoClick={handlePhotoClick} />
+          <FooterSection />
+        </div>
       </ReactLenis>
 
       <motion.button
@@ -158,6 +159,17 @@ export default function Home() {
 
       <AnimatePresence>
         {showUpload && <UploadLightbox onClose={() => setShowUpload(false)} onUpload={() => reload()} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {lightboxOpen && (
+          <ImmersiveLightbox
+            photos={photos}
+            index={lightboxIndex}
+            onClose={handleLightboxClose}
+            onDelete={handleDelete}
+          />
+        )}
       </AnimatePresence>
     </>
   );

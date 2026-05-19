@@ -29,22 +29,18 @@ export default function DotNav() {
   }, [pathname]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > window.innerHeight * 0.6);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    setScrolled(true);
   }, []);
 
   return (
     <>
       <motion.nav
         initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: scrolled ? 1 : 0, x: scrolled ? 0 : -20 }}
+        animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
         onMouseMove={handleMouse}
-        className="fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden lg:block pointer-events-none"
-        style={{ pointerEvents: scrolled ? "auto" : "none" }}
+        className="fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden lg:block"
+        style={{ pointerEvents: "auto" }}
       >
         <div
           className="glass-panel shadow-glass rounded-2xl py-4 px-3 relative overflow-hidden"

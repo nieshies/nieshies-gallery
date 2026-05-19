@@ -177,13 +177,18 @@ body {
 }
 
 .tilt-card img {
-  transition: transform 700ms ease;
+  transition: filter 400ms ease;
   will-change: transform;
 }
 
 .tilt-card:hover img {
   filter: brightness(1.25) saturate(1.1);
-  transform: scale(1.1);
+}
+
+.masonry-grid:has([data-hovered="true"]) .tilt-card:not([data-hovered="true"]) {
+  opacity: 0.5;
+  filter: blur(2px);
+  transition: opacity 400ms ease, filter 400ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

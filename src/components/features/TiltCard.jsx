@@ -1,8 +1,14 @@
 "use client";
 import { useRef, useCallback } from "react";
+import { motion } from "framer-motion";
 
-export default function TiltCard({ children, className, style }) {
+export default function TiltCard({ children, className, style, ...rest }) {
   const ref = useRef(null);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!ref.current) return;
+    ref.current.dataset.hovered = "true";
+  }, []);
 
   const handleMouseMove = useCallback((e) => {
     if (!ref.current) return;
@@ -18,6 +24,7 @@ export default function TiltCard({ children, className, style }) {
 
   const handleMouseLeave = useCallback(() => {
     if (!ref.current) return;
+    ref.current.dataset.hovered = "false";
     ref.current.style.setProperty("--mx", "50%");
     ref.current.style.setProperty("--my", "50%");
     ref.current.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
@@ -26,6 +33,7 @@ export default function TiltCard({ children, className, style }) {
   return (
     <div
       ref={ref}
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`tilt-card ${className || ""}`}
@@ -37,13 +45,20 @@ export default function TiltCard({ children, className, style }) {
         transform: "perspective(900px) rotateX(0deg) rotateY(0deg)",
         ...style,
       }}
+      {...rest}
     >
-      {children}
+      <motion.div
+        whileHover={{ scale: 1.03 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="w-full h-full"
+      >
+        {children}
+      </motion.div>
       <div
         className="tilt-glow"
         style={{
           background:
-            "radial-gradient(circle at var(--mx) var(--my), rgba(255,170,120,0.22), transparent 42%)",
+            "radial-gradient(circle at var(--mx) var(--my), rgba(255,170,120,0.10), transparent 42%)",
         }}
       />
     </div>
