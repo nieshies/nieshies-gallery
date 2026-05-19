@@ -36,6 +36,7 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch (err) {
+    console.error("Photo upload error:", err);
     return NextResponse.json({ error: err.message || "Failed to upload image" }, { status: 400 });
   }
 }

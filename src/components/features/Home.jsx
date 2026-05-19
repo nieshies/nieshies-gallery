@@ -32,10 +32,13 @@ function UploadLightbox({ onClose, onUpload }) {
       fd.append("file", selected);
       fd.append("name", name);
       const res = await fetch("/api/photos", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Upload failed");
+      }
       setStatus("Uploaded ✓");
       setTimeout(() => { onUpload(); onClose(); }, 400);
-    } catch { setStatus("Upload failed"); }
+    } catch (e) { setStatus(e.message); }
   };
 
   return (
