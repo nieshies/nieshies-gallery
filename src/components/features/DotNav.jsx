@@ -9,15 +9,13 @@ const links = [
   { href: "/products", label: "GALLERY" },
   { href: "/amnie", label: "AMNIE" },
   { href: "/family", label: "FAMILY" },
-  { href: "/dashboard", label: "DASHBOARD" },
-  { href: "/feed", label: "FEED" },
-  { href: "/real-results", label: "QUOTES" },
 ];
 
 export default function DotNav() {
   const pathname = usePathname();
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const handleMouse = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -31,14 +29,23 @@ export default function DotNav() {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > window.innerHeight * 0.6);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
       <motion.nav
         initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+        animate={{ opacity: scrolled ? 1 : 0, x: scrolled ? 0 : -20 }}
+        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
         onMouseMove={handleMouse}
-        className="fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden lg:block"
+        className="fixed left-4 top-1/2 -translate-y-1/2 z-40 hidden lg:block pointer-events-none"
+        style={{ pointerEvents: scrolled ? "auto" : "none" }}
       >
         <div
           className="glass-panel shadow-glass rounded-2xl py-4 px-3 relative overflow-hidden"
@@ -77,8 +84,11 @@ export default function DotNav() {
         </div>
       </motion.nav>
 
-      <button
+      <motion.button
         onClick={() => setMobileOpen(!mobileOpen)}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: scrolled ? 1 : 0, y: scrolled ? 0 : -10 }}
+        transition={{ duration: 0.3 }}
         className="fixed top-4 left-4 z-50 lg:hidden glass-panel shadow-glass rounded-xl w-10 h-10 flex items-center justify-center"
       >
         <div className="space-y-1">
@@ -86,7 +96,7 @@ export default function DotNav() {
           <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "opacity-0" : ""}`} />
           <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "-rotate-45 -translate-y-[3.5px]" : ""}`} />
         </div>
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {mobileOpen && (
