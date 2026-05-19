@@ -182,9 +182,6 @@ export default function StoryLightbox({ photos, index, onClose, onDelete }) {
           <div className="absolute bottom-6 right-6 pointer-events-auto">
             {showMenu ? (
               <div className="bg-black/80 backdrop-blur-md border border-white/15 rounded-xl p-3 min-w-[140px]">
-                {photo.caption && (
-                  <p className="text-white/60 text-xs mb-2 pb-2 border-b border-white/10">{photo.caption}</p>
-                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
                   className="w-full text-left text-red-400 text-xs font-display uppercase tracking-wider hover:text-red-300 transition-colors"

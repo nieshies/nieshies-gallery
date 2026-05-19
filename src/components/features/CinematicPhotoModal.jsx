@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function CinematicPhotoModal({ item, onClose, onDelete, deleteLabel = "Delete", metaLine }) {
+export default function CinematicPhotoModal({ item, onClose, onDelete, deleteLabel = "Delete", metaLine, hideText = false }) {
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "Escape") onClose();
@@ -53,15 +53,19 @@ export default function CinematicPhotoModal({ item, onClose, onDelete, deleteLab
 
             <div className="flex flex-col justify-between border-t border-white/10 bg-[rgba(16,16,16,0.82)] p-6 md:border-l md:border-t-0">
               <div>
-                <p className="mb-3 text-[10px] font-display uppercase tracking-[0.32em] text-accent/70">
-                  memory frame
-                </p>
-                {metaLine ? (
-                  <p className="mb-3 text-xs uppercase tracking-[0.18em] text-white/38">{metaLine}</p>
+                {!hideText ? (
+                  <>
+                    <p className="mb-3 text-[10px] font-display uppercase tracking-[0.32em] text-accent/70">
+                      memory frame
+                    </p>
+                    {metaLine ? (
+                      <p className="mb-3 text-xs uppercase tracking-[0.18em] text-white/38">{metaLine}</p>
+                    ) : null}
+                    <p className="text-base leading-relaxed text-white/82">
+                      {item.caption || "A quiet moment in the roll."}
+                    </p>
+                  </>
                 ) : null}
-                <p className="text-base leading-relaxed text-white/82">
-                  {item.caption || "A quiet moment in the roll."}
-                </p>
               </div>
 
               {onDelete ? (

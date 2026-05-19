@@ -3,12 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import usePaginatedMemories from "@/hooks/usePaginatedMemories";
-import { normalizeMemoryItem } from "@/lib/normalizeGalleryItems";
-import CinematicGalleryPage from "@/components/features/CinematicGalleryPage";
+import ReferenceGalleryFlow from "@/components/features/ReferenceGalleryFlow";
 import CinematicPhotoModal from "@/components/features/CinematicPhotoModal";
 
 function AddMemoryModal({ onClose, onAdd }) {
-  const [description, setDescription] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -40,7 +38,6 @@ function AddMemoryModal({ onClose, onAdd }) {
     try {
       const formData = new FormData();
       formData.append("photo", photoFile);
-      formData.append("description", description.trim());
       const res = await fetch("/api/amnie", { method: "POST", body: formData });
       if (res.ok) {
         const data = await res.json();
@@ -78,13 +75,6 @@ function AddMemoryModal({ onClose, onAdd }) {
             )}
             <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
           </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="a moment worth keeping..."
-            rows={4}
-            className="w-full rounded-2xl border border-white/12 bg-white/5 p-3 text-sm text-white outline-none placeholder:text-white/22"
-          />
           <button
             onClick={handleSubmit}
             disabled={!photoFile || uploading}
@@ -118,8 +108,15 @@ export default function AmnieDump() {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, fetchNext]);
 
-  const normalizedItems = useMemo(
-    () => memories.map((memory) => normalizeMemoryItem(memory, { meta: { label: "amnie" } })),
+  const flowPhotos = useMemo(
+    () =>
+      memories.map((memory) => ({
+        id: memory.id,
+        url: memory.photoUrl,
+        uploadedAt: memory.createdAt || memory.date || Date.now(),
+        width: memory.width,
+        height: memory.height,
+      })),
     [memories],
   );
 
@@ -132,16 +129,6 @@ export default function AmnieDump() {
     setItems((prev) => prev.filter((memory) => memory.id !== id));
     setViewing(null);
   }, [setItems]);
-
-  const emptySlot = !loading && !memories.length ? (
-    <div className="px-6 pb-24 sm:px-10 lg:pl-28 lg:pr-12">
-      <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-white/[0.03] px-8 py-16 text-center">
-        <p className="mb-3 text-4xl">📸</p>
-        <p className="text-lg uppercase tracking-[0.2em] text-white/56">dump is empty</p>
-        <p className="mt-3 text-sm text-white/38">Add the first portrait frame and the sequence will build itself.</p>
-      </div>
-    </div>
-  ) : null;
 
   const loaderSlot = (
     <div className="px-6 pb-14 sm:px-10 lg:pl-28 lg:pr-12">
@@ -157,26 +144,23 @@ export default function AmnieDump() {
 
   return (
     <>
-      <CinematicGalleryPage
-        items={normalizedItems}
-        eyebrow="amnie"
-        title="An intimate portrait stream."
-        description="The amnie page now shares the same cinematic rhythm as the homepage, but keeps its own softer, more personal tone."
-        onItemClick={setViewing}
-        bottomSlot={
-          <>
-            {emptySlot}
-            {loaderSlot}
-          </>
+      <ReferenceGalleryFlow
+        photos={flowPhotos}
+        title="amnie"
+        onPhotoClick={(photo) => {
+          const match = memories.find((memory) => memory.id === photo.id);
+          if (match) setViewing({ raw: match, src: match.photoUrl });
+        }}
+        topAction={
+          <button
+            onClick={() => setShowAdd(true)}
+            className="inline-flex items-center rounded-full border border-white/16 bg-black/22 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/72 backdrop-blur-md transition hover:border-white/28 hover:bg-black/32 hover:text-white"
+          >
+            Add Photos
+          </button>
         }
       />
-
-      <button
-        onClick={() => setShowAdd(true)}
-        className="fixed bottom-6 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-xl text-white shadow-2xl"
-      >
-        +
-      </button>
+      {loaderSlot}
 
       <AnimatePresence>
         {showAdd ? <AddMemoryModal onClose={() => setShowAdd(false)} onAdd={addMemory} /> : null}
@@ -187,6 +171,7 @@ export default function AmnieDump() {
             onDelete={deleteMemory}
             deleteLabel="Delete memory"
             metaLine={viewing.raw.date}
+            hideText={true}
           />
         ) : null}
       </AnimatePresence>

@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import usePaginatedMemories from "@/hooks/usePaginatedMemories";
-import { normalizeMemoryItem } from "@/lib/normalizeGalleryItems";
-import CinematicGalleryPage from "@/components/features/CinematicGalleryPage";
+import ReferenceGalleryFlow from "@/components/features/ReferenceGalleryFlow";
 import CinematicPhotoModal from "@/components/features/CinematicPhotoModal";
 
 const familyMembers = [
@@ -18,7 +17,6 @@ const familyMembers = [
 
 function AddMemoryModal({ onClose, onAdd }) {
   const [memberName, setMemberName] = useState(familyMembers[0].nick);
-  const [description, setDescription] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -51,7 +49,6 @@ function AddMemoryModal({ onClose, onAdd }) {
       const formData = new FormData();
       formData.append("photo", photoFile);
       formData.append("memberName", memberName);
-      formData.append("description", description.trim());
       const res = await fetch("/api/family", { method: "POST", body: formData });
       if (res.ok) {
         const data = await res.json();
@@ -105,13 +102,6 @@ function AddMemoryModal({ onClose, onAdd }) {
             )}
             <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
           </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="what's the vibe?"
-            rows={4}
-            className="w-full rounded-2xl border border-white/12 bg-white/5 p-3 text-sm text-white outline-none placeholder:text-white/22"
-          />
           <button
             onClick={handleSubmit}
             disabled={!photoFile || uploading}
@@ -146,14 +136,15 @@ export default function FamilyDump() {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, fetchNext]);
 
-  const normalizedItems = useMemo(
+  const flowPhotos = useMemo(
     () =>
-      memories.map((memory) => {
-        const member = familyMembers.find((entry) => entry.nick === memory.memberName);
-        return normalizeMemoryItem(memory, {
-          meta: member ? { label: `${member.emoji} ${member.relation}` } : { label: "family" },
-        });
-      }),
+      memories.map((memory) => ({
+        id: memory.id,
+        url: memory.photoUrl,
+        uploadedAt: memory.createdAt || memory.date || Date.now(),
+        width: memory.width,
+        height: memory.height,
+      })),
     [memories],
   );
 
@@ -167,36 +158,6 @@ export default function FamilyDump() {
     setViewing(null);
   }, [setItems]);
 
-  const topSlot = (
-    <div className="px-6 py-10 sm:px-10 lg:pl-28 lg:pr-12">
-      <div className="mx-auto flex max-w-7xl flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveMember(null)}
-          className={`rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
-            !activeMember ? "border-accent bg-accent text-white" : "border-white/10 text-white/46 hover:text-white/76"
-          }`}
-        >
-          all
-        </button>
-        {familyMembers.map((member) => (
-          <button
-            key={member.nick}
-            type="button"
-            onClick={() => setActiveMember(member.nick)}
-            className={`rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
-              activeMember === member.nick
-                ? "border-accent bg-accent text-white"
-                : "border-white/10 text-white/46 hover:text-white/76"
-            }`}
-          >
-            {member.emoji} {member.nick}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   const bottomSlot = (
     <div className="px-6 pb-14 sm:px-10 lg:pl-28 lg:pr-12">
       <div ref={loaderRef} className="mx-auto flex h-12 max-w-7xl items-center justify-center">
@@ -206,34 +167,55 @@ export default function FamilyDump() {
           <span className="text-[11px] uppercase tracking-[0.24em] text-white/18">all moments loaded</span>
         ) : null}
       </div>
-      {!loading && !memories.length ? (
-        <div className="mx-auto mt-8 max-w-7xl rounded-[2rem] border border-white/10 bg-white/[0.03] px-8 py-16 text-center">
-          <p className="mb-3 text-4xl">👨‍👩‍👧‍👦</p>
-          <p className="text-lg uppercase tracking-[0.2em] text-white/56">family dump is empty</p>
-          <p className="mt-3 text-sm text-white/38">Add a family photo and it will join the shared cinematic flow.</p>
-        </div>
-      ) : null}
     </div>
   );
 
   return (
     <>
-      <CinematicGalleryPage
-        items={normalizedItems}
-        eyebrow="family"
-        title="The whole crew in one sequence."
-        description="Family frames now share the same cinematic system too, with member identity kept as soft metadata instead of a separate card style."
-        onItemClick={setViewing}
-        topSlot={topSlot}
-        bottomSlot={bottomSlot}
+      <div className="px-6 py-10 sm:px-10 lg:pl-28 lg:pr-12">
+        <div className="mx-auto flex max-w-7xl flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveMember(null)}
+            className={`rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
+              !activeMember ? "border-accent bg-accent text-white" : "border-white/10 text-white/46 hover:text-white/76"
+            }`}
+          >
+            all
+          </button>
+          {familyMembers.map((member) => (
+            <button
+              key={member.nick}
+              type="button"
+              onClick={() => setActiveMember(member.nick)}
+              className={`rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
+                activeMember === member.nick
+                  ? "border-accent bg-accent text-white"
+                  : "border-white/10 text-white/46 hover:text-white/76"
+              }`}
+            >
+              {member.emoji} {member.nick}
+            </button>
+          ))}
+        </div>
+      </div>
+      <ReferenceGalleryFlow
+        photos={flowPhotos}
+        title="family"
+        onPhotoClick={(photo) => {
+          const match = memories.find((memory) => memory.id === photo.id);
+          if (match) setViewing({ raw: match, src: match.photoUrl });
+        }}
+        topAction={
+          <button
+            onClick={() => setShowAdd(true)}
+            className="inline-flex items-center rounded-full border border-white/16 bg-black/22 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/72 backdrop-blur-md transition hover:border-white/28 hover:bg-black/32 hover:text-white"
+          >
+            Add Photos
+          </button>
+        }
       />
-
-      <button
-        onClick={() => setShowAdd(true)}
-        className="fixed bottom-6 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-xl text-white shadow-2xl"
-      >
-        +
-      </button>
+      {bottomSlot}
 
       <AnimatePresence>
         {showAdd ? <AddMemoryModal onClose={() => setShowAdd(false)} onAdd={addMemory} /> : null}
@@ -247,6 +229,7 @@ export default function FamilyDump() {
               const member = familyMembers.find((entry) => entry.nick === viewing.raw.memberName);
               return member ? `${member.emoji} ${member.nick} - ${member.relation}` : viewing.raw.date;
             })()}
+            hideText={true}
           />
         ) : null}
       </AnimatePresence>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-export default function HeroSection({ photos }) {
+export default function HeroSection({ photos, title = "nishi's dump" }) {
   const [idx, setIdx] = useState(0);
   const timer = useRef(null);
   const ref = useRef(null);
@@ -60,10 +60,10 @@ export default function HeroSection({ photos }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/60" />
         <div className="absolute inset-0 flex items-center justify-center hero-title">
           <h1
-            className="font-display uppercase text-[clamp(2rem,5vw,4rem)] leading-[0.92] tracking-[-0.03em] text-white text-center"
+            className="font-display uppercase text-[clamp(2.4rem,5vw,4rem)] leading-[0.92] tracking-[-0.03em] text-white text-center"
             style={{ textShadow: "0 0 26px rgba(255,145,76,0.26)" }}
           >
-            nieshies dump
+            {title}
           </h1>
         </div>
       </section>

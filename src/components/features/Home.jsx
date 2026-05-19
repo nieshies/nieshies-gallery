@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import usePhotos from "@/hooks/usePhotos";
 import StoryLightbox from "@/components/features/StoryLightbox";
-import CinematicGalleryPage from "@/components/features/CinematicGalleryPage";
-import { normalizePhotoItem } from "@/lib/normalizeGalleryItems";
+import ReferenceGalleryFlow from "@/components/features/ReferenceGalleryFlow";
 
 function UploadLightbox({ onClose, onUpload }) {
   const [files, setFiles] = useState([]);
-  const [caption, setCaption] = useState("");
   const [status, setStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -53,7 +51,6 @@ function UploadLightbox({ onClose, onUpload }) {
       try {
         const fd = new FormData();
         fd.append("file", file);
-        if (caption.trim()) fd.append("caption", caption.trim());
         const res = await fetch("/api/photos", { method: "POST", body: fd });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -120,15 +117,6 @@ function UploadLightbox({ onClose, onUpload }) {
               <input type="file" accept="image/*" multiple onChange={handleFile} className="hidden" />
             </label>
           </div>
-          <div>
-            <p className="mb-2 text-xs uppercase tracking-[0.22em] text-white/28">Caption</p>
-            <input
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Add a caption..."
-              className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-base text-white outline-none placeholder:text-white/20 focus:border-accent/40"
-            />
-          </div>
           {status ? <p className="text-center text-sm text-accent">{status}</p> : null}
           <button
             onClick={handleUpload}
@@ -147,21 +135,13 @@ export default function Home() {
   const { photos, reload } = usePhotos();
   const [showUpload, setShowUpload] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
-  const [uploadBtnVisible, setUploadBtnVisible] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setUploadBtnVisible(true), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const normalizedItems = useMemo(() => photos.map((photo) => normalizePhotoItem(photo)), [photos]);
-
   const handleItemClick = useCallback((item) => {
-    setLightboxPhoto(item.raw);
+    setLightboxPhoto(item);
   }, []);
 
   const handleDelete = useCallback(() => {
@@ -174,21 +154,19 @@ export default function Home() {
 
   return (
     <>
-      <CinematicGalleryPage
-        items={normalizedItems}
-        eyebrow="nieshies gallery"
-        title="A portrait-led memory sequence."
-        description="Your homepage now flows like one cinematic roll: taller frames, calmer hover motion, and scroll sections that reveal memories in order instead of switching visual systems every few seconds."
-        onItemClick={handleItemClick}
+      <ReferenceGalleryFlow
+        photos={photos}
+        title="nishi's dump"
+        onPhotoClick={handleItemClick}
+        topAction={
+          <button
+            onClick={() => setShowUpload(true)}
+            className="inline-flex items-center rounded-full border border-white/16 bg-black/22 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/72 backdrop-blur-md transition hover:border-white/28 hover:bg-black/32 hover:text-white"
+          >
+            Add Photos
+          </button>
+        }
       />
-
-      <button
-        onClick={() => setShowUpload(true)}
-        className={`upload-btn fixed bottom-6 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full text-xl text-white shadow-2xl ${uploadBtnVisible ? "visible" : ""}`}
-        style={{ background: "#f48c36" }}
-      >
-        +
-      </button>
 
       {showUpload ? <UploadLightbox onClose={() => setShowUpload(false)} onUpload={() => reload()} /> : null}
 

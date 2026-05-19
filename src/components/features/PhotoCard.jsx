@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useCallback } from "react";
 
-export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt = true }) {
+export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt = false, showCaption = false }) {
   const ref = useRef(null);
 
   const handleMouseMove = useCallback((e) => {
@@ -62,7 +62,7 @@ export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt 
           draggable={false}
         />
       </div>
-      {photo.caption && (
+      {showCaption && photo.caption && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-3">
           <p className="text-xs tracking-wide text-white/85 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
             {photo.caption}
