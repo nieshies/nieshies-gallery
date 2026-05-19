@@ -1,7 +1,4 @@
-import fs from "fs/promises";
-import path from "path";
-
-const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
+import { supabase } from "./supabase";
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
@@ -15,17 +12,33 @@ export function validateFile(file) {
   return null;
 }
 
-export async function saveUpload(file) {
+export async function saveUpload(file, bucket = "uploads") {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const ext = path.extname(file.name) || ".jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  const ext = file.name.split(".").pop() || "jpg";
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
-  await fs.writeFile(path.join(UPLOADS_DIR, filename), buffer);
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(filename, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (error) throw error;
+
+  const { data: urlData } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filename);
 
   return {
-    url: `/uploads/${filename}`,
+    url: urlData.publicUrl,
     filename,
     sizeBytes: buffer.length,
   };
+}
+
+export async function deleteUpload(url, bucket = "uploads") {
+  const filename = url.split("/").pop();
+  if (!filename) return;
+  await supabase.storage.from(bucket).remove([filename]);
 }

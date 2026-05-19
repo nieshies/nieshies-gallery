@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
+import { deleteUpload } from "@/lib/upload";
 
 export async function DELETE(request, { params }) {
   try {
@@ -12,9 +11,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const filePath = path.join(process.cwd(), "public", memory.photoUrl);
-    await fs.unlink(filePath).catch(() => {});
-
+    await deleteUpload(memory.photoUrl, "amnie");
     await prisma.amnieMemory.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch {
