@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id        String      @id @default(cuid())
+  email     String?     @unique
+  name      String?
+  image     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  uploads   Upload[]
+  likes     Like[]
+  comments  Comment[]
+}
+
+model Upload {
+  id         String      @id @default(cuid())
+  url        String
+  publicId   String?
+  name       String
+  caption    String?
+  width      Int?
+  height     Int?
+  sizeBytes  Int?
+  visibility String      @default("public")
+  token      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  profileId  String
+  profile    Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  likes      Like[]
+  comments   Comment[]
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  uploadId  String
+  upload    Upload   @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, uploadId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  uploadId  String
+  upload    Upload   @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+}
+
+model AmnieMemory {
+  id          String   @id @default(cuid())
+  photoUrl    String
+  description String?
+  date        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FamilyMemory {
+  id          String   @id @default(cuid())
+  photoUrl    String
+  memberName  String
+  description String?
+  date        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StatusUpdate {
+  id        String   @id @default(cuid())
+  content   String
+  author    String
+  createdAt DateTime @default(now())
+}

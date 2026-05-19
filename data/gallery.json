@@ -1,0 +1,121 @@
+{
+  "photos": [
+    {
+      "id": "66063885-b76c-49ba-8af2-184d4d9861ad",
+      "name": "IMG_1874.JPG",
+      "filename": "IMG_1874.JPG",
+      "url": "/pictures/IMG_1874.JPG",
+      "uploadedAt": 1761403667000,
+      "sizeBytes": 2285161,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "feab4f11-c16b-4691-8c3c-0c2a801f40c1",
+      "name": "IMG_2116.jpg",
+      "filename": "IMG_2116.jpg",
+      "url": "/pictures/IMG_2116.jpg",
+      "uploadedAt": 1761370043000,
+      "sizeBytes": 1656977,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "1cc15aff-07e9-48b7-8bff-7b2bea4360ce",
+      "name": "IMG_6603.JPG",
+      "filename": "IMG_6603.JPG",
+      "url": "/pictures/IMG_6603.JPG",
+      "uploadedAt": 1774262067000,
+      "sizeBytes": 1368730,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "b558adac-e97e-4a39-aea8-ec0e8ca5754b",
+      "name": "IMG_6606.JPG",
+      "filename": "IMG_6606.JPG",
+      "url": "/pictures/IMG_6606.JPG",
+      "uploadedAt": 1774261289000,
+      "sizeBytes": 1178081,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "ff617cfe-262c-40fd-b47a-1fccc3413397",
+      "name": "IMG_7008.jpg",
+      "filename": "IMG_7008.jpg",
+      "url": "/pictures/IMG_7008.jpg",
+      "uploadedAt": 1745140805000,
+      "sizeBytes": 1510947,
+      "favorite": true,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "cc0dd7b4-35ad-408b-8676-20244dabc96d",
+      "name": "IMG_8043.JPG",
+      "filename": "IMG_8043.JPG",
+      "url": "/pictures/IMG_8043.JPG",
+      "uploadedAt": 1755038750000,
+      "sizeBytes": 1989818,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "a761d4da-48f8-4398-81df-a696ad3ea3b4",
+      "name": "IMG_9837.jpg",
+      "filename": "IMG_9837.jpg",
+      "url": "/pictures/IMG_9837.jpg",
+      "uploadedAt": 1775398117000,
+      "sizeBytes": 2455167,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "380ea74d-ce3f-46bf-b423-82affac62c6b",
+      "name": "IMG_0430.jpeg",
+      "filename": "1778887579688-img_0430-380ea74d.jpg",
+      "url": "/pictures/1778887579688-img_0430-380ea74d.jpg",
+      "uploadedAt": 1778887579688,
+      "sizeBytes": 2834184,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    },
+    {
+      "id": "c167787b-9ae6-48e9-927e-8d68d1280e9c",
+      "name": "IMG_4507.JPG",
+      "filename": "1779006908397-img_4507-c167787b.jpg",
+      "url": "/pictures/1779006908397-img_4507-c167787b.jpg",
+      "uploadedAt": 1779006908397,
+      "sizeBytes": 1908840,
+      "favorite": false,
+      "caption": "",
+      "tags": [],
+      "visibility": "public",
+      "token": null
+    }
+  ]
+}
