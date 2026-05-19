@@ -30,7 +30,7 @@ function generatePile(count) {
   return positions;
 }
 
-export default function ScatteredGallery({ photos = [] }) {
+export default function ScatteredGallery({ photos = [], onDelete }) {
   const [lightboxIdx, setLightboxIdx] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
   const scrollRef = useRef(null);
@@ -163,6 +163,7 @@ export default function ScatteredGallery({ photos = [] }) {
             photos={photos}
             index={lightboxIdx}
             onClose={() => setLightboxIdx(null)}
+            onDelete={onDelete ? (id) => { setLightboxIdx(null); onDelete(id); } : undefined}
           />
         )}
       </AnimatePresence>

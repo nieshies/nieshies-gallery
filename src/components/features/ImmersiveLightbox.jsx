@@ -44,11 +44,13 @@ function MagneticBtn({ children, className = "", ...props }) {
   );
 }
 
-export default function ImmersiveLightbox({ photos, index, onClose }) {
+export default function ImmersiveLightbox({ photos, index, onClose, onDelete }) {
   const [currentIdx, setCurrentIdx] = useState(index);
   const [showMeta, setShowMeta] = useState(false);
   const [showExif, setShowExif] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
 
   const photo = photos[currentIdx];
@@ -86,6 +88,7 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
 
   useEffect(() => {
     setShowExif(false);
+    setConfirmDelete(false);
   }, [currentIdx]);
 
   if (!photo) return null;
@@ -123,6 +126,15 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
           <span className="text-white/30 text-xs font-mono">
             {currentIdx + 1} / {photos.length}
           </span>
+          {onDelete && (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500/25 flex items-center justify-center text-red-400/60 hover:text-red-400 transition-all text-xs"
+              title="Delete photo"
+            >
+              &#128465;
+            </button>
+          )}
           <button
             onClick={() => setShowMeta((v) => !v)}
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all text-xs"
@@ -272,6 +284,55 @@ export default function ImmersiveLightbox({ photos, index, onClose }) {
           &#9660;
         </button>
       </div>
+
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !deleting && setConfirmDelete(false)}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="px-6 py-5 rounded-xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl text-center max-w-xs"
+            >
+              <p className="text-white/70 text-sm font-display mb-4">Delete this photo?</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded-lg border border-white/15 text-white/50 text-xs font-display uppercase tracking-wider hover:text-white/80 transition-all disabled:opacity-30"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    setDeleting(true);
+                    try {
+                      const res = await fetch(`/api/photos/${photo.id}`, { method: "DELETE" });
+                      if (res.ok) {
+                        onDelete?.(photo.id);
+                        onClose();
+                      }
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-display uppercase tracking-wider hover:bg-red-500/25 transition-all disabled:opacity-30"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

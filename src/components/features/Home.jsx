@@ -275,7 +275,7 @@ export default function Home() {
                 <p className="text-white/20 text-sm mt-1">Tap + to upload your first capture</p>
               </div>
             ) : (
-              <ScatteredGallery photos={photos} />
+              <ScatteredGallery photos={photos} onDelete={reload} />
             )}
           </motion.div>
 
