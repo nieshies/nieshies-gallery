@@ -120,6 +120,17 @@ body {
   background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,170,120,0.12) 0%, transparent 60%);
 }
 
+/* Scroll Gallery */
+.scroll-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  z-index: 2;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
 .cinematic-page-bg {
   position: fixed;
   inset: 0;
@@ -132,8 +143,8 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 0px;
+  height: 0px;
 }
 
 ::-webkit-scrollbar-track {

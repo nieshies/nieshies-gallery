@@ -1,17 +1,16 @@
 "use client";
-import dynamic from "next/dynamic";
-import Home from "@/components/features/Home";
+import usePhotos from "@/hooks/usePhotos";
+import ScrollGallery from "@/components/ScrollGallery";
 import Providers from "./providers";
 import InteractiveEffects from "@/components/features/InteractiveEffects";
 
-const DotNav = dynamic(() => import("@/components/features/DotNav"), { ssr: false });
-
 export default function Page() {
+  const { photos } = usePhotos();
+
   return (
     <Providers>
       <InteractiveEffects />
-      <DotNav />
-      <Home />
+      <ScrollGallery photos={photos} />
     </Providers>
   );
 }

@@ -1,4 +1,5 @@
 import "./../styles.css";
+import ClientLayout from "@/components/ClientLayout";
 
 export const metadata = {
   title: "nieshies gallery",
@@ -17,7 +18,7 @@ export default function RootLayout({ children }) {
         <div className="noise-overlay" />
         <div className="ambient-glow" />
         <div className="vignette-overlay" />
-        {children}
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
