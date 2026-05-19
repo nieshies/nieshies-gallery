@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { saveUpload } from "@/lib/upload";
+import { saveUpload, validateFile } from "@/lib/upload";
 import { loadDb, saveDb, normalizePhoto } from "@/lib/db";
 
 export async function GET() {
@@ -13,11 +13,10 @@ export async function POST(request) {
     const file = formData.get("file");
     const name = String(formData.get("name") || "").trim();
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
+    const error = validateFile(file);
+    if (error) return NextResponse.json({ error }, { status: 400 });
 
-    const result = await saveUpload(file, "photos");
+    const result = await saveUpload(file, "uploads");
     const uploadedAt = Date.now();
 
     const db = loadDb();
