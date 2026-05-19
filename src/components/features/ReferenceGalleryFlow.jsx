@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback, useEffect } from "react";
 import slicePhotos from "@/lib/slicePhotos";
 import detectOrientation from "@/lib/detectOrientation";
 import HeroSection from "@/components/sections/HeroSection";
@@ -9,31 +10,119 @@ import ParallaxLayers from "@/components/sections/ParallaxLayers";
 import FloatingCloud from "@/components/sections/FloatingCloud";
 import HorizontalJourney from "@/components/sections/HorizontalJourney";
 import CollageGrid from "@/components/sections/CollageGrid";
-import CinematicViewer from "@/components/sections/CinematicViewer";
 import MemoryWall from "@/components/sections/MemoryWall";
+import PhotoSection from "@/components/PhotoSection";
 
-export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nishi's dump", onPhotoClick, topAction }) {
+export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nieshies' dump", onPhotoClick }) {
+  const containerRef = useRef(null);
   const { horizontal, vertical } = detectOrientation(photos);
   const verticalSections = slicePhotos(vertical, 5);
   const resolvedHeroPhotos = heroPhotos?.length ? heroPhotos : photos.slice(0, 6);
 
+  const scrollTo = useCallback((dir) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const sections = el.querySelectorAll("[data-snap]");
+    const currentScroll = el.scrollTop;
+    if (dir === "next") {
+      for (let i = 0; i < sections.length; i++) {
+        if (sections[i].offsetTop > currentScroll + 10) {
+          sections[i].scrollIntoView({ behavior: "smooth" });
+          break;
+        }
+      }
+    } else {
+      for (let i = sections.length - 1; i >= 0; i--) {
+        if (sections[i].offsetTop < currentScroll - 10) {
+          sections[i].scrollIntoView({ behavior: "smooth" });
+          break;
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleKey = (e) => {
+      if (e.key === "ArrowDown" || e.key === " ") {
+        e.preventDefault();
+        scrollTo("next");
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        scrollTo("prev");
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [scrollTo]);
+
+  const stackPhotos = verticalSections[1] || [];
+  const parallaxPhotos = verticalSections[2] || [];
+  const floatingPhotos = verticalSections[3] || [];
+
   return (
-    <div className="relative">
-      {topAction ? (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex justify-end px-5 pt-5 md:px-8 md:pt-8">
-          <div className="pointer-events-auto">{topAction}</div>
+    <div
+      ref={containerRef}
+      style={{
+        height: "100vh",
+        overflowY: "scroll",
+        scrollSnapType: "y mandatory",
+        background: "#000",
+        position: "relative",
+      }}
+    >
+      <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
+        <HeroSection photos={resolvedHeroPhotos} title={title} />
+      </div>
+
+      {verticalSections[0]?.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center" }}>
+          <FilmStrip photos={verticalSections[0]} onPhotoClick={onPhotoClick} />
         </div>
       ) : null}
 
-      <HeroSection photos={resolvedHeroPhotos} title={title} />
-      <FilmStrip photos={verticalSections[0] || []} onPhotoClick={onPhotoClick} />
-      <StackStory photos={verticalSections[1] || []} onPhotoClick={onPhotoClick} />
-      <ParallaxLayers photos={verticalSections[2] || []} onPhotoClick={onPhotoClick} />
-      <FloatingCloud photos={verticalSections[3] || []} onPhotoClick={onPhotoClick} />
-      <HorizontalJourney photos={horizontal} onPhotoClick={onPhotoClick} />
-      <CollageGrid photos={verticalSections[4] || []} onPhotoClick={onPhotoClick} />
-      <CinematicViewer photos={photos.slice(0, 2)} onPhotoClick={onPhotoClick} />
-      <MemoryWall photos={photos.slice(0, 12)} onPhotoClick={onPhotoClick} />
+      {stackPhotos.map((photo) => (
+        <div key={photo.id} data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
+          <StackStory photos={[photo]} onPhotoClick={onPhotoClick} />
+        </div>
+      ))}
+
+      {parallaxPhotos.map((photo) => (
+        <div key={photo.id} data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
+          <ParallaxLayers photos={[photo]} onPhotoClick={onPhotoClick} />
+        </div>
+      ))}
+
+      {floatingPhotos.map((photo) => (
+        <div key={photo.id} data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
+          <FloatingCloud photos={[photo]} onPhotoClick={onPhotoClick} />
+        </div>
+      ))}
+
+      {horizontal.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center" }}>
+          <HorizontalJourney photos={horizontal} onPhotoClick={onPhotoClick} />
+        </div>
+      ) : null}
+
+      {verticalSections[4]?.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <CollageGrid photos={verticalSections[4]} onPhotoClick={onPhotoClick} />
+        </div>
+      ) : null}
+
+      {photos.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <MemoryWall photos={photos.slice(0, 12)} onPhotoClick={onPhotoClick} />
+        </div>
+      ) : null}
+
+      <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#000", color: "#fff" }}>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+          more memories soon
+        </p>
+      </div>
     </div>
   );
 }
