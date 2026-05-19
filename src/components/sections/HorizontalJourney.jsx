@@ -1,8 +1,30 @@
 "use client";
-import { useReducedMotion } from "framer-motion";
+import { useRef, useEffect } from "react";
 
 export default function HorizontalJourney({ photos, onPhotoClick }) {
-  const reduceMotion = useReducedMotion();
+  const trackRef = useRef(null);
+  const pausedRef = useRef(false);
+  const posRef = useRef(0);
+
+  useEffect(() => {
+    if (photos.length === 0) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+
+    let id;
+    const step = () => {
+      if (!pausedRef.current) {
+        posRef.current -= 0.6;
+        const half = trackRef.current.scrollWidth / 2;
+        if (Math.abs(posRef.current) >= half) posRef.current = 0;
+        trackRef.current.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
+      }
+      id = requestAnimationFrame(step);
+    };
+    id = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(id);
+  }, [photos.length]);
+
   if (photos.length === 0) return null;
   const loopPhotos = [...photos, ...photos];
 
@@ -10,9 +32,11 @@ export default function HorizontalJourney({ photos, onPhotoClick }) {
     <section className="relative overflow-hidden py-20">
       <div className="flex min-h-[80vh] items-center overflow-hidden">
         <div
-          className={`flex gap-6 px-6 ${reduceMotion ? "horizontal-loop-static" : "horizontal-loop-track"}`}
+          ref={trackRef}
+          className="flex gap-6 px-6 horizontal-loop-track"
           style={{ willChange: "transform" }}
-          aria-live="off"
+          onMouseEnter={() => { pausedRef.current = true; }}
+          onMouseLeave={() => { pausedRef.current = false; }}
         >
           {loopPhotos.map((photo, index) => (
             <div

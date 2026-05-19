@@ -238,7 +238,9 @@ function AddAchievementModal({ onClose, onAdd }) {
   );
 }
 
-function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
+function AchievementSection({ achievements, onView, onDelete, onAddClick, loading }) {
+  const [hovered, setHovered] = useState(null);
+
   return (
     <section className="px-6 py-16 sm:px-10 lg:pl-28 lg:pr-12">
       <div className="mx-auto max-w-7xl">
@@ -272,11 +274,18 @@ function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}
                 transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.18) }}
-                className="overflow-hidden rounded-[2rem] border border-rose-200/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] shadow-[0_18px_60px_rgba(0,0,0,0.25)]"
+                className="overflow-hidden rounded-[2rem] border border-rose-200/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))] shadow-[0_18px_60px_rgba(0,0,0,0.25)] cursor-pointer"
+                onMouseEnter={() => setHovered(index)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => onView?.(achievement)}
+                style={{
+                  transform: hovered === index ? "translateY(-6px) scale(1.02)" : "scale(1)",
+                  transition: "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+                }}
               >
                 {achievement.photoUrl ? (
                   <div className="aspect-[16/10] overflow-hidden">
-                    <img src={achievement.photoUrl} alt="" className="h-full w-full object-cover" />
+                    <img src={achievement.photoUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                   </div>
                 ) : null}
                 <div className="p-6">
@@ -288,7 +297,7 @@ function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
                     <p className="mt-3 text-sm leading-7 text-white/64">{achievement.note}</p>
                   ) : null}
                   <button
-                    onClick={() => onDelete(achievement.id)}
+                    onClick={(e) => { e.stopPropagation(); onDelete(achievement.id); }}
                     className="mt-6 rounded-full border border-red-300/18 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-red-200 transition hover:border-red-200/36 hover:text-red-100"
                   >
                     Delete
@@ -412,6 +421,7 @@ export default function AmnieDump() {
   const [showAddMemory, setShowAddMemory] = useState(false);
   const [showAddAchievement, setShowAddAchievement] = useState(false);
   const [viewing, setViewing] = useState(null);
+  const [viewingAchievement, setViewingAchievement] = useState(null);
   const loaderRef = useRef(null);
 
   useEffect(() => {
@@ -504,6 +514,7 @@ export default function AmnieDump() {
 
         <AchievementSection
           achievements={achievements}
+          onView={(a) => setViewingAchievement({ raw: a, src: a.photoUrl, caption: a.note || "" })}
           onDelete={deleteAchievement}
           onAddClick={() => setShowAddAchievement(true)}
           loading={achievementsLoading}
@@ -533,6 +544,16 @@ export default function AmnieDump() {
             onDelete={deleteMemory}
             deleteLabel="Delete memory"
             metaLine={viewing.raw.date}
+            hideText={false}
+          />
+        ) : null}
+        {viewingAchievement ? (
+          <CinematicPhotoModal
+            item={viewingAchievement}
+            onClose={() => setViewingAchievement(null)}
+            onDelete={deleteAchievement}
+            deleteLabel="Delete achievement"
+            metaLine={viewingAchievement.raw.achievementDate ? formatPrettyDate(viewingAchievement.raw.achievementDate) : ""}
             hideText={false}
           />
         ) : null}
