@@ -1,6 +1,5 @@
 "use client";
 import { useRef, useCallback } from "react";
-import { motion } from "framer-motion";
 
 export default function TiltCard({ children, className, style, ...rest }) {
   const ref = useRef(null);
@@ -47,18 +46,13 @@ export default function TiltCard({ children, className, style, ...rest }) {
       }}
       {...rest}
     >
-      <motion.div
-        whileHover={{ scale: 1.03 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="w-full h-full"
-      >
+      <div className="tilt-card-inner">
         {children}
-      </motion.div>
+      </div>
       <div
         className="tilt-glow"
         style={{
-          background:
-            "radial-gradient(circle at var(--mx) var(--my), rgba(255,170,120,0.10), transparent 42%)",
+          background: "radial-gradient(circle at var(--mx) var(--my), rgba(255,170,120,0.10), transparent 42%)",
         }}
       />
     </div>

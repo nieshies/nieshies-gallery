@@ -1,26 +1,33 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ReactLenis } from "lenis/react";
 import usePhotos from "@/hooks/usePhotos";
 import useHeaders from "@/hooks/useHeaders";
+import slicePhotos from "@/lib/slicePhotos";
 import HeroSection from "@/components/sections/HeroSection";
-import MasonryGrid from "@/components/sections/MasonryGrid";
+import ParallaxLayers from "@/components/sections/ParallaxLayers";
+import FloatingCloud from "@/components/sections/FloatingCloud";
+import HorizontalJourney from "@/components/sections/HorizontalJourney";
+import StackStory from "@/components/sections/StackStory";
+import CollageGrid from "@/components/sections/CollageGrid";
+import CinematicViewer from "@/components/sections/CinematicViewer";
 import FooterSection from "@/components/sections/FooterSection";
-import ImmersiveLightbox from "@/components/features/ImmersiveLightbox";
+import StoryLightbox from "@/components/features/StoryLightbox";
 
 function UploadLightbox({ onClose, onUpload }) {
   const [files, setFiles] = useState([]);
   const [caption, setCaption] = useState("");
   const [status, setStatus] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    const handleKey = (e) => { if (e.key === "Escape") { setClosing(true); setTimeout(onClose, 200); } };
     document.addEventListener("keydown", handleKey);
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", handleKey); document.body.style.overflow = ""; };
   }, [onClose]);
+
+  const handleBgClick = () => { setClosing(true); setTimeout(onClose, 200); };
 
   const handleFile = (e) => {
     const f = Array.from(e.target.files || []);
@@ -55,27 +62,21 @@ function UploadLightbox({ onClose, onUpload }) {
       setStatus(errors[0]);
     } else {
       setStatus(`Uploaded ${done} ✓`);
-      setTimeout(() => { onUpload(); onClose(); }, 400);
+      setTimeout(() => { onUpload(); handleBgClick(); }, 400);
     }
     setUploading(false);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 lightbox-overlay ${closing ? "closing" : "open"}`}
+      onClick={handleBgClick}
     >
-      <motion.div
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.85, opacity: 0 }}
+      <div
         onClick={(e) => e.stopPropagation()}
         className="relative max-w-lg w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white text-lg">&#10005;</button>
+        <button onClick={() => { setClosing(true); setTimeout(onClose, 200); }} className="absolute top-4 right-4 text-white/40 hover:text-white text-lg">&times;</button>
         <p className="text-white/60 text-lg font-display uppercase tracking-widest mb-6">ADD PHOTOS</p>
         <div className="space-y-4">
           <div>
@@ -86,7 +87,7 @@ function UploadLightbox({ onClose, onUpload }) {
                   {files.map((f, i) => (
                     <div key={i} className="relative group">
                       <img src={URL.createObjectURL(f)} className="w-16 h-16 rounded-lg object-cover" alt="" />
-                      <button onClick={() => removeFile(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 text-white/60 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&#10005;</button>
+                      <button onClick={() => removeFile(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 text-white/60 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
                     </div>
                   ))}
                 </div>
@@ -107,8 +108,8 @@ function UploadLightbox({ onClose, onUpload }) {
             {uploading ? "UPLOADING..." : "UPLOAD ALL"}
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -117,8 +118,10 @@ export default function Home() {
   const { photos: headers } = useHeaders();
   const [showUpload, setShowUpload] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [uploadBtnVisible, setUploadBtnVisible] = useState(false);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
+  useEffect(() => { const t = setTimeout(() => setUploadBtnVisible(true), 1000); return () => clearTimeout(t); }, []);
 
   const handlePhotoClick = useCallback((photo) => {
     setLightboxPhoto(photo);
@@ -136,41 +139,39 @@ export default function Home() {
   const lightboxIndex = lightboxPhoto ? photos.findIndex((p) => p.id === lightboxPhoto.id) : -1;
   const lightboxOpen = lightboxIndex >= 0;
 
+  const sections = slicePhotos(photos, 6);
+
   return (
     <>
-      <ReactLenis root options={{ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) }}>
-        <div className="lg:pl-20">
-          <HeroSection photos={headers} />
-          <MasonryGrid photos={photos} onPhotoClick={handlePhotoClick} />
-          <FooterSection />
-        </div>
-      </ReactLenis>
+      <div className="lg:pl-20">
+        <HeroSection photos={headers} />
+        <ParallaxLayers photos={sections[0]} onPhotoClick={handlePhotoClick} />
+        <FloatingCloud photos={sections[1]} onPhotoClick={handlePhotoClick} />
+        <HorizontalJourney photos={sections[2]} onPhotoClick={handlePhotoClick} />
+        <StackStory photos={sections[3]} onPhotoClick={handlePhotoClick} />
+        <CollageGrid photos={sections[4]} onPhotoClick={handlePhotoClick} />
+        <CinematicViewer photos={sections[5]} onPhotoClick={handlePhotoClick} />
+        <FooterSection />
+      </div>
 
-      <motion.button
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1, type: "spring", stiffness: 200, damping: 15 }}
+      <button
         onClick={() => setShowUpload(true)}
-        className="fixed bottom-6 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl text-white text-xl"
+        className={`fixed bottom-6 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl text-white text-xl upload-btn ${uploadBtnVisible ? "visible" : ""}`}
         style={{ background: "#f48c36" }}
       >
         +
-      </motion.button>
+      </button>
 
-      <AnimatePresence>
-        {showUpload && <UploadLightbox onClose={() => setShowUpload(false)} onUpload={() => reload()} />}
-      </AnimatePresence>
+      {showUpload && <UploadLightbox onClose={() => setShowUpload(false)} onUpload={() => reload()} />}
 
-      <AnimatePresence>
-        {lightboxOpen && (
-          <ImmersiveLightbox
-            photos={photos}
-            index={lightboxIndex}
-            onClose={handleLightboxClose}
-            onDelete={handleDelete}
-          />
-        )}
-      </AnimatePresence>
+      {lightboxOpen && (
+        <StoryLightbox
+          photos={photos}
+          index={lightboxIndex}
+          onClose={handleLightboxClose}
+          onDelete={handleDelete}
+        />
+      )}
     </>
   );
 }

@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
-import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/lib/ThemeContext";
 
 export default function Providers({ children }) {
@@ -11,7 +10,6 @@ export default function Providers({ children }) {
   return (
     <SessionProvider>
     <QueryClientProvider client={queryClient}>
-    <MotionConfig reducedMotion="user">
     <ThemeProvider>
       <div className="min-h-screen relative overflow-x-hidden">
         <div className="fixed inset-0 z-0 bg-[#0a0a0a]" />
@@ -23,7 +21,6 @@ export default function Providers({ children }) {
         </main>
       </div>
     </ThemeProvider>
-    </MotionConfig>
     </QueryClientProvider>
     </SessionProvider>
   );
