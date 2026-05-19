@@ -5,14 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import usePaginatedMemories from "@/hooks/usePaginatedMemories";
 import useAmnieAchievements from "@/hooks/useAmnieAchievements";
 import CinematicPhotoModal from "@/components/features/CinematicPhotoModal";
-
-const RELATIONSHIP_START = "2023-12-02T00:00:00+08:00";
-
-function getRelationshipDays() {
-  const start = new Date(RELATIONSHIP_START).getTime();
-  const now = Date.now();
-  return Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
-}
+import DayCounter from "@/components/features/DayCounter";
 
 function formatPrettyDate(value) {
   if (!value) return "";
@@ -219,31 +212,7 @@ function AddAchievementModal({ onClose, onAdd }) {
   );
 }
 
-function RelationshipCounter() {
-  const [days, setDays] = useState(getRelationshipDays());
 
-  useEffect(() => {
-    setDays(getRelationshipDays());
-    const timer = setInterval(() => setDays(getRelationshipDays()), 60 * 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
-      <div className="rounded-[1.8rem] border border-black/10 bg-white px-6 pb-5 pt-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
-        <div className="relative overflow-hidden rounded-[1.35rem] border border-black/8 bg-[#f8f5f2] px-10 py-5 shadow-inner">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-black/38" />
-          <div className="pointer-events-none absolute left-3 top-1/2 h-8 w-3 -translate-y-1/2 rounded-md border border-black/18 bg-white shadow-sm" />
-          <div className="pointer-events-none absolute right-3 top-1/2 h-8 w-3 -translate-y-1/2 rounded-md border border-black/18 bg-white shadow-sm" />
-          <p className="relative text-center font-display text-[clamp(3.5rem,6vw,5rem)] font-bold leading-none tracking-[-0.06em] text-[#1b1b1b]">
-            {days}
-          </p>
-        </div>
-        <p className="mt-3 text-center text-sm uppercase tracking-[0.24em] text-[#1b1b1b]">days</p>
-      </div>
-    </div>
-  );
-}
 
 function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
   return (
@@ -252,9 +221,9 @@ function AchievementSection({ achievements, onDelete, onAddClick, loading }) {
         <div className="mb-8 flex items-end justify-between gap-6">
           <div>
             <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-rose-300/72">future dentist</p>
-            <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
-              Achievements she can keep adding.
-            </h2>
+              <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
+                achievements
+              </h2>
           </div>
           <button
             onClick={onAddClick}
@@ -321,9 +290,9 @@ function MemoriesSection({ memories, onView, onAddClick, loaderRef, loading, loa
         <div className="mb-8 flex items-end justify-between gap-6">
           <div>
             <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-rose-300/72">our memories</p>
-            <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
-              Sweet frames, soft light, little chapters.
-            </h2>
+              <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] uppercase leading-[0.94] text-white">
+                memories
+              </h2>
           </div>
           <button
             onClick={onAddClick}
@@ -468,7 +437,7 @@ export default function AmnieDump() {
                 Sweet years, proud milestones, and the future dentist glow.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-white/64">
-                A softer page just for her: achievements she can keep collecting, memories you both can keep adding, and a live counter for every day since 2 December 2023.
+                every day since 2 dec 2023
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <button
@@ -520,7 +489,7 @@ export default function AmnieDump() {
         />
       </div>
 
-      <RelationshipCounter />
+      <DayCounter variant="amnie" />
 
       <AnimatePresence>
         {showAddMemory ? <AddMemoryModal onClose={() => setShowAddMemory(false)} onAdd={addMemory} /> : null}

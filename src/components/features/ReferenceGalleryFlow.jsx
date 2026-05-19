@@ -11,7 +11,6 @@ import HorizontalJourney from "@/components/sections/HorizontalJourney";
 import CollageGrid from "@/components/sections/CollageGrid";
 import CinematicViewer from "@/components/sections/CinematicViewer";
 import MemoryWall from "@/components/sections/MemoryWall";
-import DayCounter from "@/components/features/DayCounter";
 
 export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nishi's dump", onPhotoClick, topAction }) {
   const { horizontal, vertical } = detectOrientation(photos);
@@ -35,7 +34,6 @@ export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nish
       <CollageGrid photos={verticalSections[4] || []} onPhotoClick={onPhotoClick} />
       <CinematicViewer photos={photos.slice(0, 2)} onPhotoClick={onPhotoClick} />
       <MemoryWall photos={photos.slice(0, 12)} onPhotoClick={onPhotoClick} />
-      <DayCounter />
     </div>
   );
 }
