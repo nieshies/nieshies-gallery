@@ -5,9 +5,10 @@ import usePhotos from "@/hooks/usePhotos";
 import ScatteredGallery from "./ScatteredGallery";
 
 function UploadLightbox({ onClose, onUpload }) {
-  const [selected, setSelected] = useState(null);
-  const [name, setName] = useState("");
+  const [files, setFiles] = useState([]);
+  const [caption, setCaption] = useState("");
   const [status, setStatus] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -17,28 +18,43 @@ function UploadLightbox({ onClose, onUpload }) {
   }, [onClose]);
 
   const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelected(file);
-      if (!name) setName(file.name.replace(/\.[^/.]+$/, ""));
-    }
+    const f = Array.from(e.target.files || []);
+    if (f.length) setFiles((prev) => [...prev, ...f]);
+  };
+
+  const removeFile = (i) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const handleUpload = async () => {
-    if (!selected) return;
-    setStatus("Uploading...");
-    try {
-      const fd = new FormData();
-      fd.append("file", selected);
-      fd.append("name", name);
-      const res = await fetch("/api/photos", { method: "POST", body: fd });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Upload failed");
+    if (files.length === 0) return;
+    setUploading(true);
+    let done = 0;
+    let errors = [];
+    for (const file of files) {
+      setStatus(`Uploading ${done + 1}/${files.length}...`);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        if (caption.trim()) fd.append("caption", caption.trim());
+        const res = await fetch("/api/photos", { method: "POST", body: fd });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          errors.push(`${file.name}: ${data.error || "Failed"}`);
+        } else {
+          done++;
+        }
+      } catch (e) {
+        errors.push(`${file.name}: ${e.message}`);
       }
-      setStatus("Uploaded ✓");
+    }
+    if (errors.length) {
+      setStatus(errors[0]);
+    } else {
+      setStatus(`Uploaded ${done} ✓`);
       setTimeout(() => { onUpload(); onClose(); }, 400);
-    } catch (e) { setStatus(e.message); }
+    }
+    setUploading(false);
   };
 
   return (
@@ -54,31 +70,47 @@ function UploadLightbox({ onClose, onUpload }) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.85, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative max-w-md w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl"
+        className="relative max-w-lg w-full p-6 rounded-2xl border border-white/15 bg-[rgba(10,10,10,0.95)] backdrop-blur-xl"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white text-lg">&#10005;</button>
-        <p className="text-white/60 text-lg font-display uppercase tracking-widest mb-6">ADD PHOTO</p>
+        <p className="text-white/60 text-lg font-display uppercase tracking-widest mb-6">ADD PHOTOS</p>
         <div className="space-y-4">
           <div>
-            <p className="text-white/30 text-xs font-display uppercase tracking-[0.2em] mb-2">Photo</p>
-            <label className="block w-full border-2 border-dashed border-white/25 rounded-xl p-6 text-center cursor-pointer hover:border-accent/50 transition-colors">
-              {selected ? (
-                <p className="text-accent text-sm font-display">{selected.name}</p>
+            <p className="text-white/30 text-xs font-display uppercase tracking-[0.2em] mb-2">Photos ({files.length})</p>
+            <label className="block w-full border-2 border-dashed border-white/25 rounded-xl p-4 text-center cursor-pointer hover:border-accent/50 transition-colors">
+              {files.length > 0 ? (
+                <div className="flex flex-wrap gap-2 justify-center max-h-32 overflow-y-auto">
+                  {files.map((f, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={URL.createObjectURL(f)}
+                        className="w-16 h-16 rounded-lg object-cover"
+                        alt=""
+                      />
+                      <button
+                        onClick={() => removeFile(i)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 text-white/60 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="text-white/40 text-sm font-display">Click to select a photo</p>
+                <p className="text-white/40 text-sm font-display">Click to select photos</p>
               )}
-              <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+              <input type="file" accept="image/*" multiple onChange={handleFile} className="hidden" />
             </label>
           </div>
           <div>
-            <p className="text-white/30 text-xs font-display uppercase tracking-[0.2em] mb-2">Name</p>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Photo name"
+            <p className="text-white/30 text-xs font-display uppercase tracking-[0.2em] mb-2">Caption (optional)</p>
+            <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption..."
               className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-white text-base outline-none focus:border-accent/40 placeholder:text-white/20" />
           </div>
           {status && <p className="text-accent text-sm text-center">{status}</p>}
-          <button onClick={handleUpload} disabled={!selected}
+          <button onClick={handleUpload} disabled={files.length === 0 || uploading}
             className="w-full py-3 rounded-xl border border-accent/40 text-accent text-sm font-display uppercase tracking-widest hover:bg-accent/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-            UPLOAD
+            {uploading ? "UPLOADING..." : "UPLOAD ALL"}
           </button>
         </div>
       </motion.div>
@@ -141,12 +173,16 @@ function PhotoReel({ photos }) {
               className="w-full h-full object-cover"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <p className="text-white/80 text-sm font-display leading-tight line-clamp-2">
-                {photo.caption || photo.name || " "}
-              </p>
-            </div>
+            {photo.caption && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            )}
+            {photo.caption && (
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <p className="text-white/80 text-sm font-display leading-tight line-clamp-2">
+                  {photo.caption}
+                </p>
+              </div>
+            )}
           </div>
         ))}
       </div>

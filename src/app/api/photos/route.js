@@ -15,7 +15,7 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    const name = String(formData.get("name") || "").trim();
+    const caption = String(formData.get("caption") || "").trim();
 
     const error = validateFile(file);
     if (error) return NextResponse.json({ error }, { status: 400 });
@@ -24,7 +24,8 @@ export async function POST(request) {
 
     const photo = await prisma.galleryPhoto.create({
       data: {
-        name: name || file.name,
+        name: file.name,
+        caption,
         filename: result.filename,
         url: result.url,
         sizeBytes: result.sizeBytes,

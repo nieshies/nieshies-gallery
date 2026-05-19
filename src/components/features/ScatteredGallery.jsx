@@ -115,7 +115,7 @@ export default function ScatteredGallery({ photos = [] }) {
                       style={{
                         width: 200,
                         background: "#fff",
-                        padding: "10px 10px 50px 10px",
+                        padding: "10px 10px 20px 10px",
                       }}
                     >
                       <div className="relative overflow-hidden bg-neutral-100">
@@ -129,21 +129,19 @@ export default function ScatteredGallery({ photos = [] }) {
                         />
                       </div>
 
-                      <AnimatePresence>
-                        {isHovered && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 28, opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <p className="text-[10px] text-neutral-500 font-mono leading-none pt-1.5 truncate text-center">
-                              {photo.caption || new Date(photo.uploadedAt).toLocaleDateString()}
-                            </p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {isHovered && photo.caption && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 28, opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <p className="text-[10px] text-neutral-500 font-mono leading-none pt-1.5 truncate text-center">
+                            {photo.caption}
+                          </p>
+                        </motion.div>
+                      )}
                     </motion.div>
                   </motion.div>
                 );
