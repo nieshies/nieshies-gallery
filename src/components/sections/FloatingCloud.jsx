@@ -1,51 +1,75 @@
 "use client";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import useInView from "@/lib/useInView";
 import PhotoCard from "@/components/features/PhotoCard";
 
 const POSITIONS = [
-  { x: 5, y: 0, r: -6 }, { x: 55, y: 5, r: 4 },
-  { x: 30, y: 25, r: -3 }, { x: 70, y: 35, r: 7 },
-  { x: 10, y: 50, r: -8 }, { x: 50, y: 55, r: 5 },
-  { x: 80, y: 15, r: -4 }, { x: 25, y: 70, r: 6 },
+  { x: 5, y: 4, r: -5, dur: 7.0 },
+  { x: 55, y: 6, r: 3, dur: 8.5 },
+  { x: 30, y: 28, r: -2, dur: 6.5 },
+  { x: 72, y: 16, r: 6, dur: 9.0 },
+  { x: 8, y: 52, r: -7, dur: 7.8 },
+  { x: 48, y: 56, r: 4, dur: 8.2 },
+  { x: 78, y: 48, r: -3, dur: 6.8 },
+  { x: 25, y: 72, r: 5, dur: 9.5 },
 ];
 
 export default function FloatingCloud({ photos, onPhotoClick }) {
-  const [ref, inView] = useInView({ threshold: 0.1 });
+  const [ref, inView] = useInView({ threshold: 0.05 });
   const [hovered, setHovered] = useState(null);
   if (photos.length === 0) return null;
 
   return (
-    <section ref={ref} className="relative py-20 overflow-hidden">
-      <div className="relative mx-auto h-[120vh] w-full max-w-6xl">
-        {photos.slice(0, 8).map((photo, i) => {
-          const pos = POSITIONS[i % POSITIONS.length];
-          return (
-            <div
-              key={photo.id}
-              className="absolute"
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-              style={{
-                top: `${pos.y}%`,
-                left: `${pos.x}%`,
-                width: "min(20rem, 44vw)",
-                rotate: `${pos.r}deg`,
-                zIndex: hovered === i ? 120 : i + 1,
-                opacity: inView ? 1 : 0,
-                transform: inView
-                  ? hovered === i
-                    ? "translateY(-18px) scale(1.06)"
-                    : "translateY(0) scale(1)"
-                  : "translateY(36px) scale(0.95)",
-                transition: `opacity 0.5s ${i * 0.1}s ease, transform 0.34s cubic-bezier(0.23, 1, 0.32, 1)`,
-              }}
-            >
-              <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/5" />
-            </div>
-          );
-        })}
-      </div>
+    <section ref={ref} style={{ height: "100vh", position: "relative", overflow: "hidden", background: "#000" }}>
+      {photos.slice(0, 8).map((photo, i) => {
+        const p = POSITIONS[i % POSITIONS.length];
+        return (
+          <motion.div
+            key={photo.id}
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+            animate={
+              inView
+                ? {
+                    opacity: 0.88,
+                    scale: 1,
+                    y: hovered === i ? -16 : [0, -10, 0],
+                  }
+                : { opacity: 0, scale: 0.92, y: 24 }
+            }
+            transition={{
+              opacity: { delay: 0.15 + i * 0.08, duration: 0.7, ease: "easeOut" },
+              scale: { delay: 0.15 + i * 0.08, duration: 0.7, ease: "easeOut" },
+              y: {
+                duration: p.dur,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut",
+                delay: i * 0.12,
+              },
+            }}
+            style={{
+              position: "absolute",
+              top: `${p.y}%`,
+              left: `${p.x}%`,
+              width: "min(18rem, 40vw)",
+              rotate: `${p.r}deg`,
+              zIndex: hovered === i ? 20 : i + 1,
+              cursor: "pointer",
+            }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onPhotoClick?.(photo)}
+          >
+            <PhotoCard
+              photo={photo}
+              onClick={onPhotoClick}
+              aspect="4/5"
+              tilt={false}
+            />
+          </motion.div>
+        );
+      })}
     </section>
   );
 }

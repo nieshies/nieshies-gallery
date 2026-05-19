@@ -10,8 +10,8 @@ import ParallaxLayers from "@/components/sections/ParallaxLayers";
 import FloatingCloud from "@/components/sections/FloatingCloud";
 import HorizontalJourney from "@/components/sections/HorizontalJourney";
 import CollageGrid from "@/components/sections/CollageGrid";
+import CinematicViewer from "@/components/sections/CinematicViewer";
 import MemoryWall from "@/components/sections/MemoryWall";
-import PhotoSection from "@/components/PhotoSection";
 
 export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nieshies' dump", onPhotoClick }) {
   const containerRef = useRef(null);
@@ -88,17 +88,17 @@ export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nies
         </div>
       ))}
 
-      {parallaxPhotos.map((photo) => (
-        <div key={photo.id} data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
-          <ParallaxLayers photos={[photo]} onPhotoClick={onPhotoClick} />
+      {parallaxPhotos.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
+          <ParallaxLayers photos={parallaxPhotos} onPhotoClick={onPhotoClick} />
         </div>
-      ))}
+      ) : null}
 
-      {floatingPhotos.map((photo) => (
-        <div key={photo.id} data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0 }}>
-          <FloatingCloud photos={[photo]} onPhotoClick={onPhotoClick} />
+      {floatingPhotos.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden" }}>
+          <FloatingCloud photos={floatingPhotos} onPhotoClick={onPhotoClick} />
         </div>
-      ))}
+      ) : null}
 
       {horizontal.length ? (
         <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center" }}>
@@ -109,6 +109,12 @@ export default function ReferenceGalleryFlow({ photos, heroPhotos, title = "nies
       {verticalSections[4]?.length ? (
         <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <CollageGrid photos={verticalSections[4]} onPhotoClick={onPhotoClick} />
+        </div>
+      ) : null}
+
+      {photos.length ? (
+        <div data-snap style={{ scrollSnapAlign: "start", height: "100vh", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <CinematicViewer photos={photos.slice(0, 2)} onPhotoClick={onPhotoClick} />
         </div>
       ) : null}
 

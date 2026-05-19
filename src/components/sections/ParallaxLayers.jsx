@@ -1,55 +1,75 @@
 "use client";
-import { useRef, useEffect } from "react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import useInView from "@/lib/useInView";
 import PhotoCard from "@/components/features/PhotoCard";
 
+const POSITIONS = [
+  { x: 2, y: 2, w: 220, h: 290, r: -4, dur: 7.0 },
+  { x: 48, y: 4, w: 190, h: 250, r: 3, dur: 8.5 },
+  { x: 28, y: 20, w: 170, h: 230, r: -2, dur: 6.5 },
+  { x: 72, y: 12, w: 200, h: 270, r: 5, dur: 9.0 },
+  { x: 5, y: 44, w: 240, h: 320, r: -6, dur: 7.8 },
+  { x: 42, y: 50, w: 210, h: 280, r: 4, dur: 8.2 },
+  { x: 75, y: 46, w: 180, h: 240, r: -3, dur: 6.8 },
+  { x: 15, y: 68, w: 160, h: 210, r: 6, dur: 9.5 },
+  { x: 55, y: 72, w: 230, h: 300, r: -5, dur: 7.2 },
+  { x: 82, y: 62, w: 150, h: 200, r: 7, dur: 8.8 },
+];
+
 export default function ParallaxLayers({ photos, onPhotoClick }) {
+  const [ref, inView] = useInView({ threshold: 0.05 });
+  const [hovered, setHovered] = useState(null);
   if (photos.length === 0) return null;
-  const ref = useRef(null);
-  const layersRef = useRef([]);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const rect = el.getBoundingClientRect();
-          const start = rect.top + window.scrollY;
-          const delta = window.scrollY - start;
-          const vs = window.innerHeight;
-          const progress = Math.min(1, Math.max(0, delta / vs));
-          layersRef.current.forEach((layer, i) => {
-            if (!layer) return;
-            const speed = [18, 0, -18][i];
-            layer.style.transform = `translateY(${progress * speed}px)`;
-          });
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const n = Math.ceil(photos.length / 3);
-  const layers = [photos.slice(0, n), photos.slice(n, n * 2), photos.slice(n * 2)];
 
   return (
-    <section ref={ref} className="relative py-20 overflow-hidden">
-      <div className="mx-auto max-w-6xl px-6 md:px-10 space-y-6">
-        {layers.map((layerPhotos, li) => (
-          <div key={li} ref={(el) => (layersRef.current[li] = el)} className="flex gap-4" style={{ willChange: "transform" }}>
-            {layerPhotos.map((photo) => (
-              <div key={photo.id} className="w-48 flex-shrink-0">
-                <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/5" />
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
+    <section ref={ref} style={{ height: "100vh", position: "relative", overflow: "hidden", background: "#000" }}>
+      {photos.slice(0, 10).map((photo, i) => {
+        const p = POSITIONS[i % POSITIONS.length];
+        return (
+          <motion.div
+            key={photo.id}
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={
+              inView
+                ? {
+                    opacity: 0.85,
+                    scale: 1,
+                    y: hovered === i ? -12 : [0, -8, 0],
+                  }
+                : { opacity: 0, scale: 0.92, y: 20 }
+            }
+            transition={{
+              opacity: { delay: 0.1 + i * 0.06, duration: 0.7, ease: "easeOut" },
+              scale: { delay: 0.1 + i * 0.06, duration: 0.7, ease: "easeOut" },
+              y: {
+                duration: p.dur,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut",
+                delay: i * 0.15,
+              },
+            }}
+            style={{
+              position: "absolute",
+              top: `${p.y}%`,
+              left: `${p.x}%`,
+              width: p.w,
+              height: p.h,
+              rotate: `${p.r}deg`,
+              zIndex: hovered === i ? 20 : i + 1,
+              cursor: "pointer",
+              borderRadius: 4,
+              overflow: "hidden",
+            }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onPhotoClick?.(photo)}
+          >
+            <PhotoCard photo={photo} onClick={onPhotoClick} aspect="4/5" tilt={false} />
+          </motion.div>
+        );
+      })}
     </section>
   );
 }

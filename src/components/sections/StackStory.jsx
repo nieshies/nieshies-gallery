@@ -11,22 +11,34 @@ export default function StackStory({ photos, onPhotoClick }) {
       style={{
         height: "100vh",
         width: "100%",
-        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         background: "#000",
-        overflow: "hidden",
+        position: "relative",
         cursor: "pointer",
       }}
       onClick={() => onPhotoClick?.(photo)}
     >
-      <Image
-        src={photo.url}
-        alt={photo.caption || `Memory ${i + 1}`}
-        fill
-        style={{ objectFit: "cover", opacity: 0.88 }}
-        priority={i < 3}
-        sizes="100vw"
-      />
-      <div className="scroll-grain" />
+      <div
+        style={{
+          position: "relative",
+          width: "auto",
+          height: "min(85vh, 90vw)",
+          aspectRatio: "9/16",
+          maxHeight: "85vh",
+        }}
+      >
+        <Image
+          src={photo.url}
+          alt={photo.caption || `Memory ${i + 1}`}
+          fill
+          style={{ objectFit: "cover" }}
+          priority={i < 3}
+          sizes="50vw"
+        />
+        <div className="scroll-grain" />
+      </div>
 
       {photo.caption ? (
         <motion.p
@@ -37,7 +49,6 @@ export default function StackStory({ photos, onPhotoClick }) {
           style={{
             position: "absolute",
             bottom: "2.5rem",
-            left: "2.5rem",
             color: "#fff",
             fontSize: "0.88rem",
             fontWeight: 300,
