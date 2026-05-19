@@ -1,6 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
+import TiltCard from "@/components/features/TiltCard";
 
 function seeding(seed) {
   let s = seed;
@@ -24,7 +25,6 @@ export default function FloatingCloud({ photos }) {
 
   return (
     <section className="content-section relative py-16 overflow-hidden">
-      <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">floating</p>
       <div className="relative h-[100vh] w-full max-w-6xl mx-auto">
         {photos.map((photo, i) => {
           const pos = positions[i] || {};
@@ -44,14 +44,14 @@ export default function FloatingCloud({ photos }) {
                 aspectRatio: "1/1",
               }}
             >
-              <div className="w-full h-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
+              <TiltCard className="w-full h-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-lg backdrop-blur-sm">
                 <img
                   src={`${photo.url}?t=${photo.uploadedAt}`}
                   alt=""
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
-              </div>
+              </TiltCard>
             </motion.div>
           );
         })}

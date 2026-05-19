@@ -131,7 +131,7 @@ export default function Home() {
 
   return (
     <>
-      <ReactLenis root>
+      <ReactLenis root options={{ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) }}>
       <HeroSection photos={headers} />
       <FilmStrip photos={sliced.filmStrip} />
       <HorizontalJourney photos={sliced.horizontalJourney} />

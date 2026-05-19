@@ -159,14 +159,31 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
-.content-section img {
-  filter: brightness(0.5) saturate(0.95);
-  transition: filter 150ms ease, transform 700ms ease;
+.tilt-card {
+  position: relative;
+}
+
+.tilt-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.tilt-card:hover .tilt-glow {
+  opacity: 1;
+}
+
+.tilt-card img {
+  transition: transform 700ms ease;
   will-change: transform;
 }
 
-.content-section img:hover {
+.tilt-card:hover img {
   filter: brightness(1.25) saturate(1.1);
+  transform: scale(1.1);
 }
 
 @media (prefers-reduced-motion: reduce) {

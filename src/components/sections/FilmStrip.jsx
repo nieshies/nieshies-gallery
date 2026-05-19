@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import TiltCard from "@/components/features/TiltCard";
 
 export default function FilmStrip({ photos }) {
   const [paused, setPaused] = useState(false);
@@ -28,15 +29,14 @@ export default function FilmStrip({ photos }) {
 
   return (
     <section className="content-section relative py-16 overflow-hidden">
-      <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">film strip</p>
       <div className="relative cursor-pointer select-none" onClick={() => setPaused((p) => !p)}>
         <div className="absolute inset-y-0 left-0 w-32 z-10 bg-gradient-to-r from-[#0a0a0a] to-transparent pointer-events-none" />
         <div className="absolute inset-y-0 right-0 w-32 z-10 bg-gradient-to-l from-[#0a0a0a] to-transparent pointer-events-none" />
         <div ref={trackRef} className="flex gap-6" style={{ willChange: "transform" }}>
           {doubled.map((photo, i) => (
-            <div
+            <TiltCard
               key={`${photo.id}-${i}`}
-              className="relative flex-shrink-0 overflow-hidden rounded-xl"
+              className="flex-shrink-0 overflow-hidden rounded-xl"
               style={{ width: "min(52vw, 360px)", aspectRatio: "3/4" }}
             >
               <img
@@ -46,7 +46,7 @@ export default function FilmStrip({ photos }) {
                 draggable={false}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-            </div>
+            </TiltCard>
           ))}
         </div>
         {paused && (
