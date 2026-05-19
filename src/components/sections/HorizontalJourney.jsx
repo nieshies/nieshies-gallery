@@ -1,6 +1,8 @@
 "use client";
+import { useReducedMotion } from "framer-motion";
 
 export default function HorizontalJourney({ photos, onPhotoClick }) {
+  const reduceMotion = useReducedMotion();
   if (photos.length === 0) return null;
   const loopPhotos = [...photos, ...photos];
 
@@ -8,8 +10,9 @@ export default function HorizontalJourney({ photos, onPhotoClick }) {
     <section className="relative overflow-hidden py-20">
       <div className="flex min-h-[80vh] items-center overflow-hidden">
         <div
-          className="horizontal-loop-track flex gap-6 px-6"
+          className={`flex gap-6 px-6 ${reduceMotion ? "horizontal-loop-static" : "horizontal-loop-track"}`}
           style={{ willChange: "transform" }}
+          aria-live="off"
         >
           {loopPhotos.map((photo, index) => (
             <div

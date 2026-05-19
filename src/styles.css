@@ -232,10 +232,16 @@ body {
 .horizontal-loop-track {
   width: max-content;
   animation: horizontal-loop-right 34s linear infinite;
+  transform: translate3d(-50%, 0, 0);
 }
 
 .horizontal-loop-track:hover {
   animation-play-state: paused;
+}
+
+.horizontal-loop-static {
+  width: max-content;
+  transform: translate3d(0, 0, 0);
 }
 
 /* --- Hero Section --- */
