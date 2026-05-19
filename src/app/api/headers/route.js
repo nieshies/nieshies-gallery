@@ -8,6 +8,7 @@ export async function GET() {
 
     const photos = (data || [])
       .filter((f) => f.metadata?.mimetype?.startsWith("image/"))
+      .filter((f) => !/\.(heic|heif|HEIC|HEIF)$/i.test(f.name))
       .map((f) => {
         const { data: urlData } = supabase.storage.from("headers").getPublicUrl(f.name);
         return { id: f.id || f.name, name: f.name, url: urlData.publicUrl };

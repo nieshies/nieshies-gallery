@@ -15,6 +15,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <div className="noise-overlay" />
+        <div className="ambient-glow" />
         <div className="vignette-overlay" />
         {children}
       </body>

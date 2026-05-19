@@ -5,7 +5,6 @@ import { ReactLenis } from "lenis/react";
 import usePhotos from "@/hooks/usePhotos";
 import useHeaders from "@/hooks/useHeaders";
 import slicePhotos from "@/lib/slicePhotos";
-import AmbientGlow from "@/components/features/AmbientGlow";
 import HeroSection from "@/components/sections/HeroSection";
 import FilmStrip from "@/components/sections/FilmStrip";
 import HorizontalJourney from "@/components/sections/HorizontalJourney";
@@ -132,7 +131,6 @@ export default function Home() {
 
   return (
     <>
-      <AmbientGlow />
       <ReactLenis root>
       <HeroSection photos={headers} />
       <FilmStrip photos={sliced.filmStrip} />
