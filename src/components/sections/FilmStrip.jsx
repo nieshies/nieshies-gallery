@@ -27,7 +27,7 @@ export default function FilmStrip({ photos }) {
   if (photos.length === 0) return null;
 
   return (
-    <section className="relative py-16 overflow-hidden">
+    <section className="content-section relative py-16 overflow-hidden">
       <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">film strip</p>
       <div className="relative cursor-pointer select-none" onClick={() => setPaused((p) => !p)}>
         <div className="absolute inset-y-0 left-0 w-32 z-10 bg-gradient-to-r from-[#0a0a0a] to-transparent pointer-events-none" />

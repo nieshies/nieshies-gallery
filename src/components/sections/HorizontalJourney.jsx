@@ -8,7 +8,7 @@ export default function HorizontalJourney({ photos }) {
   if (photos.length === 0) return null;
 
   return (
-    <section className="relative py-16 overflow-hidden">
+    <section className="content-section relative py-16 overflow-hidden">
       <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">journey</p>
       <div className="overflow-x-auto scrollbar-none cursor-grab active:cursor-grabbing" ref={trackRef}>
         <div className="flex gap-8 px-8 pb-4" style={{ width: "max-content" }}>

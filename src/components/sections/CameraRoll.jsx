@@ -23,7 +23,7 @@ export default function CameraRoll({ photos }) {
   if (photos.length === 0) return null;
 
   return (
-    <section className="relative py-16 overflow-hidden">
+    <section className="content-section relative py-16 overflow-hidden">
       <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">camera roll</p>
       <div className="relative h-[120vh] w-full max-w-5xl mx-auto">
         {photos.map((photo, i) => {

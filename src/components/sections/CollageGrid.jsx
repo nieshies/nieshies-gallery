@@ -11,7 +11,7 @@ export default function CollageGrid({ photos }) {
   if (photos.length === 0) return null;
 
   return (
-    <section className="relative py-16 overflow-hidden">
+    <section className="content-section relative py-16 overflow-hidden">
       <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">collage</p>
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-12 auto-rows-[44px] gap-3">

@@ -13,7 +13,7 @@ export default function CinematicViewer({ photos }) {
   const photo = photos[idx];
 
   return (
-    <section className="relative py-16 overflow-hidden">
+    <section className="content-section relative py-16 overflow-hidden">
       <p className="text-white/20 text-[10px] font-display uppercase tracking-[0.3em] text-center mb-6">cinematic</p>
       <div className="flex items-center justify-center gap-4 px-4">
         {photos.length > 1 && (

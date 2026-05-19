@@ -159,6 +159,16 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
+.content-section img {
+  filter: brightness(0.5) saturate(0.95);
+  transition: filter 150ms ease, transform 700ms ease;
+  will-change: transform;
+}
+
+.content-section img:hover {
+  filter: brightness(1.25) saturate(1.1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .snap-y {
     scroll-snap-type: none !important;

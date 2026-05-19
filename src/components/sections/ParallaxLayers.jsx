@@ -15,7 +15,7 @@ export default function ParallaxLayers({ photos }) {
   const layers = photos.slice(0, 3);
 
   return (
-    <section ref={ref} className="relative h-[180vh] overflow-hidden">
+    <section ref={ref} className="content-section relative h-[180vh] overflow-hidden">
       <div className="sticky top-0 h-svh w-full overflow-hidden">
         {layers.map((photo, i) => (
           <motion.div
