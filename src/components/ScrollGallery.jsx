@@ -3,7 +3,7 @@ import { useEffect, useRef, useCallback } from "react";
 import ScatteredHero from "./ScatteredHero";
 import PhotoSection from "./PhotoSection";
 
-export default function ScrollGallery({ photos }) {
+export default function ScrollGallery({ photos, heroPhotos }) {
   const containerRef = useRef(null);
 
   const scrollTo = useCallback((dir) => {
@@ -64,7 +64,7 @@ export default function ScrollGallery({ photos }) {
           position: "relative",
         }}
       >
-        <ScatteredHero photos={photos} />
+        <ScatteredHero photos={heroPhotos?.length ? heroPhotos : photos} />
 
         {photos.map((photo, i) => (
           <PhotoSection key={photo.id} photo={photo} index={i} total={photos.length} />
