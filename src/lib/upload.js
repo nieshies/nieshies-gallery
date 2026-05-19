@@ -59,5 +59,6 @@ export async function saveUpload(file, bucket = "uploads") {
 export async function deleteUpload(url, bucket = "uploads") {
   const filename = url.split("/").pop();
   if (!filename) return;
-  await supabase.storage.from(bucket).remove([filename]);
+  const { error } = await supabase.storage.from(bucket).remove([filename]);
+  if (error) throw new Error(`Supabase delete failed: ${error.message}`);
 }

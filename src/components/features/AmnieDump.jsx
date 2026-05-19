@@ -438,7 +438,8 @@ export default function AmnieDump() {
   }, [setAchievements]);
 
   const deleteMemory = useCallback(async (id) => {
-    await fetch(`/api/amnie/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/amnie/${id}`, { method: "DELETE" });
+    if (!res.ok) return;
     setItems((prev) => prev.filter((memory) => memory.id !== id));
     setViewing(null);
   }, [setItems]);
