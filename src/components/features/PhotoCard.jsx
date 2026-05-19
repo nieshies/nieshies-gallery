@@ -1,23 +1,35 @@
 "use client";
 import { useRef, useCallback } from "react";
 
-export default function PhotoCard({ photo, onClick, aspect = "4/5", style }) {
+export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt = true }) {
   const ref = useRef(null);
 
   const handleMouseMove = useCallback((e) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const mx = ((e.clientX - rect.left) / rect.width) * 100;
-    const my = ((e.clientY - rect.top) / rect.height) * 100;
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const mx = x * 100;
+    const my = y * 100;
     ref.current.style.setProperty("--mx", `${mx}%`);
     ref.current.style.setProperty("--my", `${my}%`);
-  }, []);
+    if (tilt) {
+      const tiltX = (0.5 - y) * 18;
+      const tiltY = (x - 0.5) * 18;
+      ref.current.style.transition = "transform 0.15s cubic-bezier(0.23, 1, 0.32, 1)";
+      ref.current.style.transform = `perspective(600px) translateY(-8px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    }
+  }, [tilt]);
 
   const handleMouseLeave = useCallback(() => {
     if (!ref.current) return;
     ref.current.style.setProperty("--mx", "50%");
     ref.current.style.setProperty("--my", "50%");
-  }, []);
+    if (tilt) {
+      ref.current.style.transition = "";
+      ref.current.style.transform = "";
+    }
+  }, [tilt]);
 
   return (
     <article
