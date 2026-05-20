@@ -3,19 +3,21 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
-export default function MasonryGallery({ page = "home" }) {
-  const [photos, setPhotos] = useState([]);
+export default function MasonryGallery({ page = "home", photos: propPhotos }) {
+  const [fetched, setFetched] = useState([]);
+  const photos = propPhotos ?? fetched;
   const [lightbox, setLightbox] = useState({ open: false, idx: 0 });
   const itemRefs = useRef([]);
   const overlayRef = useRef(null);
   const lbTouchStart = useRef(null);
 
   useEffect(() => {
+    if (propPhotos !== undefined) return;
     fetch(`/api/photos?page=${page}`)
       .then((r) => r.json())
-      .then((d) => setPhotos(d.photos || []))
+      .then((d) => setFetched(d.photos || []))
       .catch(() => {});
-  }, [page]);
+  }, [page, propPhotos]);
 
   // IntersectionObserver reveal with stagger
   useEffect(() => {

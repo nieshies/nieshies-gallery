@@ -6,8 +6,9 @@ import { getPhotoUrl } from "@/utils/photo";
 const DURATION = 3500;
 const TICK = 33;
 
-export default function StoryViewer() {
-  const [photos, setPhotos] = useState([]);
+export default function StoryViewer({ photos: propPhotos }) {
+  const [fetched, setFetched] = useState([]);
+  const photos = propPhotos ?? fetched;
   const [idx, setIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const [slots, setSlots] = useState({ a: null, b: null, active: "a" });
@@ -16,11 +17,12 @@ export default function StoryViewer() {
   const touchStartRef = useRef(null);
 
   useEffect(() => {
+    if (propPhotos !== undefined) return;
     fetch("/api/photos?page=home")
       .then((r) => r.json())
-      .then((d) => setPhotos(d.photos || []))
+      .then((d) => setFetched(d.photos || []))
       .catch(() => {});
-  }, []);
+  }, [propPhotos]);
 
   // Sync double-buffer slots with current idx
   useEffect(() => {

@@ -3,15 +3,18 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
-export default function PhotoStrip() {
-  const [photos, setPhotos] = useState([]);
+export default function PhotoStrip({ photos: propPhotos }) {
+  const [fetched, setFetched] = useState([]);
 
   useEffect(() => {
+    if (propPhotos !== undefined) return;
     fetch("/api/photos?page=home")
       .then((r) => r.json())
-      .then((d) => setPhotos(d.photos || []))
+      .then((d) => setFetched(d.photos || []))
       .catch(() => {});
-  }, []);
+  }, [propPhotos]);
+
+  const photos = propPhotos ?? fetched;
 
   if (photos.length === 0) return null;
 

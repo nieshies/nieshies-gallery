@@ -5,8 +5,9 @@ import { getPhotoUrl } from "@/utils/photo";
 
 const pad = (n) => String(n).padStart(2, "0");
 
-export default function ScrollSlider() {
-  const [photos, setPhotos] = useState([]);
+export default function ScrollSlider({ photos: propPhotos }) {
+  const [fetched, setFetched] = useState([]);
+  const photos = propPhotos ?? fetched;
   const [idx, setIdx] = useState(0);
 
   const idxRef = useRef(0);
@@ -17,15 +18,16 @@ export default function ScrollSlider() {
   const containerRef = useRef(null);
 
   useEffect(() => {
+    lenRef.current = photos.length;
+  }, [photos.length]);
+
+  useEffect(() => {
+    if (propPhotos !== undefined) return;
     fetch("/api/photos?page=home")
       .then((r) => r.json())
-      .then((d) => {
-        const list = d.photos || [];
-        setPhotos(list);
-        lenRef.current = list.length;
-      })
+      .then((d) => setFetched(d.photos || []))
       .catch(() => {});
-  }, []);
+  }, [propPhotos]);
 
   useEffect(() => {
     return () => clearTimeout(lockTimer.current);

@@ -36,8 +36,9 @@ const ANIM = [
   { period: 4100, phase: 1.10, amp:  6 },
 ];
 
-export default function ScatterSection({ page = "home" }) {
-  const [photos, setPhotos] = useState([]);
+export default function ScatterSection({ page = "home", photos: propPhotos }) {
+  const [fetched, setFetched] = useState([]);
+  const photos = (propPhotos ?? fetched).slice(0, 12);
   const [isMobile, setIsMobile] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState(-1);
   const imgRefs = useRef([]);
@@ -51,11 +52,12 @@ export default function ScatterSection({ page = "home" }) {
   }, []);
 
   useEffect(() => {
+    if (propPhotos !== undefined) return;
     fetch(`/api/photos?page=${page}`)
       .then((r) => r.json())
-      .then((d) => setPhotos((d.photos || []).slice(0, 12)))
+      .then((d) => setFetched((d.photos || []).slice(0, 12)))
       .catch(() => {});
-  }, [page]);
+  }, [page, propPhotos]);
 
   useEffect(() => {
     if (photos.length === 0) return;
