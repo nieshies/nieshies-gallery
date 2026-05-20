@@ -2,8 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { saveUpload, validateFile } from "@/lib/upload";
 
-export async function GET() {
+const PAGE_BUCKETS = {
+  home: "uploads",
+  amnie: "amnie",
+  family: "family",
+};
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const page = searchParams.get("page");
+
   const photos = await prisma.galleryPhoto.findMany({
+    where: page ? { page } : undefined,
     orderBy: { uploadedAt: "desc" },
   });
   return NextResponse.json({
@@ -16,11 +26,13 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get("file");
     const caption = String(formData.get("caption") || "").trim();
+    const page = String(formData.get("page") || "home").toLowerCase();
 
     const error = validateFile(file);
     if (error) return NextResponse.json({ error }, { status: 400 });
 
-    const result = await saveUpload(file, "uploads");
+    const bucket = PAGE_BUCKETS[page] ?? "uploads";
+    const result = await saveUpload(file, bucket);
 
     const photo = await prisma.galleryPhoto.create({
       data: {
@@ -31,6 +43,7 @@ export async function POST(request) {
         sizeBytes: result.sizeBytes,
         width: result.width,
         height: result.height,
+        tags: [page],
       },
     });
 

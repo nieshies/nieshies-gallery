@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function HeroSection({ photos, title = "nishi's dump" }) {
   const [idx, setIdx] = useState(0);
@@ -51,7 +52,7 @@ export default function HeroSection({ photos, title = "nishi's dump" }) {
         {photos.map((p, i) => (
           <img
             key={p.id}
-            src={p.url}
+            src={getPhotoUrl(p.url, "full")}
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
             style={{ opacity: i === idx ? 1 : 0, transition: "opacity 1s" }}

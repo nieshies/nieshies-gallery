@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useEffect } from "react";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function HorizontalJourney({ photos, onPhotoClick }) {
   const trackRef = useRef(null);
@@ -48,7 +49,7 @@ export default function HorizontalJourney({ photos, onPhotoClick }) {
               <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[var(--glass)] shadow-glass backdrop-blur-md" style={{ aspectRatio: "4/3" }}>
                 <div className="relative h-full w-full overflow-hidden">
                   <img
-                    src={`${photo.url}?t=${photo.uploadedAt}`}
+                    src={getPhotoUrl(photo.url, "medium")}
                     alt=""
                     loading="lazy"
                     className="object-cover"

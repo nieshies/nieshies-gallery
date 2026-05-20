@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function PhotoSection({ photo, index, total }) {
   return (
@@ -16,7 +17,7 @@ export default function PhotoSection({ photo, index, total }) {
       }}
     >
       <Image
-        src={photo.url}
+        src={getPhotoUrl(photo.url, "full")}
         alt={photo.caption || `Memory ${index + 1}`}
         fill
         priority={index < 3}

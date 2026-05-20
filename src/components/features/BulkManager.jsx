@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPhotoUrl } from "@/utils/photo";
 
 function formatBytes(bytes) {
   if (!bytes) return "0 B";
@@ -228,7 +229,7 @@ export default function BulkManager({ photos, onUpdate }) {
             <Checkmark selected={selected.has(photo.id)} />
             <div className="w-9 h-9 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-black/30">
               <img
-                src={`${photo.url}?t=${photo.uploadedAt}`}
+                src={getPhotoUrl(photo.url, "thumb")}
                 alt=""
                 className="w-full h-full object-cover"
                 loading="lazy"

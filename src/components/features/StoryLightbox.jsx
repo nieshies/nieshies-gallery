@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function StoryLightbox({ photos, index, onClose, onDelete }) {
   const [currentIdx, setCurrentIdx] = useState(index);
@@ -147,7 +148,7 @@ export default function StoryLightbox({ photos, index, onClose, onDelete }) {
       >
         <img
           key={photo.id}
-          src={`${photo.url}?t=${photo.uploadedAt}`}
+          src={getPhotoUrl(photo.url, "full")}
           alt=""
           className="max-w-full max-h-full w-auto h-auto object-contain"
           draggable={false}

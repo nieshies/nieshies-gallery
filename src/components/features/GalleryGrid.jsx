@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ImmersiveLightbox from "./ImmersiveLightbox";
+import { getPhotoUrl } from "@/utils/photo";
 
 function TiltCard({ photo, index, onClick }) {
   const cardRef = useRef(null);
@@ -66,7 +67,7 @@ function TiltCard({ photo, index, onClick }) {
             </div>
           )}
           <img
-            src={`${photo.url}?t=${photo.uploadedAt}`}
+            src={getPhotoUrl(photo.url, "medium")}
             alt=""
             onLoad={() => setLoaded(true)}
             className={`w-full h-64 md:h-80 object-cover transition-all duration-500 group-hover:scale-110 ${

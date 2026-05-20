@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { saveUpload, validateFile } from "@/lib/upload";
 
 export async function GET() {
   try {
@@ -17,5 +18,24 @@ export async function GET() {
     return NextResponse.json({ photos });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file");
+
+    const error = validateFile(file);
+    if (error) return NextResponse.json({ error }, { status: 400 });
+
+    const result = await saveUpload(file, "headers");
+    return NextResponse.json(
+      { ok: true, url: result.url, filename: result.filename },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("Headers upload error:", err);
+    return NextResponse.json({ error: err.message || "Failed to upload" }, { status: 400 });
   }
 }

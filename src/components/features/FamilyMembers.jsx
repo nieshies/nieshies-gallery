@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
+import { getPhotoUrl } from "@/utils/photo";
 
 const STORAGE_KEY = "nieshies-family-photos";
 
@@ -105,7 +106,7 @@ function PolaroidCard({ member, index }) {
             {photoUrl ? (
               <div className="relative">
                 <img
-                  src={photoUrl}
+                  src={getPhotoUrl(photoUrl, "medium")}
                   alt=""
                   className="w-full object-cover rounded-sm"
                   style={{ aspectRatio: "4/3" }}

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import usePaginatedMemories from "@/hooks/usePaginatedMemories";
 import ReferenceGalleryFlow from "@/components/features/ReferenceGalleryFlow";
 import CinematicPhotoModal from "@/components/features/CinematicPhotoModal";
+import { getPhotoUrl } from "@/utils/photo";
 
 const familyMembers = [
   { nick: "mantip", relation: "dad", emoji: "🏃" },
@@ -204,7 +205,7 @@ export default function FamilyDump() {
         title="family"
         onPhotoClick={(photo) => {
           const match = memories.find((memory) => memory.id === photo.id);
-          if (match) setViewing({ raw: match, src: match.photoUrl });
+          if (match) setViewing({ raw: match, src: getPhotoUrl(match.photoUrl, "full") });
         }}
         topAction={
           <button

@@ -6,6 +6,7 @@ import usePaginatedMemories from "@/hooks/usePaginatedMemories";
 import useAmnieAchievements from "@/hooks/useAmnieAchievements";
 import CinematicPhotoModal from "@/components/features/CinematicPhotoModal";
 import DayCounter from "@/components/features/DayCounter";
+import { getPhotoUrl } from "@/utils/photo";
 
 function formatPrettyDate(value) {
   if (!value) return "";
@@ -285,7 +286,7 @@ function AchievementSection({ achievements, onView, onDelete, onAddClick, loadin
               >
                 {achievement.photoUrl ? (
                   <div className="aspect-[16/10] overflow-hidden">
-                    <img src={achievement.photoUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <img src={getPhotoUrl(achievement.photoUrl, "medium")} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                   </div>
                 ) : null}
                 <div className="p-6">
@@ -386,7 +387,7 @@ function MemoriesSection({ memories, onView, onDelete, onAddClick, loaderRef, lo
                 }}
               >
                 <div className="aspect-[4/5] overflow-hidden rounded-[1.8rem]">
-                  <img src={memory.photoUrl} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
+                  <img src={getPhotoUrl(memory.photoUrl, "thumb")} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
                 </div>
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(0,0,0,0.18))]" />
               </button>
@@ -502,7 +503,7 @@ export default function AmnieDump() {
               <div className="relative rotate-[3deg] overflow-hidden rounded-[2.4rem] border border-rose-200/16 bg-white/[0.04] p-3 shadow-[0_28px_90px_rgba(0,0,0,0.3)]">
                 <div className="aspect-[4/5] overflow-hidden rounded-[1.8rem] bg-black/20">
                   {heroPhoto ? (
-                    <img src={heroPhoto} alt="" className="h-full w-full object-cover" />
+                    <img src={getPhotoUrl(heroPhoto, "medium")} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center text-white/30">No memory yet</div>
                   )}
@@ -514,7 +515,7 @@ export default function AmnieDump() {
 
         <AchievementSection
           achievements={achievements}
-          onView={(a) => setViewingAchievement({ raw: a, src: a.photoUrl, caption: a.note || "" })}
+          onView={(a) => setViewingAchievement({ raw: a, src: getPhotoUrl(a.photoUrl, "full"), caption: a.note || "" })}
           onDelete={deleteAchievement}
           onAddClick={() => setShowAddAchievement(true)}
           loading={achievementsLoading}
@@ -522,7 +523,7 @@ export default function AmnieDump() {
 
         <MemoriesSection
           memories={memories}
-          onView={(memory) => setViewing({ raw: memory, src: memory.photoUrl, caption: memory.description || "" })}
+          onView={(memory) => setViewing({ raw: memory, src: getPhotoUrl(memory.photoUrl, "full"), caption: memory.description || "" })}
           onDelete={deleteMemory}
           onAddClick={() => setShowAddMemory(true)}
           loaderRef={loaderRef}

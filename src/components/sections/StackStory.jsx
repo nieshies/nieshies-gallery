@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function StackStory({ photos, onPhotoClick }) {
   if (photos.length === 0) return null;
@@ -30,7 +31,7 @@ export default function StackStory({ photos, onPhotoClick }) {
         }}
       >
         <Image
-          src={photo.url}
+          src={getPhotoUrl(photo.url, "full")}
           alt={photo.caption || `Memory ${i + 1}`}
           fill
           style={{ objectFit: "cover" }}

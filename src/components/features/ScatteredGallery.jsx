@@ -2,6 +2,7 @@
 import { useState, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ImmersiveLightbox from "./ImmersiveLightbox";
+import { getPhotoUrl } from "@/utils/photo";
 
 function seededRandom(seed) {
   let s = seed;
@@ -120,7 +121,7 @@ export default function ScatteredGallery({ photos = [], onDelete }) {
                     >
                       <div className="relative overflow-hidden bg-neutral-100">
                         <img
-                          src={`${photo.url}?t=${photo.uploadedAt}`}
+                          src={getPhotoUrl(photo.url, "thumb")}
                           alt=""
                           className="w-full object-cover"
                           style={{ height: 200 }}

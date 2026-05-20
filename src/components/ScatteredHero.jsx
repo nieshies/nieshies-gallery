@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { getPhotoUrl } from "@/utils/photo";
 
 const positions = [
   { top: "6%",  left: "4%",  width: 270, height: 360, rotate: -5,  floatDur: 7.0, delay: 0    },
@@ -59,7 +60,7 @@ export default function ScatteredHero({ photos }) {
             }}
           >
             <Image
-              src={photo.url}
+              src={getPhotoUrl(photo.url, "thumb")}
               alt={photo.caption || `Memory ${i + 1}`}
               fill
               style={{ objectFit: "cover" }}

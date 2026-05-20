@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPhotoUrl } from "@/utils/photo";
 
 function TiltCard({ photo, index, onClick }) {
   const cardRef = useRef(null);
@@ -49,7 +50,7 @@ function TiltCard({ photo, index, onClick }) {
         />
         <div className="relative overflow-hidden">
           <img
-            src={`${photo.url}?t=${photo.uploadedAt}`}
+            src={getPhotoUrl(photo.url, "medium")}
             alt=""
             className="w-full h-64 md:h-80 object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
@@ -102,7 +103,7 @@ function Lightbox({ photo, onClose }) {
           &#10005;
         </button>
         <img
-          src={`${photo.url}?t=${photo.uploadedAt}`}
+          src={getPhotoUrl(photo.url, "full")}
           alt=""
           className="w-full h-full object-contain rounded-2xl"
         />

@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import sizeOf from "image-size";
+import sharp from "sharp";
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
@@ -21,23 +21,20 @@ export function validateFile(file) {
 }
 
 export async function saveUpload(file, bucket = "uploads") {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const ext = file.name.split(".").pop() || "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const raw = Buffer.from(await file.arrayBuffer());
 
-  let width = null;
-  let height = null;
-  try {
-    const dim = sizeOf(buffer);
-    width = dim.width;
-    height = dim.height;
-  } catch {}
+  const { data: buffer, info } = await sharp(raw)
+    .rotate()
+    .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer({ resolveWithObject: true });
 
-  const contentType = file.type || EXT_MAP[file.name?.split(".").pop()?.toLowerCase()] || "image/jpeg";
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+
   const { error } = await supabase.storage
     .from(bucket)
     .upload(filename, buffer, {
-      contentType,
+      contentType: "image/webp",
       upsert: false,
     });
 
@@ -51,8 +48,8 @@ export async function saveUpload(file, bucket = "uploads") {
     url: urlData.publicUrl,
     filename,
     sizeBytes: buffer.length,
-    width,
-    height,
+    width: info.width,
+    height: info.height,
   };
 }
 

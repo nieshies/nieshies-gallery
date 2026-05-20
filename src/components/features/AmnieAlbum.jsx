@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/ThemeContext";
+import { getPhotoUrl } from "@/utils/photo";
 
 const SPREAD_SIZE = 4;
 const STORAGE_KEY = "nieshies-amnie-memories";
@@ -34,7 +35,7 @@ function PolaroidCard({ memory, index, onClick, total }) {
         <div className="relative overflow-hidden bg-neutral-100 rounded-sm">
           {memory.photoUrl ? (
             <img
-              src={memory.photoUrl}
+              src={getPhotoUrl(memory.photoUrl, "thumb")}
               alt=""
               className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
               style={{ aspectRatio: "4/3" }}
@@ -264,7 +265,7 @@ function ViewMemoryModal({ memory, onClose, onDelete }) {
           {memory.photoUrl ? (
             <div className="relative overflow-hidden bg-neutral-100 rounded-sm">
               <img
-                src={memory.photoUrl}
+                src={getPhotoUrl(memory.photoUrl, "full")}
                 alt=""
                 className="w-full object-contain"
                 style={{ maxHeight: "55vh" }}

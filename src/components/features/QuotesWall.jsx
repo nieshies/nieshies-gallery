@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPhotoUrl } from "@/utils/photo";
 
 const quotes = [
   { text: "The only limit to our realization of tomorrow is our doubts of today.", author: "Franklin D. Roosevelt" },
@@ -102,7 +103,7 @@ export default function QuotesWall({ photos = [] }) {
           {randomPhoto && (
             <div className="absolute inset-0 z-0">
               <img
-                src={randomPhoto.url}
+                src={getPhotoUrl(randomPhoto.url, "medium")}
                 alt=""
                 className="w-full h-full object-cover opacity-20"
               />

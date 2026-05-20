@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import PostActions from "./PostActions";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function PostCard({ upload, index = 0 }) {
   const [caption, setCaption] = useState(upload.caption || "");
@@ -29,7 +30,7 @@ export default function PostCard({ upload, index = 0 }) {
       </div>
 
       <img
-        src={`${upload.url}?t=${upload.updatedAt || upload.createdAt}`}
+        src={getPhotoUrl(upload.url, "medium")}
         alt={upload.name}
         className="w-full rounded-xl block max-h-[500px] object-cover"
         loading="lazy"

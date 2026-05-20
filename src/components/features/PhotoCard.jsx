@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useCallback } from "react";
+import { getPhotoUrl } from "@/utils/photo";
 
 export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt = false, showCaption = false }) {
   const ref = useRef(null);
@@ -56,7 +57,7 @@ export default function PhotoCard({ photo, onClick, aspect = "4/5", style, tilt 
       />
       <div className="relative h-full min-h-[220px] w-full overflow-hidden">
         <img
-          src={`${photo.url}?t=${photo.uploadedAt}`}
+          src={getPhotoUrl(photo.url, "medium")}
           alt=""
           loading="lazy"
           className="object-cover transition-transform duration-700 will-change-transform group-hover:scale-110"
