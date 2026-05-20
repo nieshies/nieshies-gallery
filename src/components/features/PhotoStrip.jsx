@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 export default function PhotoStrip() {
@@ -31,13 +32,27 @@ export default function PhotoStrip() {
         .ps-track:hover {
           animation-play-state: paused;
         }
-        .ps-img {
-          filter: brightness(0.82);
-          transition: filter 0.35s ease, transform 0.35s ease;
+        .ps-wrap {
+          position: relative;
+          width: 110px;
+          flex-shrink: 0;
+          border-radius: 8px;
+          overflow: hidden;
+          transition: transform 0.35s ease;
         }
-        .ps-img:hover {
-          filter: brightness(1);
+        .ps-wrap:hover {
           transform: scale(1.04);
+        }
+        .ps-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0.18);
+          transition: opacity 0.35s ease;
+          pointer-events: none;
+          will-change: opacity;
+        }
+        .ps-wrap:hover .ps-overlay {
+          opacity: 0;
         }
       `}</style>
 
@@ -51,21 +66,18 @@ export default function PhotoStrip() {
           }}
         >
           {doubled.map((photo, i) => (
-            <img
-              key={`${photo.id}-${i}`}
-              src={getPhotoUrl(photo.url, "thumb")}
-              alt=""
-              className="ps-img"
-              style={{
-                width: "110px",
-                height: "auto",
-                borderRadius: "8px",
-                flexShrink: 0,
-                display: "block",
-              }}
-              loading="lazy"
-              draggable={false}
-            />
+            <div key={`${photo.id}-${i}`} className="ps-wrap">
+              <Image
+                src={getPhotoUrl(photo.url, "thumb")}
+                alt=""
+                width={110}
+                height={196}
+                style={{ objectFit: "cover", display: "block" }}
+                loading="lazy"
+                draggable={false}
+              />
+              <div className="ps-overlay" />
+            </div>
           ))}
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 const DURATION = 3500;
@@ -93,10 +94,6 @@ export default function StoryViewer() {
   const currentPhoto = active === "a" ? a : b;
 
   const imgStyle = (visible) => ({
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
     objectFit: "cover",
     opacity: visible ? 1 : 0,
     transition: "opacity 0.25s ease",
@@ -129,18 +126,24 @@ export default function StoryViewer() {
     >
       {/* Double-buffer images */}
       {a && (
-        <img
+        <Image
           src={getPhotoUrl(a.url, "medium")}
           alt=""
+          fill
           style={imgStyle(active === "a")}
+          sizes="min(100vw, 56.25vh)"
+          priority
           draggable={false}
         />
       )}
       {b && (
-        <img
+        <Image
           src={getPhotoUrl(b.url, "medium")}
           alt=""
+          fill
           style={imgStyle(active === "b")}
+          sizes="min(100vw, 56.25vh)"
+          loading="lazy"
           draggable={false}
         />
       )}
@@ -187,12 +190,9 @@ export default function StoryViewer() {
               style={{
                 height: "100%",
                 background: "#fff",
-                width:
-                  i < idx
-                    ? "100%"
-                    : i === idx
-                    ? `${Math.round(progress * 100)}%`
-                    : "0%",
+                transformOrigin: "left",
+                transform: `scaleX(${i < idx ? 1 : i === idx ? progress : 0})`,
+                willChange: "transform",
               }}
             />
           </div>

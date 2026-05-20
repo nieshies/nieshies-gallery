@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 function shuffle(arr) {
@@ -67,10 +68,6 @@ export default function HeroSection() {
   const isAActive = slots.active === "a";
 
   const imgStyle = (visible) => ({
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
     objectFit: "cover",
     objectPosition: "center center",
     filter: "brightness(0.35) saturate(0.7)",
@@ -89,8 +86,8 @@ export default function HeroSection() {
         background: "#0a0805",
       }}
     >
-      {urlA && <img src={urlA} alt="" style={imgStyle(isAActive)} />}
-      {urlB && <img src={urlB} alt="" style={imgStyle(!isAActive)} />}
+      {urlA && <Image src={urlA} alt="" fill style={imgStyle(isAActive)} sizes="100vw" priority />}
+      {urlB && <Image src={urlB} alt="" fill style={imgStyle(!isAActive)} sizes="100vw" />}
 
       <div
         style={{

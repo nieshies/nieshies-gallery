@@ -106,18 +106,17 @@ export default function MasonryGallery({ page = "home" }) {
           overflow: hidden;
           opacity: 0;
           transform: translateY(12px);
-          filter: blur(4px);
-          transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+          transition: opacity 0.5s ease, transform 0.5s ease;
         }
         .mg-item.mg-revealed {
           opacity: 1;
           transform: translateY(0);
-          filter: blur(0px);
         }
         .mg-inner {
           position: relative;
           aspect-ratio: 9 / 16;
           transition: transform 0.3s ease;
+          will-change: transform;
         }
         .mg-item:hover .mg-inner {
           transform: scale(1.03);

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 // Each row sums to 4 columns: [2+1+1], [1+1+2], [1+2+1], [2+1+1]
@@ -48,16 +49,12 @@ export default function EndCard() {
               className="ec-item"
               style={{ gridColumn: `span ${SPANS[i] ?? 1}` }}
             >
-              <img
+              <Image
                 src={getPhotoUrl(photo.url, "thumb")}
                 alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                  filter: "brightness(0.62)",
-                }}
+                fill
+                style={{ objectFit: "cover", filter: "brightness(0.62)" }}
+                sizes="(max-width: 639px) 50vw, 25vw"
                 loading="lazy"
                 draggable={false}
               />

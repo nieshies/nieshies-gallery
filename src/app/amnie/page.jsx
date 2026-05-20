@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import Providers from "../providers";
 import ScatterSection from "@/components/sections/ScatterSection";
 import { getPhotoUrl } from "@/utils/photo";
@@ -74,18 +75,13 @@ function AmnHero() {
       justifyContent: "center",
     }}>
       {photo && (
-        <img
+        <Image
           src={getPhotoUrl(photo.url, "medium")}
           alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-            filter: "brightness(0.25) saturate(0.6)",
-          }}
+          fill
+          style={{ objectFit: "cover", objectPosition: "center", filter: "brightness(0.25) saturate(0.6)" }}
+          sizes="100vw"
+          priority
         />
       )}
 
@@ -218,10 +214,12 @@ function CountCard({ title, accent, ymd, progress, sublabel }) {
       }}>
         <div style={{
           height: "100%",
-          width: `${Math.max(0, Math.min(100, progress))}%`,
           background: accent,
           borderRadius: "1px",
-          transition: "width 1s linear",
+          transformOrigin: "left",
+          transform: `scaleX(${Math.max(0, Math.min(100, progress)) / 100})`,
+          transition: "transform 1s linear",
+          willChange: "transform",
         }} />
       </div>
     </div>
@@ -330,15 +328,13 @@ function AchievementModal({ item, onClose }) {
           ×
         </button>
 
-        <div style={{ position: "relative" }}>
-          <img
+        <div style={{ position: "relative", aspectRatio: "4 / 3" }}>
+          <Image
             src={getPhotoUrl(item.imageUrl, "medium")}
             alt={item.title}
-            style={{
-              width: "100%",
-              display: "block",
-              objectFit: "cover",
-            }}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="min(92vw, 420px)"
           />
           <span style={{
             position: "absolute",
@@ -417,18 +413,14 @@ function AchievementsGrid() {
               cursor: "pointer",
             }}
           >
-            <div style={{ position: "relative" }}>
-              <img
+            <div style={{ position: "relative", aspectRatio: "4 / 3" }}>
+              <Image
                 src={getPhotoUrl(item.imageUrl, "thumb")}
                 alt={item.title}
-                style={{
-                  width: "100%",
-                  aspectRatio: "4 / 3",
-                  objectFit: "cover",
-                  display: "block",
-                  filter: "brightness(0.8)",
-                  transition: "filter 0.3s ease",
-                }}
+                fill
+                style={{ objectFit: "cover", filter: "brightness(0.8)" }}
+                sizes="(max-width: 680px) 50vw, 340px"
+                loading="lazy"
               />
               <span style={{
                 position: "absolute",

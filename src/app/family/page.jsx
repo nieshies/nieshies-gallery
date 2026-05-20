@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Providers from "../providers";
 import MasonryGallery from "@/components/features/MasonryGallery";
 import { getPhotoUrl } from "@/utils/photo";
@@ -68,18 +69,13 @@ function FamHero() {
       justifyContent: "center",
     }}>
       {photo && (
-        <img
+        <Image
           src={getPhotoUrl(photo.url, "medium")}
           alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-            filter: "brightness(0.25) saturate(0.6)",
-          }}
+          fill
+          style={{ objectFit: "cover", objectPosition: "center", filter: "brightness(0.25) saturate(0.6)" }}
+          sizes="100vw"
+          priority
         />
       )}
 
@@ -131,16 +127,13 @@ function MemberCard({ member, photoUrl }) {
     }}>
       <div style={{ position: "relative", width: "100%", aspectRatio: "1" }}>
         {photoUrl ? (
-          <img
+          <Image
             src={getPhotoUrl(photoUrl, "thumb")}
             alt={member.nick}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              filter: "brightness(0.88)",
-            }}
+            fill
+            style={{ objectFit: "cover", filter: "brightness(0.88)" }}
+            sizes="(max-width: 639px) 50vw, 33vw"
+            loading="lazy"
           />
         ) : (
           <div style={{

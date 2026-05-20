@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 const PI2 = Math.PI * 2;
@@ -125,22 +126,29 @@ export default function ScatterSection({ page = "home" }) {
                 zIndex: hoveredIdx === i ? 20 : 5 + i,
               }}
             >
-              <img
+              <div
                 ref={(el) => { imgRefs.current[i] = el; }}
-                src={getPhotoUrl(photo.url, "thumb")}
-                alt={photo.caption || ""}
                 style={{
+                  position: "relative",
                   width: `${imgW}px`,
-                  height: "auto",
+                  height: `${Math.round(imgW * 16 / 9)}px`,
                   borderRadius: "4px",
-                  display: "block",
+                  overflow: "hidden",
                   willChange: "transform",
                   transform: `rotate(${rotate}deg)`,
                   boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
                 }}
-                draggable={false}
-                loading="lazy"
-              />
+              >
+                <Image
+                  src={getPhotoUrl(photo.url, "thumb")}
+                  alt={photo.caption || ""}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes={`${imgW}px`}
+                  draggable={false}
+                  loading="lazy"
+                />
+              </div>
             </div>
           );
         })}

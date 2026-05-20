@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -95,17 +96,27 @@ export default function ScrollSlider() {
               flex: "0 0 auto",
               position: "relative",
               height: "min(70vh, 580px)",
-              filter: i === idx ? "brightness(1)" : "brightness(0.55)",
-              transition: "filter 0.5s ease",
             }}
           >
-            <img
+            <Image
               src={getPhotoUrl(photo.url, "medium")}
               alt={photo.caption || ""}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              loading={i < 3 ? "eager" : "lazy"}
+              fill
+              style={{ objectFit: "cover" }}
+              sizes="100vw"
+              priority={i === 0}
+              loading={i === 0 ? undefined : "lazy"}
               draggable={false}
             />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.45)",
+              opacity: i === idx ? 0 : 1,
+              transition: "opacity 0.5s ease",
+              willChange: "opacity",
+              pointerEvents: "none",
+            }} />
 
             {photo.caption && (
               <p
