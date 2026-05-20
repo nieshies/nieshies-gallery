@@ -1,25 +1,14 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import NextImage from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
-
-const pad = (n) => String(n).padStart(2, "0");
 
 export default function ScrollSlider({ photos: propPhotos }) {
   const [fetched, setFetched] = useState([]);
   const photos = propPhotos ?? fetched;
   const [idx, setIdx] = useState(0);
-
-  const idxRef = useRef(0);
-  const lenRef = useRef(0);
-  const lockedRef = useRef(false);
-  const lockTimer = useRef(null);
-  const touchStartRef = useRef(null);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    lenRef.current = photos.length;
-  }, [photos.length]);
+  const [tick, setTick] = useState(0);
+  const [slots, setSlots] = useState({ a: null, b: null, active: "a" });
 
   useEffect(() => {
     if (propPhotos !== undefined) return;
@@ -29,191 +18,162 @@ export default function ScrollSlider({ photos: propPhotos }) {
       .catch(() => {});
   }, [propPhotos]);
 
+  // Double-buffer: load incoming photo into inactive slot, then flip active
   useEffect(() => {
-    return () => clearTimeout(lockTimer.current);
-  }, []);
+    if (photos.length === 0) return;
+    const photo = photos[idx];
+    setSlots((prev) => {
+      if (prev.a === null) return { a: photo, b: null, active: "a" };
+      const incoming = prev.active === "a" ? "b" : "a";
+      return { ...prev, [incoming]: photo, active: incoming };
+    });
+  }, [idx, photos]);
 
-  const advance = useCallback((delta) => {
-    if (lockedRef.current) return;
-    const next = Math.max(0, Math.min(lenRef.current - 1, idxRef.current + delta));
-    if (next === idxRef.current) return;
-    lockedRef.current = true;
-    idxRef.current = next;
-    setIdx(next);
-    clearTimeout(lockTimer.current);
-    lockTimer.current = setTimeout(() => { lockedRef.current = false; }, 500);
-  }, []);
-
+  // Auto-advance; tick resets the interval on manual nav
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const onWheel = (e) => {
-      e.preventDefault();
-      advance(e.deltaY > 0 ? 1 : -1);
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [advance]);
+    if (photos.length < 2) return;
+    const id = setInterval(() => setIdx((p) => (p + 1) % photos.length), 5000);
+    return () => clearInterval(id);
+  }, [photos.length, tick]);
 
-  const onTouchStart = (e) => {
-    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-
-  const onTouchEnd = (e) => {
-    if (!touchStartRef.current) return;
-    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-    touchStartRef.current = null;
-    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
-    advance(dx < 0 ? 1 : -1);
+  const navigate = (delta) => {
+    setIdx((prev) => ((prev + delta) % photos.length + photos.length) % photos.length);
+    setTick((t) => t + 1);
   };
 
   if (photos.length === 0) return null;
 
-  const n = photos.length;
-  const slideW = 100 / n;
+  const { a, b, active } = slots;
+  const current = active === "a" ? a : b;
+
+  const imgStyle = (visible) => ({
+    objectFit: "cover",
+    objectPosition: "center",
+    opacity: visible ? 1 : 0,
+    transition: "opacity 0.9s ease-in-out",
+    willChange: "opacity",
+  });
 
   return (
-    <div
-      ref={containerRef}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      style={{ position: "relative", overflow: "hidden", width: "100%", userSelect: "none" }}
-    >
-      {/* Slide track */}
-      <div
-        style={{
-          display: "flex",
-          width: `${n * 100}%`,
-          transform: `translateX(calc(-${idx} * ${slideW}%))`,
-          transition: "transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)",
-          willChange: "transform",
-        }}
-      >
-        {photos.map((photo, i) => (
-          <div
-            key={photo.id}
-            style={{
-              width: `${slideW}%`,
-              flex: "0 0 auto",
-              position: "relative",
-              height: "min(70vh, 580px)",
-            }}
-          >
-            <Image
-              src={getPhotoUrl(photo.url, "medium")}
-              alt={photo.caption || ""}
+    <>
+      <style>{`
+        @keyframes floatCard {
+          0%, 100% { transform: translateY(0px);  }
+          50%       { transform: translateY(-10px); }
+        }
+        .sl-card { animation: floatCard 4.5s ease-in-out infinite; will-change: transform; }
+        .sl-dot  { cursor: pointer; transition: all 0.3s ease; }
+      `}</style>
+
+      <div style={{ display: "flex", justifyContent: "center", padding: "1.5rem 1.5rem 2.5rem" }}>
+        <div
+          className="sl-card"
+          style={{
+            position: "relative",
+            width: "min(90vw, 900px)",
+            aspectRatio: "16/9",
+            borderRadius: "20px",
+            overflow: "hidden",
+            boxShadow: "0 28px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)",
+          }}
+        >
+          {a && (
+            <NextImage
+              src={getPhotoUrl(a.url, "medium")}
+              alt=""
               fill
-              style={{ objectFit: "cover" }}
-              sizes="100vw"
-              priority={i === 0}
-              loading={i === 0 ? undefined : "lazy"}
-              draggable={false}
+              style={imgStyle(active === "a")}
+              sizes="min(90vw, 900px)"
+              priority
             />
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(0,0,0,0.45)",
-              opacity: i === idx ? 0 : 1,
-              transition: "opacity 0.5s ease",
-              willChange: "opacity",
-              pointerEvents: "none",
-            }} />
+          )}
+          {b && (
+            <NextImage
+              src={getPhotoUrl(b.url, "medium")}
+              alt=""
+              fill
+              style={imgStyle(active === "b")}
+              sizes="min(90vw, 900px)"
+              loading="lazy"
+            />
+          )}
 
-            {photo.caption && (
-              <p
+          {/* Caption */}
+          {current?.caption && (
+            <p
+              style={{
+                position: "absolute",
+                bottom: "1.25rem",
+                left: "1.25rem",
+                right: "5rem",
+                margin: 0,
+                zIndex: 5,
+                color: "rgba(255,255,255,0.88)",
+                fontSize: "clamp(10px, 1.2vw, 13px)",
+                fontStyle: "italic",
+                textShadow: "0 1px 8px rgba(0,0,0,0.9)",
+                pointerEvents: "none",
+              }}
+            >
+              {current.caption}
+            </p>
+          )}
+
+          {/* Prev */}
+          {photos.length > 1 && (
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Previous"
+              style={{
+                position: "absolute", left: "0.85rem", top: "50%",
+                transform: "translateY(-50%)", zIndex: 10,
+                width: 36, height: 36, borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(0,0,0,0.38)", backdropFilter: "blur(6px)",
+                color: "#fff", fontSize: 14, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >&#8592;</button>
+          )}
+
+          {/* Next */}
+          {photos.length > 1 && (
+            <button
+              onClick={() => navigate(1)}
+              aria-label="Next"
+              style={{
+                position: "absolute", right: "0.85rem", top: "50%",
+                transform: "translateY(-50%)", zIndex: 10,
+                width: 36, height: 36, borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(0,0,0,0.38)", backdropFilter: "blur(6px)",
+                color: "#fff", fontSize: 14, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >&#8594;</button>
+          )}
+
+          {/* Dot indicators */}
+          <div style={{
+            position: "absolute", bottom: "1rem", right: "1.25rem",
+            display: "flex", gap: "5px", zIndex: 10,
+          }}>
+            {photos.map((_, i) => (
+              <div
+                key={i}
+                className="sl-dot"
+                onClick={() => { setIdx(i); setTick((t) => t + 1); }}
                 style={{
-                  position: "absolute",
-                  bottom: "1.5rem",
-                  left: "1.5rem",
-                  right: "3rem",
-                  margin: 0,
-                  color: "rgba(255,255,255,0.85)",
-                  fontSize: "clamp(11px, 1.4vw, 14px)",
-                  fontStyle: "italic",
-                  lineHeight: 1.45,
-                  textShadow: "0 1px 10px rgba(0,0,0,0.9)",
+                  width: i === idx ? 18 : 5,
+                  height: 5,
+                  borderRadius: "3px",
+                  background: i === idx ? "#fff" : "rgba(255,255,255,0.3)",
                 }}
-              >
-                {photo.caption}
-              </p>
-            )}
+              />
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-
-      {/* Counter */}
-      <span
-        style={{
-          position: "absolute",
-          top: "1rem",
-          right: "1.25rem",
-          zIndex: 10,
-          color: "rgba(255,255,255,0.5)",
-          fontSize: "11px",
-          fontFamily: "monospace",
-          letterSpacing: "0.12em",
-          pointerEvents: "none",
-        }}
-      >
-        {pad(idx + 1)}/{pad(n)}
-      </span>
-
-      {/* Arrow buttons */}
-      {idx > 0 && (
-        <button
-          onClick={() => advance(-1)}
-          aria-label="Previous photo"
-          style={{
-            position: "absolute",
-            left: "1rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 10,
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.18)",
-            background: "rgba(0,0,0,0.42)",
-            backdropFilter: "blur(6px)",
-            color: "#fff",
-            fontSize: 15,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          &#8592;
-        </button>
-      )}
-      {idx < n - 1 && (
-        <button
-          onClick={() => advance(1)}
-          aria-label="Next photo"
-          style={{
-            position: "absolute",
-            right: "1rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 10,
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.18)",
-            background: "rgba(0,0,0,0.42)",
-            backdropFilter: "blur(6px)",
-            color: "#fff",
-            fontSize: 15,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          &#8594;
-        </button>
-      )}
-    </div>
+    </>
   );
 }

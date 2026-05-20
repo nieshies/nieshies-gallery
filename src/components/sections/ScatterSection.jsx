@@ -5,22 +5,22 @@ import { getPhotoUrl } from "@/utils/photo";
 
 const PI2 = Math.PI * 2;
 
+// Tighter, more overlapping layout — bigger cards fill the space
 const POSITIONS = [
-  { top:  8, left:  5, rotate: -8 },
-  { top:  6, left: 28, rotate:  4 },
-  { top: 12, left: 55, rotate: -3 },
-  { top:  5, left: 78, rotate:  7 },
-  { top: 35, left: 10, rotate:  5 },
-  { top: 40, left: 38, rotate: -6 },
-  { top: 32, left: 65, rotate:  3 },
-  { top: 38, left: 85, rotate: -9 },
-  { top: 62, left:  3, rotate: -4 },
-  { top: 68, left: 22, rotate:  8 },
-  { top: 60, left: 50, rotate: -5 },
-  { top: 65, left: 75, rotate:  6 },
+  { top:  3, left:  2, rotate: -8 },
+  { top:  2, left: 23, rotate:  5 },
+  { top:  5, left: 46, rotate: -4 },
+  { top:  3, left: 67, rotate:  7 },
+  { top: 38, left:  8, rotate:  6 },
+  { top: 36, left: 30, rotate: -7 },
+  { top: 40, left: 53, rotate:  3 },
+  { top: 37, left: 72, rotate: -6 },
+  { top: 68, left:  2, rotate: -3 },
+  { top: 66, left: 25, rotate:  8 },
+  { top: 70, left: 49, rotate: -5 },
+  { top: 67, left: 71, rotate:  4 },
 ];
 
-// period in ms (3–5s), phase offset, desktop amplitude (5–10px)
 const ANIM = [
   { period: 3200, phase: 0.00, amp:  8 },
   { period: 4500, phase: 1.30, amp:  6 },
@@ -93,7 +93,8 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
   if (photos.length === 0) return null;
 
   const count = isMobile ? Math.min(8, photos.length) : photos.length;
-  const imgW = isMobile ? 90 : 140;
+  const imgW = isMobile ? 130 : 200;
+  const imgH = Math.round(imgW * 16 / 9);
 
   return (
     <>
@@ -102,14 +103,14 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
           transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .sc-wrap:hover {
-          transform: scale(1.1);
+          transform: scale(1.08) !important;
         }
       `}</style>
       <div
         style={{
           position: "relative",
           width: "100%",
-          height: "clamp(400px, 58vh, 660px)",
+          height: "clamp(520px, 68vh, 800px)",
           overflow: "hidden",
         }}
       >
@@ -133,12 +134,12 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
                 style={{
                   position: "relative",
                   width: `${imgW}px`,
-                  height: `${Math.round(imgW * 16 / 9)}px`,
-                  borderRadius: "4px",
+                  height: `${imgH}px`,
+                  borderRadius: "12px",
                   overflow: "hidden",
                   willChange: "transform",
                   transform: `rotate(${rotate}deg)`,
-                  boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
+                  boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
                 }}
               >
                 <Image

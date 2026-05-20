@@ -55,7 +55,7 @@ export default function StoryViewer({ photos: propPhotos }) {
       setProgress(p);
       if (p >= 1) {
         clearInterval(intervalRef.current);
-        setIdx((prev) => (prev < photos.length - 1 ? prev + 1 : prev));
+        setIdx((prev) => (prev + 1) % photos.length);
       }
     }, TICK);
 
@@ -63,7 +63,7 @@ export default function StoryViewer({ photos: propPhotos }) {
   }, [idx, photos]);
 
   const navigate = (delta) => {
-    setIdx((prev) => Math.max(0, Math.min(photos.length - 1, prev + delta)));
+    setIdx((prev) => ((prev + delta) % photos.length + photos.length) % photos.length);
   };
 
   const handleInteract = (clientX) => {

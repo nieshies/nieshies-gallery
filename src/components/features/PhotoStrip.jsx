@@ -15,7 +15,6 @@ export default function PhotoStrip({ photos: propPhotos }) {
   }, [propPhotos]);
 
   const photos = propPhotos ?? fetched;
-
   if (photos.length === 0) return null;
 
   const doubled = [...photos, ...photos];
@@ -28,7 +27,7 @@ export default function PhotoStrip({ photos: propPhotos }) {
           to   { transform: translateX(-50%) translateZ(0); }
         }
         .ps-track {
-          animation: scrollLoop 22s linear infinite;
+          animation: scrollLoop 28s linear infinite;
           will-change: transform;
           transform: translateZ(0);
         }
@@ -37,9 +36,10 @@ export default function PhotoStrip({ photos: propPhotos }) {
         }
         .ps-wrap {
           position: relative;
-          width: 110px;
+          width: 140px;
+          height: 249px;
           flex-shrink: 0;
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
           transition: transform 0.35s ease;
         }
@@ -57,25 +57,22 @@ export default function PhotoStrip({ photos: propPhotos }) {
         .ps-wrap:hover .ps-overlay {
           opacity: 0;
         }
+        @media (max-width: 640px) {
+          .ps-wrap { width: 100px; height: 178px; }
+          .ps-track { animation-duration: 22s; }
+        }
       `}</style>
 
       <div style={{ overflow: "hidden", width: "100%" }}>
-        <div
-          className="ps-track"
-          style={{
-            display: "flex",
-            gap: "6px",
-            width: "max-content",
-          }}
-        >
+        <div className="ps-track" style={{ display: "flex", gap: "6px", width: "max-content" }}>
           {doubled.map((photo, i) => (
             <div key={`${photo.id}-${i}`} className="ps-wrap">
               <Image
                 src={getPhotoUrl(photo.url, "thumb")}
                 alt=""
-                width={110}
-                height={196}
-                style={{ objectFit: "cover", display: "block" }}
+                fill
+                style={{ objectFit: "cover" }}
+                sizes="(max-width: 640px) 100px, 140px"
                 loading="lazy"
                 draggable={false}
               />

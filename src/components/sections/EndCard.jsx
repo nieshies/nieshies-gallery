@@ -3,18 +3,21 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
-// Each row sums to 4 columns: [2+1+1], [1+1+2], [1+2+1], [2+1+1]
+// Each row sums to 4 cols: [2+1+1], [1+1+2], [1+2+1], [2+1+1]
 const SPANS = [2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1];
 
-export default function EndCard() {
-  const [photos, setPhotos] = useState([]);
+export default function EndCard({ photos: propPhotos }) {
+  const [fetched, setFetched] = useState([]);
 
   useEffect(() => {
+    if (propPhotos !== undefined) return;
     fetch("/api/photos?page=home")
       .then((r) => r.json())
-      .then((d) => setPhotos((d.photos || []).slice(0, 12)))
+      .then((d) => setFetched(d.photos || []))
       .catch(() => {});
-  }, []);
+  }, [propPhotos]);
+
+  const photos = (propPhotos ?? fetched).slice(0, 12);
 
   if (photos.length === 0) return null;
 
@@ -24,24 +27,25 @@ export default function EndCard() {
         .ec-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          grid-auto-rows: 220px;
+          grid-auto-rows: 200px;
+          gap: 8px;
         }
         .ec-item {
           position: relative;
           overflow: hidden;
+          border-radius: 12px;
         }
         @media (max-width: 639px) {
           .ec-grid {
             grid-template-columns: repeat(2, 1fr);
-            grid-auto-rows: 160px;
+            grid-auto-rows: 150px;
+            gap: 6px;
           }
-          .ec-item {
-            grid-column: span 1 !important;
-          }
+          .ec-item { grid-column: span 1 !important; }
         }
       `}</style>
 
-      <footer style={{ position: "relative" }}>
+      <footer style={{ position: "relative", padding: "0 0.75rem 4rem" }}>
         <div className="ec-grid">
           {photos.map((photo, i) => (
             <div
@@ -65,7 +69,7 @@ export default function EndCard() {
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            inset: "0 0.75rem 4rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -77,10 +81,10 @@ export default function EndCard() {
               margin: 0,
               color: "#fff",
               fontWeight: 300,
-              fontSize: "clamp(22px, 5vw, 38px)",
-              letterSpacing: "0.05em",
+              fontSize: "clamp(22px, 5vw, 42px)",
+              letterSpacing: "0.04em",
               textAlign: "center",
-              textShadow: "0 2px 20px rgba(0,0,0,0.6)",
+              textShadow: "0 2px 24px rgba(0,0,0,0.7)",
             }}
           >
             more memories soon.

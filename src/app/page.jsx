@@ -7,6 +7,7 @@ import ScrollSlider from "@/components/features/ScrollSlider";
 import ScatterSection from "@/components/sections/ScatterSection";
 import StoryViewer from "@/components/features/StoryViewer";
 import MasonryGallery from "@/components/features/MasonryGallery";
+import EndCard from "@/components/sections/EndCard";
 
 function shuffle(arr) {
   const a = [...arr];
@@ -29,7 +30,7 @@ const LABEL = {
   userSelect: "none",
 };
 
-const SEC = { paddingBottom: "3rem" };
+const SEC = { paddingBottom: "2rem" };
 
 export default function Page() {
   const [photos, setPhotos] = useState([]);
@@ -42,11 +43,22 @@ export default function Page() {
   }, []);
 
   const n = photos.length;
-  const strip   = photos.slice(0, Math.min(8, n));
-  const slider  = photos.slice(8, Math.min(14, n));
-  const scatter = photos.slice(14, Math.min(26, n));
-  const story   = photos.slice(0, Math.min(10, n));
-  const masonry = photos;
+
+  // Distribute photos across sections with NO repeats (except endcard which reuses all)
+  // Section sizes tuned for 30+ photos; each section gets a distinct slice
+  const s0 = 0;
+  const s1 = Math.min(s0 + 6, n);   // moments:  6 photos
+  const s2 = Math.min(s1 + 5, n);   // gallery:  5 photos
+  const s3 = Math.min(s2 + 10, n);  // scattered: 10 photos
+  const s4 = Math.min(s3 + 8, n);   // stories:  8 photos
+  const s5 = n;                      // memories: remainder
+
+  const strip   = photos.slice(s0, s1);
+  const gallery = photos.slice(s1, s2);
+  const scatter = photos.slice(s2, s3);
+  const story   = photos.slice(s3, s4);
+  const masonry = photos.slice(s4, s5);
+  const endcard = photos; // all — EndCard is the summary
 
   return (
     <Providers>
@@ -63,10 +75,10 @@ export default function Page() {
         </div>
       )}
 
-      {slider.length > 0 && (
+      {gallery.length > 0 && (
         <div style={SEC}>
           <span style={LABEL}>gallery</span>
-          <ScrollSlider photos={slider} />
+          <ScrollSlider photos={gallery} />
         </div>
       )}
 
@@ -80,16 +92,23 @@ export default function Page() {
       )}
 
       {story.length > 0 && (
-        <div style={{ ...SEC, display: "flex", flexDirection: "column", alignItems: "center", padding: "0 1rem 3rem" }}>
+        <div style={{ ...SEC, display: "flex", flexDirection: "column", alignItems: "center", padding: "0 1rem 2rem" }}>
           <span style={LABEL}>stories</span>
           <StoryViewer photos={story} />
         </div>
       )}
 
       {masonry.length > 0 && (
-        <div style={{ padding: "0 0.75rem 5rem" }}>
+        <div style={{ padding: "0 0.75rem 2rem" }}>
           <span style={LABEL}>memories</span>
           <MasonryGallery photos={masonry} />
+        </div>
+      )}
+
+      {endcard.length >= 6 && (
+        <div>
+          <span style={LABEL}>until next time</span>
+          <EndCard photos={endcard} />
         </div>
       )}
     </Providers>
