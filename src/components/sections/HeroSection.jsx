@@ -70,7 +70,7 @@ export default function HeroSection() {
   const imgStyle = (visible) => ({
     objectFit: "cover",
     objectPosition: "center center",
-    filter: "brightness(0.35) saturate(0.7)",
+    filter: "brightness(0.58) saturate(0.85)",
     opacity: visible ? 1 : 0,
     transition: "opacity 1.2s ease-in-out",
     willChange: "opacity",
