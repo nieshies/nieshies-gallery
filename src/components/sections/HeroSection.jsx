@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 function shuffle(arr) {
@@ -86,8 +86,8 @@ export default function HeroSection() {
         background: "#0a0805",
       }}
     >
-      {urlA && <Image src={urlA} alt="" fill style={imgStyle(isAActive)} sizes="100vw" priority />}
-      {urlB && <Image src={urlB} alt="" fill style={imgStyle(!isAActive)} sizes="100vw" />}
+      {urlA && <NextImage src={urlA} alt="" fill style={imgStyle(isAActive)} sizes="100vw" priority />}
+      {urlB && <NextImage src={urlB} alt="" fill style={imgStyle(!isAActive)} sizes="100vw" />}
 
       <div
         style={{
