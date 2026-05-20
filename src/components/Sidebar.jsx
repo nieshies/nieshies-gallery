@@ -4,6 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
+const SECTIONS = [
+  { key: "home",   label: "Home",   hint: "uploads bucket" },
+  { key: "amnie",  label: "Amnie",  hint: "amnie bucket"   },
+  { key: "family", label: "Family", hint: "family bucket"  },
+];
+
 const links = [
   { href: "/", label: "HOME" },
   { href: "/amnie", label: "AMNIE" },
@@ -149,10 +155,18 @@ export default function Sidebar() {
 }
 
 function UploadLightbox({ onClose }) {
-  const [files, setFiles] = useState([]);
-  const [status, setStatus] = useState("");
+  const pathname = usePathname();
+  const defaultSection = pathname.startsWith("/amnie")
+    ? "amnie"
+    : pathname.startsWith("/family")
+    ? "family"
+    : "home";
+
+  const [section, setSection]   = useState(defaultSection);
+  const [files, setFiles]       = useState([]);
+  const [status, setStatus]     = useState("");
   const [uploading, setUploading] = useState(false);
-  const [closing, setClosing] = useState(false);
+  const [closing, setClosing]   = useState(false);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -194,6 +208,7 @@ function UploadLightbox({ onClose }) {
       try {
         const fd = new FormData();
         fd.append("file", file);
+        fd.append("page", section);
         const res = await fetch("/api/photos", { method: "POST", body: fd });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -208,10 +223,8 @@ function UploadLightbox({ onClose }) {
 
     if (errors.length) setStatus(errors[0]);
     else {
-      setStatus(`Uploaded ${done} ✓`);
-      setTimeout(() => {
-        handleBgClick();
-      }, 400);
+      setStatus(`${done} photo${done !== 1 ? "s" : ""} uploaded ✓`);
+      setTimeout(handleBgClick, 600);
     }
     setUploading(false);
   };
@@ -226,15 +239,45 @@ function UploadLightbox({ onClose }) {
         className="relative w-full max-w-lg rounded-[1.75rem] border border-white/12 bg-[rgba(10,10,10,0.95)] p-6 backdrop-blur-xl"
       >
         <button
-          onClick={() => {
-            setClosing(true);
-            setTimeout(onClose, 200);
-          }}
+          onClick={() => { setClosing(true); setTimeout(onClose, 200); }}
           className="absolute right-4 top-4 text-lg text-white/40 hover:text-white"
         >
           &times;
         </button>
-        <p className="mb-6 text-lg uppercase tracking-[0.3em] text-white/62">add photos</p>
+
+        <p className="mb-5 text-lg uppercase tracking-[0.3em] text-white/62">add photos</p>
+
+        {/* Section picker */}
+        <div className="mb-5">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-white/28">Section</p>
+          <div className="flex gap-2">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setSection(s.key)}
+                style={{
+                  flex: 1,
+                  padding: "0.45rem 0",
+                  borderRadius: "10px",
+                  border: section === s.key ? "1px solid rgba(244,140,54,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                  background: section === s.key ? "rgba(244,140,54,0.1)" : "transparent",
+                  color: section === s.key ? "rgba(244,140,54,0.9)" : "rgba(255,255,255,0.35)",
+                  fontSize: "11px",
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <p style={{ marginTop: "0.35rem", fontSize: "10px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em" }}>
+            → {SECTIONS.find((s) => s.key === section)?.hint}
+          </p>
+        </div>
+
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-xs uppercase tracking-[0.22em] text-white/28">Photos ({files.length})</p>
@@ -245,7 +288,7 @@ function UploadLightbox({ onClose }) {
                     <div key={`${file.name}-${index}`} className="group relative">
                       <img src={URL.createObjectURL(file)} className="h-16 w-16 rounded-lg object-cover" alt="" />
                       <button
-                        onClick={() => removeFile(index)}
+                        onClick={(e) => { e.preventDefault(); removeFile(index); }}
                         className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/80 text-[10px] text-white/60 opacity-0 transition-opacity group-hover:opacity-100"
                       >
                         &times;
@@ -259,13 +302,15 @@ function UploadLightbox({ onClose }) {
               <input type="file" accept="image/*" multiple onChange={handleFile} className="hidden" />
             </label>
           </div>
-          {status ? <p className="text-center text-sm text-accent">{status}</p> : null}
+
+          {status && <p className="text-center text-sm text-accent">{status}</p>}
+
           <button
             onClick={handleUpload}
             disabled={!files.length || uploading}
             className="w-full rounded-xl border border-accent/40 py-3 text-sm uppercase tracking-[0.24em] text-accent transition-all hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-30"
           >
-            {uploading ? "uploading..." : "upload all"}
+            {uploading ? "uploading..." : `upload to ${section}`}
           </button>
         </div>
       </div>

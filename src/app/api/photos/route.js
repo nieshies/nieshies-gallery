@@ -1,49 +1,68 @@
 import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 import { prisma } from "@/lib/prisma";
 import { saveUpload, validateFile } from "@/lib/upload";
 
-const PAGE_BUCKETS = {
-  home: "uploads",
-  amnie: "amnie",
+const BUCKET_MAP = {
+  home:   "uploads",
+  amnie:  "amnie",
   family: "family",
 };
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const page = searchParams.get("page");
+  const page   = searchParams.get("page") || "home";
+  const bucket = BUCKET_MAP[page] ?? "uploads";
 
-  const photos = await prisma.galleryPhoto.findMany({
-    where: page ? { page } : undefined,
-    orderBy: { uploadedAt: "desc" },
-  });
-  return NextResponse.json({
-    photos: photos.map((p) => ({ ...p, uploadedAt: p.uploadedAt.getTime() })),
-  });
+  try {
+    const { data, error } = await supabase.storage.from(bucket).list("", {
+      limit:  200,
+      sortBy: { column: "created_at", order: "desc" },
+    });
+    if (error) throw error;
+
+    const photos = (data || [])
+      .filter(
+        (f) =>
+          f.metadata?.mimetype?.startsWith("image/") &&
+          !/\.(heic|heif|HEIC|HEIF)$/i.test(f.name)
+      )
+      .map((f) => {
+        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(f.name);
+        return { id: f.id || f.name, name: f.name, url: urlData.publicUrl, caption: "" };
+      });
+
+    return NextResponse.json({ photos });
+  } catch (err) {
+    console.error("Photos GET error:", err);
+    return NextResponse.json({ photos: [] }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file");
+    const file    = formData.get("file");
     const caption = String(formData.get("caption") || "").trim();
-    const page = String(formData.get("page") || "home").toLowerCase();
+    const page    = String(formData.get("page") || "home").toLowerCase();
 
     const error = validateFile(file);
     if (error) return NextResponse.json({ error }, { status: 400 });
 
-    const bucket = PAGE_BUCKETS[page] ?? "uploads";
+    const bucket = BUCKET_MAP[page] ?? "uploads";
     const result = await saveUpload(file, bucket);
 
     const photo = await prisma.galleryPhoto.create({
       data: {
-        name: file.name,
+        name:      file.name,
         caption,
-        filename: result.filename,
-        url: result.url,
+        filename:  result.filename,
+        url:       result.url,
         sizeBytes: result.sizeBytes,
-        width: result.width,
-        height: result.height,
-        tags: [page],
+        width:     result.width,
+        height:    result.height,
+        page,
+        tags:      [page],
       },
     });
 
