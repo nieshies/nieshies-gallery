@@ -35,7 +35,7 @@ const ANIM = [
   { period: 4100, phase: 1.10, amp:  6 },
 ];
 
-export default function ScatterSection() {
+export default function ScatterSection({ page = "home" }) {
   const [photos, setPhotos] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState(-1);
@@ -50,11 +50,11 @@ export default function ScatterSection() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/photos?page=home")
+    fetch(`/api/photos?page=${page}`)
       .then((r) => r.json())
       .then((d) => setPhotos((d.photos || []).slice(0, 12)))
       .catch(() => {});
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     if (photos.length === 0) return;
