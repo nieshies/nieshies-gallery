@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
 const DURATION = 3500;
@@ -38,7 +38,7 @@ export default function StoryViewer({ photos: propPhotos }) {
   // Preload next photo
   useEffect(() => {
     if (idx < photos.length - 1) {
-      const img = new Image();
+      const img = new window.Image();
       img.src = getPhotoUrl(photos[idx + 1].url, "medium");
     }
   }, [idx, photos]);
@@ -128,7 +128,7 @@ export default function StoryViewer({ photos: propPhotos }) {
     >
       {/* Double-buffer images */}
       {a && (
-        <Image
+        <NextImage
           src={getPhotoUrl(a.url, "medium")}
           alt=""
           fill
@@ -139,7 +139,7 @@ export default function StoryViewer({ photos: propPhotos }) {
         />
       )}
       {b && (
-        <Image
+        <NextImage
           src={getPhotoUrl(b.url, "medium")}
           alt=""
           fill
