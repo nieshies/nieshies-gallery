@@ -2,72 +2,140 @@
 import { useEffect, useRef, useState } from "react";
 import { getPhotoUrl } from "@/utils/photo";
 
-export default function HeroSection({ photos, title = "nishi's dump" }) {
-  const [idx, setIdx] = useState(0);
-  const timer = useRef(null);
-  const ref = useRef(null);
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+export default function HeroSection() {
+  const [photos, setPhotos] = useState([]);
+  const [slots, setSlots] = useState({ a: null, b: null, active: "a" });
+  const idxRef = useRef(0);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/headers", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        const shuffled = shuffle(d.photos || []);
+        setPhotos(shuffled);
+        if (shuffled.length > 0) {
+          setSlots({ a: shuffled[0], b: null, active: "a" });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (photos.length < 2) return;
-    timer.current = setInterval(() => setIdx((i) => (i + 1) % photos.length), 4000);
-    return () => clearInterval(timer.current);
-  }, [photos.length]);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const titleEl = el.querySelector(".hero-title");
+    const advance = () => {
+      const nextIdx = (idxRef.current + 1) % photos.length;
+      const nextPhoto = photos[nextIdx];
+      const nextUrl = getPhotoUrl(nextPhoto.url, "medium");
 
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const rect = el.getBoundingClientRect();
-          const sectionStart = rect.top + window.scrollY;
-          const scrollDelta = window.scrollY - sectionStart;
-          const vs = window.innerHeight;
-          const progress = Math.min(1, Math.max(0, scrollDelta / vs));
-
-          const scale = Math.max(0.5, Math.min(1, 1 - (Math.min(progress, 0.3) / 0.3) * 0.5));
-          const yOffset = Math.max(-120, Math.min(0, -(Math.min(progress, 0.3) / 0.3) * 120));
-          const op = Math.max(0, Math.min(1, 1 - (Math.min(progress, 0.4) / 0.4)));
-          el.style.opacity = op;
-          if (titleEl) titleEl.style.transform = `scale(${scale}) translateY(${yOffset}px)`;
-          ticking = false;
+      let committed = false;
+      const commit = () => {
+        if (committed) return;
+        committed = true;
+        idxRef.current = nextIdx;
+        setSlots((prev) => {
+          const incoming = prev.active === "a" ? "b" : "a";
+          return { ...prev, [incoming]: nextPhoto, active: incoming };
         });
-        ticking = true;
-      }
+      };
+
+      const img = new Image();
+      img.onload = commit;
+      img.onerror = commit;
+      img.src = nextUrl;
+      if (img.complete) commit();
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    intervalRef.current = setInterval(advance, 5000);
+    return () => clearInterval(intervalRef.current);
+  }, [photos]);
 
   if (photos.length === 0) return null;
 
+  const urlA = slots.a ? getPhotoUrl(slots.a.url, "medium") : null;
+  const urlB = slots.b ? getPhotoUrl(slots.b.url, "medium") : null;
+  const isAActive = slots.active === "a";
+
+  const imgStyle = (visible) => ({
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    objectPosition: "center center",
+    filter: "brightness(0.35) saturate(0.7)",
+    opacity: visible ? 1 : 0,
+    transition: "opacity 1.2s ease-in-out",
+    willChange: "opacity",
+  });
+
   return (
-    <>
-      <section ref={ref} className="relative h-svh w-full overflow-hidden hero-section">
-        {photos.map((p, i) => (
-          <img
-            key={p.id}
-            src={getPhotoUrl(p.url, "full")}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ opacity: i === idx ? 1 : 0, transition: "opacity 1s" }}
-          />
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/60" />
-        <div className="absolute inset-0 flex items-center justify-center hero-title">
-          <h1
-            className="font-display uppercase text-[clamp(2.4rem,5vw,4rem)] leading-[0.92] tracking-[-0.03em] text-white text-center"
-            style={{ textShadow: "0 0 26px rgba(255,145,76,0.26)" }}
-          >
-            {title}
-          </h1>
-        </div>
-      </section>
-    </>
+    <section
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+        background: "#0a0805",
+      }}
+    >
+      {urlA && <img src={urlA} alt="" style={imgStyle(isAActive)} />}
+      {urlB && <img src={urlB} alt="" style={imgStyle(!isAActive)} />}
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(to bottom, transparent 40%, #0a0805 100%)",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "1rem",
+          pointerEvents: "none",
+        }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            color: "#fff",
+            fontWeight: 300,
+            fontSize: "clamp(32px, 6vw, 72px)",
+            letterSpacing: "0.18em",
+            textAlign: "center",
+          }}
+        >
+          NIESHIES&apos; DUMP
+        </h1>
+        <p
+          style={{
+            margin: 0,
+            color: "rgba(255,255,255,0.25)",
+            fontSize: "clamp(9px, 1.2vw, 13px)",
+            letterSpacing: "0.26em",
+            textTransform: "uppercase",
+          }}
+        >
+          moments · memories · real
+        </p>
+      </div>
+    </section>
   );
 }

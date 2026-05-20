@@ -28,11 +28,13 @@ export default function Sidebar() {
 
   useEffect(() => {
     const container = document.getElementById("gallery-scroll");
-    if (!container || !container.querySelector("[data-hero]")) {
+    const hero = container
+      ? container.querySelector("[data-hero]")
+      : document.querySelector("[data-hero]");
+    if (!hero) {
       setNavVisible(true);
       return;
     }
-    const hero = container.querySelector("[data-hero]");
     const observer = new IntersectionObserver(
       ([entry]) => setNavVisible(!entry.isIntersecting),
       { threshold: 0 }
