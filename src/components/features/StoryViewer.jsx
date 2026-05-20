@@ -104,21 +104,28 @@ export default function StoryViewer() {
   });
 
   return (
+    <>
+      <style>{`
+        .sv-root {
+          position: relative;
+          width: min(100%, 56.25vh);
+          aspect-ratio: 9 / 16;
+          margin: 0 auto;
+          background: #000;
+          overflow: hidden;
+          cursor: pointer;
+          user-select: none;
+        }
+        @media (max-width: 639px) {
+          .sv-root { width: 100%; }
+        }
+      `}</style>
     <div
       ref={containerRef}
+      className="sv-root"
       onClick={handleClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      style={{
-        position: "relative",
-        width: "min(100%, 56.25vh)",
-        aspectRatio: "9 / 16",
-        margin: "0 auto",
-        background: "#000",
-        overflow: "hidden",
-        cursor: "pointer",
-        userSelect: "none",
-      }}
     >
       {/* Double-buffer images */}
       {a && (
@@ -248,5 +255,6 @@ export default function StoryViewer() {
         tap anywhere to continue
       </p>
     </div>
+    </>
   );
 }

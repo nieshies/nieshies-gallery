@@ -8,7 +8,7 @@ export default function MasonryGallery({ page = "home" }) {
   const [lightbox, setLightbox] = useState({ open: false, idx: 0 });
   const itemRefs = useRef([]);
   const overlayRef = useRef(null);
-  const lbTouchStartX = useRef(null);
+  const lbTouchStart = useRef(null);
 
   useEffect(() => {
     fetch(`/api/photos?page=${page}`)
@@ -79,14 +79,15 @@ export default function MasonryGallery({ page = "home" }) {
   };
 
   const handleLbTouchStart = (e) => {
-    lbTouchStartX.current = e.touches[0].clientX;
+    lbTouchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
 
   const handleLbTouchEnd = (e) => {
-    if (lbTouchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - lbTouchStartX.current;
-    lbTouchStartX.current = null;
-    if (Math.abs(dx) < 50) return;
+    if (!lbTouchStart.current) return;
+    const dx = e.changedTouches[0].clientX - lbTouchStart.current.x;
+    const dy = e.changedTouches[0].clientY - lbTouchStart.current.y;
+    lbTouchStart.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
     navigateLightbox(dx < 0 ? 1 : -1);
   };
 

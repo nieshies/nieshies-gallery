@@ -12,7 +12,7 @@ export default function ScrollSlider() {
   const lenRef = useRef(0);
   const lockedRef = useRef(false);
   const lockTimer = useRef(null);
-  const touchStartX = useRef(null);
+  const touchStartRef = useRef(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -53,14 +53,15 @@ export default function ScrollSlider() {
   }, [advance]);
 
   const onTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
 
   const onTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 50) return;
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
     advance(dx < 0 ? 1 : -1);
   };
 
