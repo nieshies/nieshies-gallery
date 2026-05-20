@@ -133,7 +133,7 @@ export default function StoryViewer({ photos: propPhotos }) {
           alt=""
           fill
           style={imgStyle(active === "a")}
-          sizes="min(100vw, 56.25vh)"
+          sizes="(max-width: 640px) 100vw, 56.25vh"
           priority
           draggable={false}
         />
@@ -144,7 +144,7 @@ export default function StoryViewer({ photos: propPhotos }) {
           alt=""
           fill
           style={imgStyle(active === "b")}
-          sizes="min(100vw, 56.25vh)"
+          sizes="(max-width: 640px) 100vw, 56.25vh"
           loading="lazy"
           draggable={false}
         />

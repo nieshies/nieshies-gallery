@@ -2,9 +2,6 @@
 import { useEffect, useState } from "react";
 import Providers from "./providers";
 import HeroSection from "@/components/sections/HeroSection";
-import PhotoStrip from "@/components/features/PhotoStrip";
-import ScrollSlider from "@/components/features/ScrollSlider";
-import ScatterSection from "@/components/sections/ScatterSection";
 import StoryViewer from "@/components/features/StoryViewer";
 import MasonryGallery from "@/components/features/MasonryGallery";
 
@@ -20,8 +17,6 @@ const LABEL = {
   userSelect: "none",
 };
 
-const SEC = { paddingBottom: "3rem" };
-
 export default function Page() {
   const [photos, setPhotos] = useState([]);
 
@@ -32,57 +27,23 @@ export default function Page() {
       .catch(() => {});
   }, []);
 
-  // Distribute photos across sections — each section gets a different slice
-  // so every photo appears somewhere without redundancy
-  const n       = photos.length;
-  const strip   = photos.slice(0, Math.min(8, n));            // strip: first 8
-  const slider  = photos.slice(8, Math.min(16, n));           // slider: next 8
-  const scatter = photos.slice(16, Math.min(28, n));          // scatter: next 12
-  const story   = photos.slice(0, n);                         // story: all (shows 1 at a time)
-  const masonry = photos.slice(0, n);                         // masonry: full grid, lazy
-
   return (
     <Providers>
       <div data-hero>
         <HeroSection />
       </div>
 
-      {strip.length > 0 && (
-        <div style={SEC}>
-          <span style={LABEL}>moments</span>
-          <div style={{ overflow: "hidden" }}>
-            <PhotoStrip photos={strip} />
-          </div>
-        </div>
-      )}
-
-      {slider.length > 0 && (
-        <div style={SEC}>
-          <span style={LABEL}>gallery</span>
-          <ScrollSlider photos={slider} />
-        </div>
-      )}
-
-      {scatter.length > 0 && (
-        <div style={SEC}>
-          <span style={LABEL}>scattered</span>
-          <div style={{ overflow: "hidden" }}>
-            <ScatterSection photos={scatter} />
-          </div>
-        </div>
-      )}
-
-      {story.length > 0 && (
-        <div style={{ ...SEC, display: "flex", flexDirection: "column", alignItems: "center", padding: "0 1rem 3rem" }}>
+      {photos.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 1rem 3rem" }}>
           <span style={LABEL}>stories</span>
-          <StoryViewer photos={story} />
+          <StoryViewer photos={photos.slice(0, 10)} />
         </div>
       )}
 
-      {masonry.length > 0 && (
+      {photos.length > 0 && (
         <div style={{ padding: "0 0.75rem 5rem" }}>
           <span style={LABEL}>memories</span>
-          <MasonryGallery photos={masonry} />
+          <MasonryGallery photos={photos} />
         </div>
       )}
     </Providers>
