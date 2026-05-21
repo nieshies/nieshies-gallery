@@ -102,8 +102,8 @@ function FamHero() {
     <section style={{
       position: "relative",
       width: "100%",
-      height: "62vh",
-      minHeight: "320px",
+      height: "100vh",
+      minHeight: "480px",
       overflow: "hidden",
       background: BG,
       display: "flex",
@@ -115,7 +115,7 @@ function FamHero() {
           src={getPhotoUrl(photo.url, "medium")}
           alt=""
           fill
-          style={{ objectFit: "cover", objectPosition: "center center", filter: "brightness(0.25)" }}
+          style={{ objectFit: "cover", objectPosition: "center center", filter: "brightness(0.32)" }}
           sizes="100vw"
           priority
         />
