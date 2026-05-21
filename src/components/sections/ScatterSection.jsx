@@ -5,20 +5,22 @@ import { getPhotoUrl } from "@/utils/photo";
 
 const PI2 = Math.PI * 2;
 
-// Tighter, more overlapping layout — bigger cards fill the space
+// 3-row layout, positions calculated so all photos fit within container height
+// Desktop container: 1100px. Bottom row at ~57% → 627px + 356px imgH = 983px < 1100px ✓
+// Mobile container:   900px. Bottom row at ~57% → 513px + 231px imgH = 744px < 900px ✓
 const POSITIONS = [
-  { top:  3, left:  2, rotate: -8 },
-  { top:  2, left: 23, rotate:  5 },
+  { top:  3, left:  3, rotate: -8 },
+  { top:  2, left: 24, rotate:  5 },
   { top:  5, left: 46, rotate: -4 },
-  { top:  3, left: 67, rotate:  7 },
-  { top: 38, left:  8, rotate:  6 },
-  { top: 36, left: 30, rotate: -7 },
-  { top: 40, left: 53, rotate:  3 },
-  { top: 37, left: 72, rotate: -6 },
-  { top: 68, left:  2, rotate: -3 },
-  { top: 66, left: 25, rotate:  8 },
-  { top: 70, left: 49, rotate: -5 },
-  { top: 67, left: 71, rotate:  4 },
+  { top:  3, left: 65, rotate:  7 },
+  { top: 32, left:  8, rotate:  6 },
+  { top: 30, left: 30, rotate: -7 },
+  { top: 33, left: 53, rotate:  3 },
+  { top: 30, left: 65, rotate: -6 },
+  { top: 57, left:  3, rotate: -3 },
+  { top: 55, left: 26, rotate:  8 },
+  { top: 59, left: 50, rotate: -5 },
+  { top: 56, left: 73, rotate:  4 },
 ];
 
 const ANIM = [
@@ -95,6 +97,8 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
   const count = isMobile ? Math.min(8, photos.length) : photos.length;
   const imgW = isMobile ? 130 : 200;
   const imgH = Math.round(imgW * 16 / 9);
+  // Container height sized so bottom row (57-59% top) + imgH fits with room to spare
+  const containerH = isMobile ? 900 : 1100;
 
   return (
     <>
@@ -110,7 +114,7 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
         style={{
           position: "relative",
           width: "100%",
-          height: "clamp(620px, 80vh, 1000px)",
+          height: `${containerH}px`,
           overflow: "hidden",
         }}
       >
