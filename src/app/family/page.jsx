@@ -548,12 +548,11 @@ function FamScatter({ photos }) {
 // ── 6. Masonry ────────────────────────────────────────────────────────────────
 
 function MasonryItem({ photo, index, onClick }) {
-  const wrapRef = useRef(null);
+  const revealRef = useRef(null);
   const [visible, setVisible] = useState(false);
-  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
-    const el = wrapRef.current;
+    const el = revealRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setVisible(true); },
@@ -568,37 +567,39 @@ function MasonryItem({ photo, index, onClick }) {
 
   return (
     <div style={{ breakInside: "avoid", marginBottom: "4px" }}>
+      {/* reveal wrapper — handles opacity/translate/blur entrance */}
       <div
-        ref={wrapRef}
-        onClick={() => onClick(index)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        ref={revealRef}
         style={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: ratio,
-          overflow: "hidden",
-          borderRadius: "8px",
-          cursor: "pointer",
           opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(12px)",
           filter: visible ? "none" : "blur(4px)",
-          transform: visible
-            ? hovered ? "scale(1.03)" : "translateY(0)"
-            : "translateY(12px)",
-          transition: visible
-            ? "transform 0.3s ease, opacity 0.55s ease, filter 0.55s ease"
-            : `opacity 0.55s ease ${delay}, transform 0.55s ease ${delay}, filter 0.55s ease ${delay}`,
+          transition: `opacity 0.55s ease ${delay}, transform 0.55s ease ${delay}, filter 0.55s ease ${delay}`,
         }}
       >
-        <Image
-          src={getPhotoUrl(photo.url, "thumb")}
-          alt=""
-          fill
-          style={{ objectFit: "cover" }}
-          sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
-          loading="lazy"
-          draggable={false}
-        />
+        {/* photo wrapper — handles hover scale via CSS */}
+        <div
+          className="fam-masonry-photo"
+          onClick={() => onClick(index)}
+          style={{
+            position: "relative",
+            width: "100%",
+            aspectRatio: ratio,
+            overflow: "hidden",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          <Image
+            src={getPhotoUrl(photo.url, "thumb")}
+            alt=""
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
+            loading="lazy"
+            draggable={false}
+          />
+        </div>
       </div>
     </div>
   );
@@ -629,6 +630,8 @@ function FamMasonry({ photos }) {
         .fam-masonry { column-count: 4; column-gap: 4px; }
         @media (max-width: 639px) { .fam-masonry { column-count: 2; } }
         @media (min-width: 640px) and (max-width: 1023px) { .fam-masonry { column-count: 3; } }
+        .fam-masonry-photo { transition: transform 0.3s ease; }
+        .fam-masonry-photo:hover { transform: scale(1.03); }
       `}</style>
 
       <div className="fam-masonry">
@@ -710,7 +713,7 @@ export default function FamilyPage() {
 
         <FamHero />
 
-        <div style={{ overflow: "hidden" }}>
+        <div style={{ overflow: "hidden", minHeight: "112px" }}>
           <span style={LABEL_STYLE}>moments</span>
           <FamStrip />
         </div>

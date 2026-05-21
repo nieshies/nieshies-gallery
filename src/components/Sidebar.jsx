@@ -40,7 +40,7 @@ export default function Sidebar() {
     );
     observer.observe(hero);
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
   const desktopVisible = loaded && navVisible;
 
