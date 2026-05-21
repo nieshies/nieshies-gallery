@@ -35,12 +35,20 @@ export async function GET(request) {
       return { f, url: urlData.publicUrl };
     });
 
-    const urls = mapped.map((m) => m.url);
-    const dbRows = await prisma.galleryPhoto.findMany({
-      where: { url: { in: urls } },
-      select: { url: true, width: true, height: true, caption: true },
-    });
-    const dbMap = new Map(dbRows.map((p) => [p.url, p]));
+    // Prisma join for metadata — non-fatal: photos still serve if DB is unavailable
+    let dbMap = new Map();
+    try {
+      const urls = mapped.map((m) => m.url);
+      if (urls.length) {
+        const dbRows = await prisma.galleryPhoto.findMany({
+          where: { url: { in: urls } },
+          select: { url: true, width: true, height: true, caption: true },
+        });
+        dbMap = new Map(dbRows.map((p) => [p.url, p]));
+      }
+    } catch (dbErr) {
+      console.warn("Prisma metadata join failed:", dbErr.message);
+    }
 
     const photos = mapped.map(({ f, url }) => {
       const db = dbMap.get(url);

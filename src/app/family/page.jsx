@@ -1,8 +1,9 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Providers from "../providers";
 import { getPhotoUrl } from "@/utils/photo";
+import { UploadButton } from "@/components/features/UploadLightbox";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -65,7 +66,14 @@ const SCATTER_ANIM = [
   { period: 4100, phase: 1.10, amp:  6 },
 ];
 
-// ── fetch helper ──────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 async function fetchPhotos(url) {
   try {
@@ -141,17 +149,10 @@ function FamHero() {
   );
 }
 
-// ── 2. Auto-scroll strip ──────────────────────────────────────────────────────
+// ── 2. Strip ──────────────────────────────────────────────────────────────────
 
-function FamStrip() {
-  const [photos, setPhotos] = useState([]);
-
-  useEffect(() => {
-    fetchPhotos("/api/family/strip").then(setPhotos);
-  }, []);
-
+function FamStrip({ photos }) {
   if (photos.length === 0) return null;
-
   const doubled = [...photos, ...photos];
 
   return (
@@ -241,7 +242,7 @@ function MemberModal({ member, photos, onClose }) {
           marginTop: "2rem",
         }}
       >
-        {hero && (
+        {hero ? (
           <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }}>
             <Image
               src={getPhotoUrl(hero.url, "medium")}
@@ -251,6 +252,10 @@ function MemberModal({ member, photos, onClose }) {
               sizes="480px"
               priority
             />
+          </div>
+        ) : (
+          <div style={{ width: "100%", aspectRatio: "16/9", background: "rgba(200,133,74,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <p style={{ margin: 0, color: "rgba(200,133,74,0.3)", fontSize: "11px", letterSpacing: "0.2em" }}>no photos yet</p>
           </div>
         )}
 
@@ -292,25 +297,30 @@ function MemberModal({ member, photos, onClose }) {
           color: "rgba(255,255,255,0.55)", fontSize: "28px",
           cursor: "pointer", zIndex: 201, lineHeight: 1,
         }}
-      >
-        ×
-      </button>
+      >×</button>
     </div>
   );
 }
 
 function FamMemberCards() {
+  // Load member cover photos progressively — each updates state independently
   const [memberPhotos, setMemberPhotos] = useState({});
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    const map = {};
-    Promise.all(
-      MEMBERS.map(async m => {
-        map[m.folder] = await fetchPhotos(`/api/family/member?folder=${m.folder}`);
-      })
-    ).then(() => setMemberPhotos({ ...map }));
+    MEMBERS.forEach(m => {
+      fetchPhotos(`/api/family/member?folder=${m.folder}`).then(photos => {
+        if (photos.length) {
+          setMemberPhotos(prev => ({ ...prev, [m.folder]: photos }));
+        }
+      });
+    });
   }, []);
+
+  const openModal = member => {
+    const photos = memberPhotos[member.folder] || [];
+    setModal({ member, photos });
+  };
 
   return (
     <>
@@ -328,8 +338,7 @@ function FamMemberCards() {
           position: absolute; inset: 0;
           background: rgba(0,0,0,0.52);
           display: flex; align-items: center; justify-content: center;
-          opacity: 0;
-          transition: opacity 0.25s ease;
+          opacity: 0; transition: opacity 0.25s ease;
         }
         .fam-card:hover .fam-card-overlay { opacity: 1; }
         .fam-cards-grid {
@@ -339,9 +348,7 @@ function FamMemberCards() {
           max-width: 720px;
           margin: 0 auto;
         }
-        @media (max-width: 639px) {
-          .fam-cards-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+        @media (max-width: 639px) { .fam-cards-grid { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
 
       <section style={{ background: BG, padding: "0 1.25rem" }}>
@@ -351,11 +358,7 @@ function FamMemberCards() {
             const photos = memberPhotos[member.folder] || [];
             const cover  = photos[0];
             return (
-              <div
-                key={member.folder}
-                className="fam-card"
-                onClick={() => setModal({ member, photos })}
-              >
+              <div key={member.folder} className="fam-card" onClick={() => openModal(member)}>
                 <div style={{ position: "relative", width: "100%", height: "72px" }}>
                   {cover ? (
                     <Image
@@ -375,7 +378,6 @@ function FamMemberCards() {
                     </span>
                   </div>
                 </div>
-
                 <div style={{ padding: "0.55rem 0.7rem 0.65rem" }}>
                   <p style={{ margin: 0, color: TEXT, fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.03em", textTransform: "capitalize" }}>
                     {member.displayName}
@@ -461,26 +463,22 @@ function FamScatter({ photos }) {
 
   useEffect(() => {
     if (photos.length === 0) return;
-    const count   = isMobile ? Math.min(8, photos.length) : Math.min(12, photos.length);
-    const mobileA = 3;
-    const rotAmp  = isMobile ? 0.4 : 0.8;
+    const count  = isMobile ? Math.min(8, photos.length) : Math.min(12, photos.length);
+    const mA     = 3;
+    const rotAmp = isMobile ? 0.4 : 0.8;
 
     const loop = ts => {
       for (let i = 0; i < count; i++) {
         const el = imgRefs.current[i];
         if (!el) continue;
         const { period, phase, amp } = SCATTER_ANIM[i];
-        const ω       = PI2 / period;
-        const a       = isMobile ? mobileA : amp;
-        const baseRot = SCATTER_POS[i].rotate;
-        const tx  = a * Math.sin(ω * ts + phase);
-        const ty  = a * Math.cos(ω * ts * 0.73 + phase);
-        const rot = baseRot + rotAmp * Math.sin(ω * ts * 1.31 + phase);
-        el.style.transform = `translate(${tx}px, ${ty}px) rotate(${rot}deg)`;
+        const ω   = PI2 / period;
+        const a   = isMobile ? mA : amp;
+        const rot = SCATTER_POS[i].rotate + rotAmp * Math.sin(ω * ts * 1.31 + phase);
+        el.style.transform = `translate(${a * Math.sin(ω * ts + phase)}px, ${a * Math.cos(ω * ts * 0.73 + phase)}px) rotate(${rot}deg)`;
       }
       rafRef.current = requestAnimationFrame(loop);
     };
-
     rafRef.current = requestAnimationFrame(loop);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [photos, isMobile]);
@@ -490,7 +488,6 @@ function FamScatter({ photos }) {
   const count = isMobile ? Math.min(8, photos.length) : Math.min(12, photos.length);
   const imgW  = isMobile ? 130 : 200;
   const imgH  = Math.round(imgW * 16 / 9);
-  const containerH = isMobile ? 900 : 1100;
 
   return (
     <>
@@ -498,7 +495,7 @@ function FamScatter({ photos }) {
         .fam-sc-wrap { transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .fam-sc-wrap:hover { transform: scale(1.1) !important; }
       `}</style>
-      <div style={{ position: "relative", width: "100%", height: `${containerH}px`, overflow: "hidden" }}>
+      <div style={{ position: "relative", width: "100%", height: `${isMobile ? 900 : 1100}px`, overflow: "hidden" }}>
         {photos.slice(0, count).map((photo, i) => {
           const { top, left, rotate } = SCATTER_POS[i];
           return (
@@ -507,34 +504,23 @@ function FamScatter({ photos }) {
               className="fam-sc-wrap"
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(-1)}
-              style={{
-                position: "absolute",
-                top: `${top}%`,
-                left: `${left}%`,
-                zIndex: hoveredIdx === i ? 20 : 5 + i,
-              }}
+              style={{ position: "absolute", top: `${top}%`, left: `${left}%`, zIndex: hoveredIdx === i ? 20 : 5 + i }}
             >
               <div
                 ref={el => { imgRefs.current[i] = el; }}
                 style={{
-                  position: "relative",
-                  width: `${imgW}px`,
-                  height: `${imgH}px`,
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  willChange: "transform",
-                  transform: `rotate(${rotate}deg)`,
+                  position: "relative", width: `${imgW}px`, height: `${imgH}px`,
+                  borderRadius: "12px", overflow: "hidden",
+                  willChange: "transform", transform: `rotate(${rotate}deg)`,
                   boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
                 }}
               >
                 <Image
                   src={getPhotoUrl(photo.url, "thumb")}
-                  alt=""
-                  fill
+                  alt="" fill
                   style={{ objectFit: "cover" }}
                   sizes={`${imgW}px`}
-                  draggable={false}
-                  loading="lazy"
+                  draggable={false} loading="lazy"
                 />
               </div>
             </div>
@@ -567,7 +553,6 @@ function MasonryItem({ photo, index, onClick }) {
 
   return (
     <div style={{ breakInside: "avoid", marginBottom: "4px" }}>
-      {/* reveal wrapper — handles opacity/translate/blur entrance */}
       <div
         ref={revealRef}
         style={{
@@ -577,27 +562,17 @@ function MasonryItem({ photo, index, onClick }) {
           transition: `opacity 0.55s ease ${delay}, transform 0.55s ease ${delay}, filter 0.55s ease ${delay}`,
         }}
       >
-        {/* photo wrapper — handles hover scale via CSS */}
         <div
           className="fam-masonry-photo"
           onClick={() => onClick(index)}
-          style={{
-            position: "relative",
-            width: "100%",
-            aspectRatio: ratio,
-            overflow: "hidden",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
+          style={{ position: "relative", width: "100%", aspectRatio: ratio, overflow: "hidden", borderRadius: "8px", cursor: "pointer" }}
         >
           <Image
             src={getPhotoUrl(photo.url, "thumb")}
-            alt=""
-            fill
+            alt="" fill
             style={{ objectFit: "cover" }}
             sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
-            loading="lazy"
-            draggable={false}
+            loading="lazy" draggable={false}
           />
         </div>
       </div>
@@ -611,9 +586,9 @@ function FamMasonry({ photos }) {
   useEffect(() => {
     if (!lightbox.open) return;
     const onKey = e => {
-      if (e.key === "Escape")      setLightbox(p => ({ ...p, open: false }));
-      if (e.key === "ArrowRight")  setLightbox(p => ({ ...p, idx: Math.min(p.idx + 1, photos.length - 1) }));
-      if (e.key === "ArrowLeft")   setLightbox(p => ({ ...p, idx: Math.max(p.idx - 1, 0) }));
+      if (e.key === "Escape")     setLightbox(p => ({ ...p, open: false }));
+      if (e.key === "ArrowRight") setLightbox(p => ({ ...p, idx: Math.min(p.idx + 1, photos.length - 1) }));
+      if (e.key === "ArrowLeft")  setLightbox(p => ({ ...p, idx: Math.max(p.idx - 1, 0) }));
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
@@ -621,76 +596,41 @@ function FamMasonry({ photos }) {
   }, [lightbox.open, photos.length]);
 
   if (photos.length === 0) return null;
-
   const current = photos[lightbox.idx];
 
   return (
     <>
       <style>{`
         .fam-masonry { column-count: 4; column-gap: 4px; }
-        @media (max-width: 639px) { .fam-masonry { column-count: 2; } }
+        @media (max-width: 639px)  { .fam-masonry { column-count: 2; } }
         @media (min-width: 640px) and (max-width: 1023px) { .fam-masonry { column-count: 3; } }
         .fam-masonry-photo { transition: transform 0.3s ease; }
-        .fam-masonry-photo:hover { transform: scale(1.03); }
+        .fam-masonry-photo:hover  { transform: scale(1.03); }
       `}</style>
 
       <div className="fam-masonry">
         {photos.map((photo, i) => (
-          <MasonryItem
-            key={photo.id}
-            photo={photo}
-            index={i}
-            onClick={idx => setLightbox({ open: true, idx })}
-          />
+          <MasonryItem key={photo.id} photo={photo} index={i} onClick={idx => setLightbox({ open: true, idx })} />
         ))}
       </div>
 
       {lightbox.open && (
         <div
           onClick={() => setLightbox(p => ({ ...p, open: false }))}
-          style={{
-            position: "fixed", inset: 0,
-            background: "rgba(0,0,0,0.94)",
-            zIndex: 300,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.94)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{
-              position: "relative",
-              width: "min(92vw, 700px)",
-              aspectRatio: current.width && current.height ? `${current.width}/${current.height}` : "4/3",
-              borderRadius: "12px",
-              overflow: "hidden",
-            }}
+            style={{ position: "relative", width: "min(92vw, 700px)", aspectRatio: current.width && current.height ? `${current.width}/${current.height}` : "4/3", borderRadius: "12px", overflow: "hidden" }}
           >
-            <Image
-              src={getPhotoUrl(current.url, "full")}
-              alt=""
-              fill
-              style={{ objectFit: "cover" }}
-              sizes="min(92vw, 700px)"
-              priority
-            />
+            <Image src={getPhotoUrl(current.url, "full")} alt="" fill style={{ objectFit: "cover" }} sizes="min(92vw, 700px)" priority />
           </div>
-
-          <button
-            onClick={() => setLightbox(p => ({ ...p, open: false }))}
-            style={{ position: "absolute", top: "1rem", right: "1.25rem", background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: "28px", cursor: "pointer" }}
-          >×</button>
-
+          <button onClick={() => setLightbox(p => ({ ...p, open: false }))} style={{ position: "absolute", top: "1rem", right: "1.25rem", background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: "28px", cursor: "pointer" }}>×</button>
           {lightbox.idx > 0 && (
-            <button
-              onClick={e => { e.stopPropagation(); setLightbox(p => ({ ...p, idx: p.idx - 1 })); }}
-              style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-            >&#8592;</button>
+            <button onClick={e => { e.stopPropagation(); setLightbox(p => ({ ...p, idx: p.idx - 1 })); }} style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>&#8592;</button>
           )}
           {lightbox.idx < photos.length - 1 && (
-            <button
-              onClick={e => { e.stopPropagation(); setLightbox(p => ({ ...p, idx: p.idx + 1 })); }}
-              style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-            >&#8594;</button>
+            <button onClick={e => { e.stopPropagation(); setLightbox(p => ({ ...p, idx: p.idx + 1 })); }} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>&#8594;</button>
           )}
         </div>
       )}
@@ -701,11 +641,20 @@ function FamMasonry({ photos }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function FamilyPage() {
-  const [dumpPhotos, setDumpPhotos] = useState([]);
+  const [photos, setPhotos] = useState([]);
 
+  // Single fetch — root-level family bucket, same pattern as home page
   useEffect(() => {
-    fetchPhotos("/api/family/photos").then(setDumpPhotos);
+    fetchPhotos("/api/photos?page=family")
+      .then(ps => setPhotos(shuffle(ps)));
   }, []);
+
+  const n         = photos.length;
+  const stripEnd  = Math.min(8, n);
+  const scatEnd   = Math.min(stripEnd + 12, n);
+  const strip     = photos.slice(0, stripEnd);
+  const scatter   = photos.slice(stripEnd, scatEnd);
+  const masonry   = photos.slice(scatEnd);
 
   return (
     <Providers>
@@ -715,22 +664,51 @@ export default function FamilyPage() {
 
         <div style={{ overflow: "hidden", minHeight: "112px" }}>
           <span style={LABEL_STYLE}>moments</span>
-          <FamStrip />
+          <FamStrip photos={strip} />
         </div>
 
         <FamMemberCards />
 
         <FamQuote />
 
-        <div>
-          <span style={LABEL_STYLE}>scattered</span>
-          <FamScatter photos={dumpPhotos} />
-        </div>
+        {scatter.length > 0 && (
+          <div>
+            <span style={LABEL_STYLE}>scattered</span>
+            <FamScatter photos={scatter} />
+          </div>
+        )}
 
-        <div style={{ padding: "0 0.75rem 4rem" }}>
-          <span style={LABEL_STYLE}>memories</span>
-          <FamMasonry photos={dumpPhotos} />
-        </div>
+        {masonry.length > 0 && (
+          <div style={{ padding: "0 0.75rem 4rem" }}>
+            <span style={LABEL_STYLE}>memories</span>
+            <FamMasonry photos={masonry} />
+          </div>
+        )}
+
+        <UploadButton
+          defaultSection="family"
+          label="+"
+          style={{
+            position: "fixed",
+            bottom: "1.5rem",
+            right: "1.5rem",
+            zIndex: 50,
+            width: "42px",
+            height: "42px",
+            borderRadius: "50%",
+            border: "1px solid rgba(200,133,74,0.4)",
+            background: "rgba(0,0,0,0.7)",
+            color: "rgba(200,133,74,0.85)",
+            fontSize: "22px",
+            cursor: "pointer",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            lineHeight: 1,
+          }}
+        />
 
       </div>
     </Providers>
