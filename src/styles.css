@@ -42,6 +42,18 @@ html, body {
 
 body {
   overflow-y: scroll;
+  /* Safe area insets for iPhone notch / home bar */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Remove blue tap flash on iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure buttons/links use finger-friendly touch area */
+button, a {
+  touch-action: manipulation;
 }
 
 @theme {
@@ -119,6 +131,12 @@ body {
   z-index: 0;
   pointer-events: none;
   background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,170,120,0.07) 0%, transparent 60%);
+}
+
+/* ── Hero height — 100svh prevents iOS Safari browser chrome overlap ─────── */
+.hero-full-height {
+  height: 100vh;
+  height: 100svh;
 }
 
 /* ── Animated smoke background ──────────────────────────────────────────────── */

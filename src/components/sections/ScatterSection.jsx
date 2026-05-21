@@ -62,23 +62,20 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
   }, [page, propPhotos]);
 
   useEffect(() => {
-    if (photos.length === 0) return;
+    if (photos.length === 0 || isMobile) return;
 
-    const count = isMobile ? Math.min(8, photos.length) : photos.length;
-    const mobileAmp = 3;
-    const rotAmp = isMobile ? 0.4 : 0.8;
+    const rotAmp = 0.8;
 
     const loop = (ts) => {
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < photos.length; i++) {
         const el = imgRefs.current[i];
         if (!el) continue;
         const { period, phase, amp } = ANIM[i];
         const ω = PI2 / period;
-        const a = isMobile ? mobileAmp : amp;
         const baseRot = POSITIONS[i].rotate;
 
-        const tx = a * Math.sin(ω * ts + phase);
-        const ty = a * Math.cos(ω * ts * 0.73 + phase);
+        const tx = amp * Math.sin(ω * ts + phase);
+        const ty = amp * Math.cos(ω * ts * 0.73 + phase);
         const rot = baseRot + rotAmp * Math.sin(ω * ts * 1.31 + phase);
 
         el.style.transform = `translate(${tx}px, ${ty}px) rotate(${rot}deg)`;
@@ -94,11 +91,42 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
 
   if (photos.length === 0) return null;
 
-  const count = isMobile ? Math.min(8, photos.length) : photos.length;
-  const imgW = isMobile ? 130 : 200;
+  // Mobile: clean 2-column grid — scatter overflow and 900px height are unusable on phone
+  if (isMobile) {
+    return (
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "6px",
+        padding: "0 1rem",
+      }}>
+        {photos.slice(0, 8).map((photo) => (
+          <div
+            key={photo.id}
+            style={{
+              position: "relative",
+              aspectRatio: "4 / 5",
+              borderRadius: "10px",
+              overflow: "hidden",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+            }}
+          >
+            <Image
+              src={getPhotoUrl(photo.url, "thumb")}
+              alt={photo.caption || ""}
+              fill
+              style={{ objectFit: "cover" }}
+              sizes="50vw"
+              loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const imgW = 200;
   const imgH = Math.round(imgW * 16 / 9);
-  // Container height sized so bottom row (57-59% top) + imgH fits with room to spare
-  const containerH = isMobile ? 900 : 1100;
 
   return (
     <>
@@ -114,11 +142,11 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
         style={{
           position: "relative",
           width: "100%",
-          height: `${containerH}px`,
+          height: "1100px",
           overflow: "hidden",
         }}
       >
-        {photos.slice(0, count).map((photo, i) => {
+        {photos.slice(0, photos.length).map((photo, i) => {
           const { top, left, rotate } = POSITIONS[i];
           return (
             <div
@@ -151,7 +179,7 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
                   alt={photo.caption || ""}
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes={`${imgW}px`}
+                  sizes="200px"
                   draggable={false}
                   loading="lazy"
                 />

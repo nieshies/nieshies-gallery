@@ -394,10 +394,9 @@ function FamScatter({ photos }) {
   }, []);
 
   useEffect(() => {
-    if (photos.length === 0) return;
-    const count  = isMobile ? Math.min(8, photos.length) : Math.min(12, photos.length);
-    const mA     = 3;
-    const rotAmp = isMobile ? 0.4 : 0.8;
+    if (photos.length === 0 || isMobile) return;
+    const count  = Math.min(12, photos.length);
+    const rotAmp = 0.8;
 
     const loop = ts => {
       for (let i = 0; i < count; i++) {
@@ -405,9 +404,8 @@ function FamScatter({ photos }) {
         if (!el) continue;
         const { period, phase, amp } = SCATTER_ANIM[i];
         const ω   = PI2 / period;
-        const a   = isMobile ? mA : amp;
         const rot = SCATTER_POS[i].rotate + rotAmp * Math.sin(ω * ts * 1.31 + phase);
-        el.style.transform = `translate(${a * Math.sin(ω * ts + phase)}px, ${a * Math.cos(ω * ts * 0.73 + phase)}px) rotate(${rot}deg)`;
+        el.style.transform = `translate(${amp * Math.sin(ω * ts + phase)}px, ${amp * Math.cos(ω * ts * 0.73 + phase)}px) rotate(${rot}deg)`;
       }
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -417,9 +415,20 @@ function FamScatter({ photos }) {
 
   if (photos.length === 0) return null;
 
-  const count = isMobile ? Math.min(8, photos.length) : Math.min(12, photos.length);
-  const imgW  = isMobile ? 130 : 200;
-  const imgH  = Math.round(imgW * 16 / 9);
+  if (isMobile) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", padding: "0 1rem" }}>
+        {photos.slice(0, 8).map((photo) => (
+          <div key={photo.id} style={{ position: "relative", aspectRatio: "4 / 5", borderRadius: "10px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+            <Image src={getPhotoUrl(photo.url, "thumb")} alt="" fill style={{ objectFit: "cover" }} sizes="50vw" loading="lazy" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const imgW = 200;
+  const imgH = Math.round(imgW * 16 / 9);
 
   return (
     <>
@@ -427,8 +436,8 @@ function FamScatter({ photos }) {
         .fam-sc-wrap { transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .fam-sc-wrap:hover { transform: scale(1.1) !important; }
       `}</style>
-      <div style={{ position: "relative", width: "100%", height: `${isMobile ? 900 : 1100}px`, overflow: "hidden" }}>
-        {photos.slice(0, count).map((photo, i) => {
+      <div style={{ position: "relative", width: "100%", height: "1100px", overflow: "hidden" }}>
+        {photos.slice(0, Math.min(12, photos.length)).map((photo, i) => {
           const { top, left, rotate } = SCATTER_POS[i];
           return (
             <div
@@ -451,7 +460,7 @@ function FamScatter({ photos }) {
                   src={getPhotoUrl(photo.url, "thumb")}
                   alt="" fill
                   style={{ objectFit: "cover" }}
-                  sizes={`${imgW}px`}
+                  sizes="200px"
                   draggable={false} loading="lazy"
                 />
               </div>

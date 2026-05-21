@@ -202,6 +202,7 @@ function DualCountdown() {
 function AchievementsGrid() {
   const [photos, setPhotos] = useState([]);
   const [lightbox, setLightbox] = useState({ open: false, idx: 0 });
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=achievement")
@@ -221,6 +222,18 @@ function AchievementsGrid() {
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [lightbox.open, photos.length]);
+
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 40) return;
+    setLightbox((p) => ({
+      ...p,
+      idx: dx < 0 ? Math.min(p.idx + 1, photos.length - 1) : Math.max(p.idx - 1, 0),
+    }));
+  };
 
   if (photos.length === 0) return null;
 
@@ -299,6 +312,8 @@ function AchievementsGrid() {
       {lightbox.open && (
         <div
           onClick={() => setLightbox((p) => ({ ...p, open: false }))}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)",
             zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
@@ -312,17 +327,17 @@ function AchievementsGrid() {
           </div>
           <button
             onClick={() => setLightbox((p) => ({ ...p, open: false }))}
-            style={{ position: "absolute", top: "1rem", right: "1.25rem", background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: "28px", cursor: "pointer" }}
+            style={{ position: "absolute", top: "1rem", right: "1.25rem", background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: "28px", cursor: "pointer", padding: "0.5rem" }}
           >×</button>
           {lightbox.idx > 0 && (
             <button onClick={(e) => { e.stopPropagation(); setLightbox((p) => ({ ...p, idx: p.idx - 1 })); }}
-              style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               &#8592;
             </button>
           )}
           {lightbox.idx < photos.length - 1 && (
             <button onClick={(e) => { e.stopPropagation(); setLightbox((p) => ({ ...p, idx: p.idx + 1 })); }}
-              style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               &#8594;
             </button>
           )}
@@ -381,7 +396,7 @@ export default function AmniePage() {
     <Providers>
       <div style={{ minHeight: "100vh" }}>
         <HeroSection
-          fetchUrl="/api/headers"
+          fetchUrl="/api/amnie/hero"
           title="AMNIE"
           subtitle="my person · always & forever"
         />
