@@ -50,52 +50,96 @@ function SectionLabel({ children }) {
 
 // ── 1. Hero ──────────────────────────────────────────────────────────────────
 
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function AmnHero() {
-  const [photo, setPhoto] = useState(null);
+  const [photos, setPhotos]   = useState([]);
+  const [slots, setSlots]     = useState({ a: null, b: null, active: "a" });
+  const idxRef                = useRef(0);
+  const intervalRef           = useRef(null);
 
   useEffect(() => {
-    fetch("/api/headers")
+    fetch("/api/photos?page=amnie&folder=hero", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
-        const list = d.photos || [];
-        if (list.length) setPhoto(list[Math.floor(Math.random() * list.length)]);
+        const shuffled = shuffle(d.photos || []);
+        setPhotos(shuffled);
+        if (shuffled.length > 0) setSlots({ a: shuffled[0], b: null, active: "a" });
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (photos.length < 2) return;
+    const advance = () => {
+      const nextIdx   = (idxRef.current + 1) % photos.length;
+      const nextPhoto = photos[nextIdx];
+      const nextUrl   = getPhotoUrl(nextPhoto.url, "medium");
+      let committed   = false;
+      const commit    = () => {
+        if (committed) return;
+        committed = true;
+        idxRef.current = nextIdx;
+        setSlots((prev) => {
+          const incoming = prev.active === "a" ? "b" : "a";
+          return { ...prev, [incoming]: nextPhoto, active: incoming };
+        });
+      };
+      const img = new Image();
+      img.onload = commit; img.onerror = commit; img.src = nextUrl;
+      if (img.complete) commit();
+    };
+    intervalRef.current = setInterval(advance, 5000);
+    return () => clearInterval(intervalRef.current);
+  }, [photos]);
+
+  const urlA     = slots.a ? getPhotoUrl(slots.a.url, "medium") : null;
+  const urlB     = slots.b ? getPhotoUrl(slots.b.url, "medium") : null;
+  const isAActive = slots.active === "a";
+  const imgStyle  = (visible) => ({
+    objectFit: "cover",
+    objectPosition: "center",
+    filter: "brightness(0.58) saturate(0.85)",
+    opacity: visible ? 1 : 0,
+    transition: "opacity 1.2s ease-in-out",
+    willChange: "opacity",
+  });
 
   return (
     <section style={{
       position: "relative",
       width: "100%",
-      height: "62vh",
-      minHeight: "300px",
+      height: "100vh",
+      minHeight: "480px",
       overflow: "hidden",
       background: "transparent",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
     }}>
-      {photo && (
-        <Image
-          src={getPhotoUrl(photo.url, "medium")}
-          alt=""
-          fill
-          style={{ objectFit: "cover", objectPosition: "center", filter: "brightness(0.25) saturate(0.6)" }}
-          sizes="100vw"
-          priority
-        />
-      )}
+      {urlA && <Image src={urlA} alt="" fill style={imgStyle(isAActive)}  sizes="100vw" priority />}
+      {urlB && <Image src={urlB} alt="" fill style={imgStyle(!isAActive)} sizes="100vw" />}
 
       <div style={{
         position: "absolute",
         inset: 0,
-        background: "linear-gradient(to bottom, transparent 40%, rgba(19,16,12,0.9) 100%)",
+        background: "linear-gradient(to bottom, transparent 40%, rgba(19,16,12,0.95) 100%)",
       }} />
 
       <div style={{
-        position: "relative",
-        zIndex: 1,
-        textAlign: "center",
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         pointerEvents: "none",
         padding: "0 1rem",
       }}>
