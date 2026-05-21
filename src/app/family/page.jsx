@@ -344,8 +344,8 @@ function FamMemberCards() {
         .fam-cards-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 0.6rem;
-          max-width: 720px;
+          gap: 0.75rem;
+          max-width: 900px;
           margin: 0 auto;
         }
         @media (max-width: 639px) { .fam-cards-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -359,7 +359,7 @@ function FamMemberCards() {
             const cover  = photos[0];
             return (
               <div key={member.folder} className="fam-card" onClick={() => openModal(member)}>
-                <div style={{ position: "relative", width: "100%", height: "130px" }}>
+                <div style={{ position: "relative", width: "100%", height: "160px" }}>
                   {cover ? (
                     <Image
                       src={getPhotoUrl(cover.url, "thumb")}
@@ -643,10 +643,20 @@ function FamMasonry({ photos }) {
 export default function FamilyPage() {
   const [photos, setPhotos] = useState([]);
 
-  // Single fetch — root-level family bucket, same pattern as home page
+  // Aggregate from all member folders — root of family bucket is usually empty
   useEffect(() => {
-    fetchPhotos("/api/photos?page=family")
-      .then(ps => setPhotos(shuffle(ps)));
+    const urls = MEMBERS.map(m => `/api/family/member?folder=${m.folder}`);
+    Promise.all(urls.map(fetchPhotos)).then(results => {
+      // Deduplicate by URL in case any photo appears in multiple folders
+      const seen = new Set();
+      const all = [];
+      for (const list of results) {
+        for (const p of list) {
+          if (!seen.has(p.url)) { seen.add(p.url); all.push(p); }
+        }
+      }
+      setPhotos(shuffle(all));
+    });
   }, []);
 
   const n       = photos.length;
