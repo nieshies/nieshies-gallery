@@ -9,7 +9,7 @@ export const SECTIONS = [
 ];
 
 export default function UploadLightbox({ defaultSection = "home", onClose }) {
-  const [section, setSection]     = useState(defaultSection);
+  const section = defaultSection;
   const [files, setFiles]         = useState([]);
   const [caption, setCaption]     = useState("");
   const [status, setStatus]       = useState("");
@@ -85,37 +85,10 @@ export default function UploadLightbox({ defaultSection = "home", onClose }) {
           &times;
         </button>
 
-        <p className="mb-5 text-lg uppercase tracking-[0.3em] text-white/62">add photos</p>
-
-        <div className="mb-4">
-          <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-white/28">Section</p>
-          <div className="flex gap-2">
-            {SECTIONS.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setSection(s.key)}
-                style={{
-                  flex: 1,
-                  padding: "0.45rem 0",
-                  borderRadius: "10px",
-                  border: section === s.key ? "1px solid rgba(244,140,54,0.5)" : "1px solid rgba(255,255,255,0.1)",
-                  background: section === s.key ? "rgba(244,140,54,0.1)" : "transparent",
-                  color: section === s.key ? "rgba(244,140,54,0.9)" : "rgba(255,255,255,0.35)",
-                  fontSize: "11px",
-                  letterSpacing: "0.15em",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-          <p style={{ marginTop: "0.35rem", fontSize: "10px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em" }}>
-            → {SECTIONS.find((s) => s.key === section)?.hint}
-          </p>
-        </div>
+        <p className="mb-1 text-lg uppercase tracking-[0.3em] text-white/62">add photos</p>
+        <p style={{ marginBottom: "1.5rem", fontSize: "10px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.1em" }}>
+          → {SECTIONS.find((s) => s.key === section)?.hint}
+        </p>
 
         <div className="space-y-4">
           <div>
