@@ -352,7 +352,7 @@ function FamMemberCards() {
       `}</style>
 
       <section style={{ background: BG, padding: "0 1.25rem" }}>
-        <span style={LABEL_STYLE}>the crew</span>
+        <span style={LABEL_STYLE}>the team</span>
         <div className="fam-cards-grid">
           {MEMBERS.map(member => {
             const photos = memberPhotos[member.folder] || [];
@@ -381,9 +381,6 @@ function FamMemberCards() {
                 <div style={{ padding: "0.55rem 0.7rem 0.65rem" }}>
                   <p style={{ margin: 0, color: TEXT, fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.03em", textTransform: "capitalize" }}>
                     {member.displayName}
-                  </p>
-                  <p style={{ margin: "0.1rem 0 0.22rem", color: ACCENT, fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>
-                    {member.role}
                   </p>
                   <p style={{ margin: 0, color: "rgba(255,255,255,0.3)", fontSize: "0.64rem", fontStyle: "italic", lineHeight: 1.4 }}>
                     {member.bio}

@@ -259,7 +259,7 @@ function DualCountdown() {
           sublabel="02 december 2023"
         />
         <CountCard
-          title="until our day"
+          title="graduation day"
           accent="#7ec28a"
           ymd={{ y: remaining.y, m: remaining.m, d: remaining.d }}
           progress={shrinkPct}
