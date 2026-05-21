@@ -5,9 +5,9 @@ import { getPhotoUrl } from "@/utils/photo";
 
 const PI2 = Math.PI * 2;
 
-// 3-row layout, positions calculated so all photos fit within container height
-// Desktop container: 1100px. Bottom row at ~57% → 627px + 356px imgH = 983px < 1100px ✓
-// Mobile container:   900px. Bottom row at ~57% → 513px + 231px imgH = 744px < 900px ✓
+// 3-row layout. Left % values chosen so photos never overflow on a 375px phone
+// when using 96px mobile width: max left=73% → 73%×375+96 = 370px < 375px ✓
+// Desktop: 200px wide, 1100px tall  |  Mobile: 96px wide, 650px tall
 const POSITIONS = [
   { top:  3, left:  3, rotate: -8 },
   { top:  2, left: 24, rotate:  5 },
@@ -62,71 +62,34 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
   }, [page, propPhotos]);
 
   useEffect(() => {
-    if (photos.length === 0 || isMobile) return;
+    if (photos.length === 0) return;
 
-    const rotAmp = 0.8;
+    const amp   = isMobile ? 3 : 1;   // scale factor applied to each photo's amp
+    const rotAmp = isMobile ? 0.4 : 0.8;
 
     const loop = (ts) => {
       for (let i = 0; i < photos.length; i++) {
         const el = imgRefs.current[i];
         if (!el) continue;
-        const { period, phase, amp } = ANIM[i];
-        const ω = PI2 / period;
-        const baseRot = POSITIONS[i].rotate;
+        const { period, phase, amp: baseAmp } = ANIM[i];
+        const ω   = PI2 / period;
+        const a   = isMobile ? amp : baseAmp;
+        const rot = POSITIONS[i].rotate + rotAmp * Math.sin(ω * ts * 1.31 + phase);
 
-        const tx = amp * Math.sin(ω * ts + phase);
-        const ty = amp * Math.cos(ω * ts * 0.73 + phase);
-        const rot = baseRot + rotAmp * Math.sin(ω * ts * 1.31 + phase);
-
-        el.style.transform = `translate(${tx}px, ${ty}px) rotate(${rot}deg)`;
+        el.style.transform = `translate(${a * Math.sin(ω * ts + phase)}px, ${a * Math.cos(ω * ts * 0.73 + phase)}px) rotate(${rot}deg)`;
       }
       rafRef.current = requestAnimationFrame(loop);
     };
 
     rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [photos, isMobile]);
 
   if (photos.length === 0) return null;
 
-  // Mobile: clean 2-column grid — scatter overflow and 900px height are unusable on phone
-  if (isMobile) {
-    return (
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "6px",
-        padding: "0 1rem",
-      }}>
-        {photos.slice(0, 8).map((photo) => (
-          <div
-            key={photo.id}
-            style={{
-              position: "relative",
-              aspectRatio: "4 / 5",
-              borderRadius: "10px",
-              overflow: "hidden",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-            }}
-          >
-            <Image
-              src={getPhotoUrl(photo.url, "thumb")}
-              alt={photo.caption || ""}
-              fill
-              style={{ objectFit: "cover" }}
-              sizes="50vw"
-              loading="lazy"
-            />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  const imgW = 200;
+  const imgW = isMobile ? 96 : 200;
   const imgH = Math.round(imgW * 16 / 9);
+  const containerH = isMobile ? 650 : 1100;
 
   return (
     <>
@@ -142,11 +105,11 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
         style={{
           position: "relative",
           width: "100%",
-          height: "1100px",
+          height: `${containerH}px`,
           overflow: "hidden",
         }}
       >
-        {photos.slice(0, photos.length).map((photo, i) => {
+        {photos.map((photo, i) => {
           const { top, left, rotate } = POSITIONS[i];
           return (
             <div
@@ -179,7 +142,7 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
                   alt={photo.caption || ""}
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes="200px"
+                  sizes={isMobile ? "96px" : "200px"}
                   draggable={false}
                   loading="lazy"
                 />
