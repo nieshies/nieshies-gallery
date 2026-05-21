@@ -12,14 +12,18 @@ function shuffle(arr) {
   return a;
 }
 
-export default function HeroSection() {
+export default function HeroSection({
+  fetchUrl   = "/api/headers",
+  title      = "NIESHIES’ DUMP",
+  subtitle   = "moments · memories · real",
+}) {
   const [photos, setPhotos] = useState([]);
   const [slots, setSlots] = useState({ a: null, b: null, active: "a" });
   const idxRef = useRef(0);
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/headers", { cache: "no-store" })
+    fetch(fetchUrl, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         const shuffled = shuffle(d.photos || []);
@@ -119,7 +123,7 @@ export default function HeroSection() {
             textAlign: "center",
           }}
         >
-          NIESHIES&apos; DUMP
+          {title}
         </h1>
         <p
           style={{
@@ -130,7 +134,7 @@ export default function HeroSection() {
             textTransform: "uppercase",
           }}
         >
-          moments · memories · real
+          {subtitle}
         </p>
       </div>
     </section>

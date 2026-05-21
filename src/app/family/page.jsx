@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"; // useRef kept for scatter RAF
 import Image from "next/image";
 import Providers from "../providers";
+import HeroSection from "@/components/sections/HeroSection";
 import { getPhotoUrl } from "@/utils/photo";
 import { UploadButton } from "@/components/features/UploadLightbox";
 
@@ -81,104 +82,6 @@ async function fetchPhotos(url) {
     const d = await r.json();
     return d.photos || [];
   } catch { return []; }
-}
-
-// ── 1. Hero ───────────────────────────────────────────────────────────────────
-
-function FamHero() {
-  const [photos, setPhotos] = useState([]);
-  const [slots, setSlots]   = useState({ a: null, b: null, active: "a" });
-  const idxRef              = useRef(null);
-  const intervalRef         = useRef(null);
-
-  useEffect(() => {
-    fetch("/api/headers", { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => {
-        const shuffled = shuffle(d.photos || []);
-        setPhotos(shuffled);
-        if (shuffled.length > 0) setSlots({ a: shuffled[0], b: null, active: "a" });
-        idxRef.current = 0;
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (photos.length < 2) return;
-    const advance = () => {
-      const nextIdx   = (idxRef.current + 1) % photos.length;
-      const nextPhoto = photos[nextIdx];
-      const nextUrl   = getPhotoUrl(nextPhoto.url, "medium");
-      let committed   = false;
-      const commit    = () => {
-        if (committed) return;
-        committed = true;
-        idxRef.current = nextIdx;
-        setSlots(prev => {
-          const incoming = prev.active === "a" ? "b" : "a";
-          return { ...prev, [incoming]: nextPhoto, active: incoming };
-        });
-      };
-      const img = new Image();
-      img.onload = commit; img.onerror = commit; img.src = nextUrl;
-      if (img.complete) commit();
-    };
-    intervalRef.current = setInterval(advance, 5000);
-    return () => clearInterval(intervalRef.current);
-  }, [photos]);
-
-  const urlA      = slots.a ? getPhotoUrl(slots.a.url, "medium") : null;
-  const urlB      = slots.b ? getPhotoUrl(slots.b.url, "medium") : null;
-  const isAActive = slots.active === "a";
-  const imgStyle  = (visible) => ({
-    objectFit: "cover", objectPosition: "center center",
-    filter: "brightness(0.58) saturate(0.85)",
-    opacity: visible ? 1 : 0,
-    transition: "opacity 1.2s ease-in-out",
-    willChange: "opacity",
-  });
-
-  return (
-    <section style={{
-      position: "relative",
-      width: "100%",
-      height: "100vh",
-      minHeight: "480px",
-      overflow: "hidden",
-      background: "transparent",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}>
-      {urlA && <Image src={urlA} alt="" fill style={imgStyle(isAActive)}  sizes="100vw" priority />}
-      {urlB && <Image src={urlB} alt="" fill style={imgStyle(!isAActive)} sizes="100vw" />}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(to bottom, transparent 40%, rgba(19,16,12,0.95) 100%)",
-      }} />
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none", padding: "0 1rem" }}>
-        <h1 style={{
-          margin: 0,
-          color: "#fff",
-          fontWeight: 300,
-          fontSize: "clamp(28px, 5vw, 56px)",
-          letterSpacing: "0.24em",
-        }}>
-          FAMILY
-        </h1>
-        <p style={{
-          margin: "0.6rem 0 0",
-          color: "rgba(255,255,255,0.22)",
-          fontSize: "10px",
-          letterSpacing: "0.34em",
-          textTransform: "uppercase",
-        }}>
-          always &amp; forever
-        </p>
-      </div>
-    </section>
-  );
 }
 
 // ── 2. Strip ──────────────────────────────────────────────────────────────────
@@ -691,7 +594,11 @@ export default function FamilyPage() {
     <Providers>
       <div style={{ minHeight: "100vh" }}>
 
-        <FamHero />
+        <HeroSection
+          fetchUrl="/api/headers"
+          title="FAMILY"
+          subtitle="always & forever"
+        />
 
         <div style={{ overflow: "hidden", minHeight: "144px" }}>
           <span style={LABEL_STYLE}>moments</span>
