@@ -23,10 +23,11 @@ export async function GET(request) {
     });
     if (error) throw error;
 
+    const IMAGE_EXT = /\.(jpe?g|png|gif|webp|avif|tiff?|bmp)$/i;
     const files = (data || []).filter(
       (f) =>
-        f.metadata?.mimetype?.startsWith("image/") &&
-        !/\.(heic|heif|HEIC|HEIF)$/i.test(f.name)
+        (f.metadata?.mimetype?.startsWith("image/") || IMAGE_EXT.test(f.name)) &&
+        !/\.(heic|heif)$/i.test(f.name)
     );
 
     const mapped = files.map((f) => {
