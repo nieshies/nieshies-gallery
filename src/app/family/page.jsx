@@ -646,19 +646,9 @@ export default function FamilyPage() {
     fetchPhotos("/api/family/strip").then(ps => setStrip(shuffle(ps)));
   }, []);
 
-  // Scatter + masonry aggregate from all member subfolders
+  // Scatter + masonry come from the family/photos folder
   useEffect(() => {
-    const urls = MEMBERS.map(m => `/api/family/member?folder=${m.folder}`);
-    Promise.all(urls.map(fetchPhotos)).then(results => {
-      const seen = new Set();
-      const all = [];
-      for (const list of results) {
-        for (const p of list) {
-          if (!seen.has(p.url)) { seen.add(p.url); all.push(p); }
-        }
-      }
-      setPhotos(shuffle(all));
-    });
+    fetchPhotos("/api/family/photos").then(ps => setPhotos(shuffle(ps)));
   }, []);
 
   const n       = photos.length;
