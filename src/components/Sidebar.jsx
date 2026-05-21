@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SECTIONS = [
-  { key: "home",   label: "Home",   hint: "uploads bucket" },
-  { key: "amnie",  label: "Amnie",  hint: "amnie bucket"   },
-  { key: "family", label: "Family", hint: "family bucket"  },
+  { key: "home",              label: "Home",        hint: "uploads bucket",      page: "home",   folder: "" },
+  { key: "amnie-achievement", label: "Achievement", hint: "amnie › achievement", page: "amnie",  folder: "achievement" },
+  { key: "amnie-moments",     label: "Moments",     hint: "amnie › moments",     page: "amnie",  folder: "moments" },
+  { key: "family",            label: "Family",      hint: "family bucket",       page: "family", folder: "" },
 ];
 
 const links = [
@@ -157,7 +158,7 @@ export default function Sidebar() {
 function UploadLightbox({ onClose }) {
   const pathname = usePathname();
   const defaultSection = pathname.startsWith("/amnie")
-    ? "amnie"
+    ? "amnie-achievement"
     : pathname.startsWith("/family")
     ? "family"
     : "home";
@@ -206,9 +207,11 @@ function UploadLightbox({ onClose }) {
     for (const file of files) {
       setStatus(`Uploading ${done + 1}/${files.length}...`);
       try {
+        const sectionConfig = SECTIONS.find((s) => s.key === section);
         const fd = new FormData();
         fd.append("file", file);
-        fd.append("page", section);
+        fd.append("page", sectionConfig?.page || section);
+        fd.append("folder", sectionConfig?.folder || "");
         const res = await fetch("/api/photos", { method: "POST", body: fd });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -310,7 +313,7 @@ function UploadLightbox({ onClose }) {
             disabled={!files.length || uploading}
             className="w-full rounded-xl border border-accent/40 py-3 text-sm uppercase tracking-[0.24em] text-accent transition-all hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-30"
           >
-            {uploading ? "uploading..." : `upload to ${section}`}
+            {uploading ? "uploading..." : `upload to ${SECTIONS.find((s) => s.key === section)?.hint || section}`}
           </button>
         </div>
       </div>

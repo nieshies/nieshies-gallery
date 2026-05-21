@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getPhotoUrl } from "@/utils/photo";
 
-// Each row sums to 4 cols: [2+1+1], [1+1+2], [1+2+1], [2+1+1]
-const SPANS = [2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1];
+// Rows: [3+1], [2+2], [1+2+1], [1+1+2], [2+2] — varied widths, each row = 4 cols
+const SPANS = [3, 1, 2, 2, 1, 2, 1, 1, 1, 2, 2, 2];
 
 export default function EndCard({ photos: propPhotos }) {
   const [fetched, setFetched] = useState([]);
@@ -27,7 +27,7 @@ export default function EndCard({ photos: propPhotos }) {
         .ec-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          grid-auto-rows: 200px;
+          grid-auto-rows: 220px;
           gap: 8px;
         }
         .ec-item {

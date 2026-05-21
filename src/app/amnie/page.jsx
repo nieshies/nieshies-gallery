@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Providers from "../providers";
 import ScatterSection from "@/components/sections/ScatterSection";
@@ -271,125 +271,32 @@ function DualCountdown() {
 
 // ── 3. Achievements ──────────────────────────────────────────────────────────
 
-function AchievementModal({ item, onClose }) {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.9)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: SURFACE,
-          border: BORDER,
-          borderRadius: "16px",
-          overflow: "hidden",
-          width: "min(92vw, 420px)",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            position: "absolute",
-            top: "0.75rem",
-            right: "0.85rem",
-            background: "none",
-            border: "none",
-            color: "rgba(255,255,255,0.45)",
-            fontSize: "22px",
-            lineHeight: 1,
-            cursor: "pointer",
-            zIndex: 10,
-          }}
-        >
-          ×
-        </button>
-
-        <div style={{ position: "relative", aspectRatio: "4 / 3" }}>
-          <Image
-            src={getPhotoUrl(item.imageUrl, "medium")}
-            alt={item.title}
-            fill
-            style={{ objectFit: "cover" }}
-            sizes="min(92vw, 420px)"
-          />
-          <span style={{
-            position: "absolute",
-            top: "0.65rem",
-            left: "0.65rem",
-            background: "rgba(0,0,0,0.65)",
-            backdropFilter: "blur(6px)",
-            color: "#f0d090",
-            fontSize: "9px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            padding: "0.22rem 0.55rem",
-            borderRadius: "3px",
-          }}>
-            {item.year}
-          </span>
-        </div>
-
-        <div style={{ padding: "1.25rem 1.25rem 1.5rem" }}>
-          <h2 style={{
-            margin: "0 0 0.6rem",
-            color: "#fff",
-            fontWeight: 400,
-            fontSize: "1.05rem",
-            letterSpacing: "0.03em",
-          }}>
-            {item.title}
-          </h2>
-          <p style={{
-            margin: 0,
-            color: "rgba(255,255,255,0.55)",
-            fontSize: "0.875rem",
-            lineHeight: 1.65,
-          }}>
-            {item.description}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AchievementsGrid() {
-  const [achievements, setAchievements] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const close = useCallback(() => setSelected(null), []);
+  const [photos, setPhotos] = useState([]);
+  const [lightbox, setLightbox] = useState({ open: false, idx: 0 });
 
   useEffect(() => {
-    fetch("/api/achievements")
+    fetch("/api/photos?page=amnie&folder=achievement")
       .then((r) => r.json())
-      .then((d) => setAchievements(d.achievements || []))
+      .then((d) => setPhotos(d.photos || []))
       .catch(() => {});
   }, []);
 
-  if (achievements.length === 0) return null;
+  useEffect(() => {
+    if (!lightbox.open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setLightbox((p) => ({ ...p, open: false }));
+      if (e.key === "ArrowRight") setLightbox((p) => ({ ...p, idx: Math.min(p.idx + 1, photos.length - 1) }));
+      if (e.key === "ArrowLeft")  setLightbox((p) => ({ ...p, idx: Math.max(p.idx - 1, 0) }));
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [lightbox.open, photos.length]);
+
+  if (photos.length === 0) return null;
+
+  const current = photos[lightbox.idx];
 
   return (
     <section style={{ background: BG, padding: "0 1.25rem 0" }}>
@@ -401,71 +308,64 @@ function AchievementsGrid() {
         maxWidth: "680px",
         margin: "0 auto",
       }}>
-        {achievements.map((item) => (
+        {photos.map((photo, i) => (
           <div
-            key={item.id}
-            onClick={() => setSelected(item)}
+            key={photo.id}
+            onClick={() => setLightbox({ open: true, idx: i })}
             style={{
               background: SURFACE,
-              border: BORDER,
+              border: `1px solid ${BORDER}`,
               borderRadius: "12px",
               overflow: "hidden",
               cursor: "pointer",
+              position: "relative",
+              aspectRatio: "4 / 3",
             }}
           >
-            <div style={{ position: "relative", aspectRatio: "4 / 3" }}>
-              <Image
-                src={getPhotoUrl(item.imageUrl, "thumb")}
-                alt={item.title}
-                fill
-                style={{ objectFit: "cover", filter: "brightness(0.8)" }}
-                sizes="(max-width: 680px) 50vw, 340px"
-                loading="lazy"
-              />
-              <span style={{
-                position: "absolute",
-                top: "0.45rem",
-                left: "0.45rem",
-                background: "rgba(0,0,0,0.6)",
-                backdropFilter: "blur(4px)",
-                color: "#f0d090",
-                fontSize: "9px",
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                padding: "0.18rem 0.45rem",
-                borderRadius: "3px",
-              }}>
-                {item.year}
-              </span>
-            </div>
-            <div style={{ padding: "0.65rem 0.7rem 0.75rem" }}>
-              <p style={{
-                margin: "0 0 0.2rem",
-                color: "rgba(255,255,255,0.88)",
-                fontSize: "0.76rem",
-                fontWeight: 500,
-                lineHeight: 1.3,
-              }}>
-                {item.title}
-              </p>
-              <p style={{
-                margin: 0,
-                color: "rgba(255,255,255,0.34)",
-                fontSize: "0.68rem",
-                lineHeight: 1.45,
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-              }}>
-                {item.description}
-              </p>
-            </div>
+            <Image
+              src={getPhotoUrl(photo.url, "thumb")}
+              alt=""
+              fill
+              style={{ objectFit: "cover", filter: "brightness(0.82)" }}
+              sizes="(max-width: 680px) 50vw, 340px"
+              loading="lazy"
+            />
           </div>
         ))}
       </div>
 
-      {selected && <AchievementModal item={selected} onClose={close} />}
+      {lightbox.open && (
+        <div
+          onClick={() => setLightbox((p) => ({ ...p, open: false }))}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)",
+            zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "relative", width: "min(92vw, 520px)", aspectRatio: "4/3", borderRadius: "14px", overflow: "hidden" }}
+          >
+            <Image src={getPhotoUrl(current.url, "medium")} alt="" fill style={{ objectFit: "cover" }} sizes="min(92vw, 520px)" priority />
+          </div>
+          <button
+            onClick={() => setLightbox((p) => ({ ...p, open: false }))}
+            style={{ position: "absolute", top: "1rem", right: "1.25rem", background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: "28px", cursor: "pointer" }}
+          >×</button>
+          {lightbox.idx > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); setLightbox((p) => ({ ...p, idx: p.idx - 1 })); }}
+              style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              &#8592;
+            </button>
+          )}
+          {lightbox.idx < photos.length - 1 && (
+            <button onClick={(e) => { e.stopPropagation(); setLightbox((p) => ({ ...p, idx: p.idx + 1 })); }}
+              style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", width: 38, height: 38, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              &#8594;
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -473,10 +373,19 @@ function AchievementsGrid() {
 // ── 4. Scatter ───────────────────────────────────────────────────────────────
 
 function AmnScatter() {
+  const [photos, setPhotos] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/photos?page=amnie&folder=moments")
+      .then((r) => r.json())
+      .then((d) => setPhotos(d.photos || []))
+      .catch(() => {});
+  }, []);
+
   return (
     <section style={{ background: BG, overflow: "hidden" }}>
       <SectionLabel>moments</SectionLabel>
-      <ScatterSection page="amnie" />
+      {photos.length > 0 && <ScatterSection photos={photos} />}
     </section>
   );
 }

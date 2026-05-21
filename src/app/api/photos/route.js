@@ -12,10 +12,12 @@ const BUCKET_MAP = {
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const page   = searchParams.get("page") || "home";
+  const folder = searchParams.get("folder") || "";
   const bucket = BUCKET_MAP[page] ?? "uploads";
+  const listPath = folder || "";
 
   try {
-    const { data, error } = await supabase.storage.from(bucket).list("", {
+    const { data, error } = await supabase.storage.from(bucket).list(listPath, {
       limit:  200,
       sortBy: { column: "created_at", order: "desc" },
     });
@@ -28,7 +30,8 @@ export async function GET(request) {
           !/\.(heic|heif|HEIC|HEIF)$/i.test(f.name)
       )
       .map((f) => {
-        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(f.name);
+        const filePath = folder ? `${folder}/${f.name}` : f.name;
+        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
         return { id: f.id || f.name, name: f.name, url: urlData.publicUrl, caption: "" };
       });
 
@@ -45,12 +48,13 @@ export async function POST(request) {
     const file    = formData.get("file");
     const caption = String(formData.get("caption") || "").trim();
     const page    = String(formData.get("page") || "home").toLowerCase();
+    const folder  = String(formData.get("folder") || "").trim();
 
     const error = validateFile(file);
     if (error) return NextResponse.json({ error }, { status: 400 });
 
     const bucket = BUCKET_MAP[page] ?? "uploads";
-    const result = await saveUpload(file, bucket);
+    const result = await saveUpload(file, bucket, folder);
 
     const photo = await prisma.galleryPhoto.create({
       data: {
@@ -62,7 +66,7 @@ export async function POST(request) {
         width:     result.width,
         height:    result.height,
         page,
-        tags:      [page],
+        tags:      [page, ...(folder ? [folder] : [])],
       },
     });
 

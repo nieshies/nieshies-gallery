@@ -110,7 +110,7 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
         style={{
           position: "relative",
           width: "100%",
-          height: "clamp(520px, 68vh, 800px)",
+          height: "clamp(620px, 80vh, 1000px)",
           overflow: "hidden",
         }}
       >

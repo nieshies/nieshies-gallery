@@ -36,8 +36,8 @@ export default function PhotoStrip({ photos: propPhotos }) {
         }
         .ps-wrap {
           position: relative;
-          width: 140px;
-          height: 249px;
+          width: 170px;
+          height: 302px;
           flex-shrink: 0;
           border-radius: 10px;
           overflow: hidden;
@@ -58,7 +58,7 @@ export default function PhotoStrip({ photos: propPhotos }) {
           opacity: 0;
         }
         @media (max-width: 640px) {
-          .ps-wrap { width: 100px; height: 178px; }
+          .ps-wrap { width: 110px; height: 196px; }
           .ps-track { animation-duration: 22s; }
         }
       `}</style>

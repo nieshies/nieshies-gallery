@@ -83,11 +83,9 @@ export default function Page() {
       )}
 
       {scatter.length > 0 && (
-        <div style={SEC}>
+        <div>
           <span style={LABEL}>scattered</span>
-          <div style={{ overflow: "hidden" }}>
-            <ScatterSection photos={scatter} />
-          </div>
+          <ScatterSection photos={scatter} />
         </div>
       )}
 

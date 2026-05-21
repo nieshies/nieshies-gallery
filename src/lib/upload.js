@@ -20,7 +20,7 @@ export function validateFile(file) {
   return null;
 }
 
-export async function saveUpload(file, bucket = "uploads") {
+export async function saveUpload(file, bucket = "uploads", folder = "") {
   const raw = Buffer.from(await file.arrayBuffer());
 
   const { data: buffer, info } = await sharp(raw)
@@ -29,7 +29,8 @@ export async function saveUpload(file, bucket = "uploads") {
     .webp({ quality: 82 })
     .toBuffer({ resolveWithObject: true });
 
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+  const basename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+  const filename = folder ? `${folder}/${basename}` : basename;
 
   const { error } = await supabase.storage
     .from(bucket)
@@ -54,7 +55,8 @@ export async function saveUpload(file, bucket = "uploads") {
 }
 
 export async function deleteUpload(url, bucket = "uploads") {
-  const filename = url.split("/").pop();
+  const parts = url.split("/storage/v1/object/public/");
+  const filename = parts[1]?.split("/").slice(1).join("/") || url.split("/").pop();
   if (!filename) return;
   const { error } = await supabase.storage.from(bucket).remove([filename]);
   if (error) throw new Error(`Supabase delete failed: ${error.message}`);
