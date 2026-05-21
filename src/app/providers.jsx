@@ -12,7 +12,7 @@ export default function Providers({ children }) {
     <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <div className="min-h-screen relative overflow-x-hidden">
-        <div className="fixed inset-0 z-0 bg-[#0a0805]" />
+        <div className="fixed inset-0 z-0 bg-[#13100c]" />
         <div className="bg-blobs" aria-hidden="true">
           <div className="bg-blob bg-blob-1" />
           <div className="bg-blob bg-blob-2" />
