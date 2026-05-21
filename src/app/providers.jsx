@@ -12,7 +12,15 @@ export default function Providers({ children }) {
     <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <div className="min-h-screen relative overflow-x-hidden">
-        <div className="fixed inset-0 z-0 bg-[#0a0a0a]" />
+        <div className="fixed inset-0 z-0 bg-[#0a0805]" />
+        <div className="bg-blobs" aria-hidden="true">
+          <div className="bg-blob bg-blob-1" />
+          <div className="bg-blob bg-blob-2" />
+          <div className="bg-blob bg-blob-3" />
+          <div className="bg-blob bg-blob-4" />
+          <div className="bg-blob bg-smoke-1" />
+          <div className="bg-blob bg-smoke-2" />
+        </div>
         <div className="noise-overlay" />
         <div className="ambient-glow" />
         <div className="vignette-overlay" />
