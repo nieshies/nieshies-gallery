@@ -26,10 +26,14 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    const container = document.getElementById("gallery-scroll");
-    const hero = container
-      ? container.querySelector("[data-hero]")
-      : document.querySelector("[data-hero]");
+    // Non-home pages: always show — no DOM query (pathname updates before
+    // DOM commits, so querying [data-hero] here would find the old page's element)
+    if (pathname !== "/") {
+      setNavVisible(true);
+      return;
+    }
+    // Home page only: hide nav while the hero section is in view
+    const hero = document.querySelector("[data-hero]");
     if (!hero) {
       setNavVisible(true);
       return;
