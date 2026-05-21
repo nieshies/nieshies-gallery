@@ -83,7 +83,7 @@ export default function HeroSection() {
         width: "100%",
         height: "100vh",
         overflow: "hidden",
-        background: "#0a0805",
+        background: "transparent",
       }}
     >
       {urlA && <NextImage src={urlA} alt="" fill style={imgStyle(isAActive)} sizes="100vw" priority />}
@@ -93,7 +93,7 @@ export default function HeroSection() {
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom, transparent 40%, #0a0805 100%)",
+          background: "linear-gradient(to bottom, transparent 40%, rgba(19,16,12,0.95) 100%)",
         }}
       />
 

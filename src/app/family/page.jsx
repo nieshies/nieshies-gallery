@@ -105,7 +105,7 @@ function FamHero() {
       height: "100vh",
       minHeight: "480px",
       overflow: "hidden",
-      background: BG,
+      background: "transparent",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -123,7 +123,7 @@ function FamHero() {
       <div style={{
         position: "absolute",
         inset: 0,
-        background: "linear-gradient(to bottom, transparent 40%, #0a0805 100%)",
+        background: "linear-gradient(to bottom, transparent 40%, rgba(19,16,12,0.9) 100%)",
       }} />
       <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 1rem" }}>
         <h1 style={{
@@ -351,7 +351,7 @@ function FamMemberCards() {
         @media (max-width: 639px) { .fam-cards-grid { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
 
-      <section style={{ background: BG, padding: "0 1.25rem" }}>
+      <section style={{ padding: "0 1.25rem" }}>
         <span style={LABEL_STYLE}>the team</span>
         <div className="fam-cards-grid">
           {MEMBERS.map(member => {
@@ -657,7 +657,7 @@ export default function FamilyPage() {
 
   return (
     <Providers>
-      <div style={{ background: BG, minHeight: "100vh" }}>
+      <div style={{ minHeight: "100vh" }}>
 
         <FamHero />
 

@@ -70,7 +70,7 @@ function AmnHero() {
       height: "62vh",
       minHeight: "300px",
       overflow: "hidden",
-      background: BG,
+      background: "transparent",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -89,7 +89,7 @@ function AmnHero() {
       <div style={{
         position: "absolute",
         inset: 0,
-        background: `linear-gradient(to bottom, ${BG}44 0%, ${BG} 100%)`,
+        background: "linear-gradient(to bottom, transparent 40%, rgba(19,16,12,0.9) 100%)",
       }} />
 
       <div style={{
@@ -242,7 +242,7 @@ function DualCountdown() {
   const shrinkPct = Math.max(0,   ((TARGET - now)          / TOTAL_MS) * 100);
 
   return (
-    <section style={{ padding: "0 1.25rem 3.5rem", background: BG }}>
+    <section style={{ padding: "0 1.25rem 3.5rem" }}>
       <SectionLabel>timeline</SectionLabel>
       <div style={{
         display: "flex",
@@ -300,7 +300,7 @@ function AchievementsGrid() {
   const current = photos[lightbox.idx];
 
   return (
-    <section style={{ background: BG, padding: "0 1.25rem 0" }}>
+    <section style={{ padding: "0 1.25rem 0" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0.5rem" }}>
         <SectionLabel>milestones</SectionLabel>
         <UploadButton
@@ -418,7 +418,7 @@ function AmnScatter() {
   }, []);
 
   return (
-    <section style={{ background: BG, overflow: "hidden" }}>
+    <section style={{ overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0.5rem" }}>
         <SectionLabel>moments</SectionLabel>
         <UploadButton
@@ -452,7 +452,7 @@ function AmnScatter() {
 export default function AmniePage() {
   return (
     <Providers>
-      <div style={{ background: BG, minHeight: "100vh" }}>
+      <div style={{ minHeight: "100vh" }}>
         <AmnHero />
         <DualCountdown />
         <AchievementsGrid />
