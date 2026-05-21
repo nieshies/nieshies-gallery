@@ -170,10 +170,10 @@ function FamStrip({ photos }) {
         .fam-strip-track:hover { animation-play-state: paused; }
         .fam-strip-item {
           position: relative;
-          width: 140px;
-          height: 100px;
+          width: 190px;
+          height: 140px;
           flex-shrink: 0;
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
           transition: transform 0.3s ease;
           cursor: default;
@@ -192,7 +192,7 @@ function FamStrip({ photos }) {
                 fill
                 className="fam-strip-img"
                 style={{ objectFit: "cover", filter: "brightness(0.82)" }}
-                sizes="140px"
+                sizes="190px"
                 loading="lazy"
                 draggable={false}
               />
@@ -641,13 +641,18 @@ function FamMasonry({ photos }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function FamilyPage() {
-  const [photos, setPhotos] = useState([]);
+  const [photos, setPhotos]     = useState([]);
+  const [stripPhotos, setStrip] = useState([]);
 
-  // Aggregate from all member folders — root of family bucket is usually empty
+  // Strip comes from the dedicated family/strip folder
+  useEffect(() => {
+    fetchPhotos("/api/family/strip").then(ps => setStrip(shuffle(ps)));
+  }, []);
+
+  // Scatter + masonry aggregate from all member subfolders
   useEffect(() => {
     const urls = MEMBERS.map(m => `/api/family/member?folder=${m.folder}`);
     Promise.all(urls.map(fetchPhotos)).then(results => {
-      // Deduplicate by URL in case any photo appears in multiple folders
       const seen = new Set();
       const all = [];
       for (const list of results) {
@@ -660,8 +665,6 @@ export default function FamilyPage() {
   }, []);
 
   const n       = photos.length;
-  const strip   = photos.slice(0, Math.min(6, n));
-  // scatter and masonry share the full pool so they always render
   const scatter = photos.slice(0, Math.min(12, n));
   const masonry = photos;
 
@@ -671,9 +674,9 @@ export default function FamilyPage() {
 
         <FamHero />
 
-        <div style={{ overflow: "hidden", minHeight: "112px" }}>
+        <div style={{ overflow: "hidden", minHeight: "144px" }}>
           <span style={LABEL_STYLE}>moments</span>
-          <FamStrip photos={strip} />
+          <FamStrip photos={stripPhotos} />
         </div>
 
         <FamMemberCards />
