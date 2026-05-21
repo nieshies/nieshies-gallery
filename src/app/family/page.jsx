@@ -359,7 +359,7 @@ function FamMemberCards() {
             const cover  = photos[0];
             return (
               <div key={member.folder} className="fam-card" onClick={() => openModal(member)}>
-                <div style={{ position: "relative", width: "100%", height: "72px" }}>
+                <div style={{ position: "relative", width: "100%", height: "130px" }}>
                   {cover ? (
                     <Image
                       src={getPhotoUrl(cover.url, "thumb")}
@@ -649,12 +649,11 @@ export default function FamilyPage() {
       .then(ps => setPhotos(shuffle(ps)));
   }, []);
 
-  const n         = photos.length;
-  const stripEnd  = Math.min(8, n);
-  const scatEnd   = Math.min(stripEnd + 12, n);
-  const strip     = photos.slice(0, stripEnd);
-  const scatter   = photos.slice(stripEnd, scatEnd);
-  const masonry   = photos.slice(scatEnd);
+  const n       = photos.length;
+  const strip   = photos.slice(0, Math.min(6, n));
+  // scatter and masonry share the full pool so they always render
+  const scatter = photos.slice(0, Math.min(12, n));
+  const masonry = photos;
 
   return (
     <Providers>
