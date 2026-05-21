@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Providers from "../providers";
 import HeroSection from "@/components/sections/HeroSection";
 import ScatterSection from "@/components/sections/ScatterSection";
@@ -380,7 +381,7 @@ export default function AmniePage() {
     <Providers>
       <div style={{ minHeight: "100vh" }}>
         <HeroSection
-          fetchUrl="/api/photos?page=amnie&folder=hero"
+          fetchUrl="/api/headers"
           title="AMNIE"
           subtitle="my person · always & forever"
         />
