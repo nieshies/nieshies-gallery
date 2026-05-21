@@ -6,6 +6,7 @@ import HeroSection from "@/components/sections/HeroSection";
 import ScatterSection from "@/components/sections/ScatterSection";
 import { getPhotoUrl } from "@/utils/photo";
 import { UploadButton } from "@/components/features/UploadLightbox";
+import AmnieMusicAmbient from "@/components/features/AmnieMusicAmbient";
 
 // ── constants ────────────────────────────────────────────────────────────────
 
@@ -405,6 +406,7 @@ export default function AmniePage() {
         <AmnScatter />
         <div style={{ height: "4rem" }} />
       </div>
+      <AmnieMusicAmbient />
     </Providers>
   );
 }
