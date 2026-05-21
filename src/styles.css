@@ -133,7 +133,6 @@ body {
 .bg-blob {
   position: absolute;
   border-radius: 50%;
-  will-change: transform;
 }
 
 /* Central warm light source — like light through haze from above */
@@ -224,6 +223,34 @@ body {
 @keyframes smoke-drift6 {
   0%, 100% { transform: translate(0,      0)    scaleX(1);    }
   50%       { transform: translate(-10vw,-4vh) scaleX(1.12); }
+}
+
+/* ── Mobile: disable heavy blur + animation (kills GPU on iOS Safari) ───────── */
+@media (max-width: 768px) {
+  .bg-blob {
+    will-change: auto;
+    animation: none !important;
+    filter: none !important;
+  }
+  .bg-blob-1 {
+    width: 100vw; height: 60vh;
+    top: -10vh; left: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(220,185,140,0.22) 0%, transparent 70%);
+  }
+  .bg-blob-2 {
+    width: 80vw; height: 50vh;
+    top: 30vh; left: -10vw;
+    background: radial-gradient(ellipse, rgba(200,140,70,0.14) 0%, transparent 65%);
+  }
+  .bg-blob-3 { display: none; }
+  .bg-blob-4 { display: none; }
+  .bg-smoke-1 {
+    width: 100vw; height: 50vh;
+    top: 40vh; left: 0;
+    border-radius: 0;
+    background: radial-gradient(ellipse, rgba(255,245,230,0.07) 0%, transparent 70%);
+  }
+  .bg-smoke-2 { display: none; }
 }
 
 /* Scroll Gallery */
