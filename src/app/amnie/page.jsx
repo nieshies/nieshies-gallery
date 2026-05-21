@@ -4,6 +4,7 @@ import Image from "next/image";
 import Providers from "../providers";
 import ScatterSection from "@/components/sections/ScatterSection";
 import { getPhotoUrl } from "@/utils/photo";
+import { UploadButton } from "@/components/features/UploadLightbox";
 
 // ── constants ────────────────────────────────────────────────────────────────
 
@@ -300,7 +301,29 @@ function AchievementsGrid() {
 
   return (
     <section style={{ background: BG, padding: "0 1.25rem 0" }}>
-      <SectionLabel>milestones</SectionLabel>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0.5rem" }}>
+        <SectionLabel>milestones</SectionLabel>
+        <UploadButton
+          defaultSection="amnie-achievement"
+          label="+"
+          style={{
+            marginBottom: "0.75rem",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            border: "1px solid rgba(255,220,180,0.25)",
+            background: "transparent",
+            color: "rgba(255,220,180,0.5)",
+            fontSize: "13px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            flexShrink: 0,
+          }}
+        />
+      </div>
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(2, 1fr)",
@@ -318,18 +341,30 @@ function AchievementsGrid() {
               borderRadius: "12px",
               overflow: "hidden",
               cursor: "pointer",
-              position: "relative",
-              aspectRatio: "4 / 3",
             }}
           >
-            <Image
-              src={getPhotoUrl(photo.url, "thumb")}
-              alt=""
-              fill
-              style={{ objectFit: "cover", filter: "brightness(0.82)" }}
-              sizes="(max-width: 680px) 50vw, 340px"
-              loading="lazy"
-            />
+            <div style={{ position: "relative", width: "100%", aspectRatio: "4 / 3" }}>
+              <Image
+                src={getPhotoUrl(photo.url, "thumb")}
+                alt=""
+                fill
+                style={{ objectFit: "cover", filter: "brightness(0.82)" }}
+                sizes="(max-width: 680px) 50vw, 340px"
+                loading="lazy"
+              />
+            </div>
+            {photo.caption && (
+              <p style={{
+                margin: 0,
+                padding: "0.5rem 0.7rem 0.65rem",
+                fontSize: "0.72rem",
+                color: "rgba(255,255,255,0.52)",
+                lineHeight: 1.45,
+                letterSpacing: "0.02em",
+              }}>
+                {photo.caption}
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -384,7 +419,29 @@ function AmnScatter() {
 
   return (
     <section style={{ background: BG, overflow: "hidden" }}>
-      <SectionLabel>moments</SectionLabel>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0.5rem" }}>
+        <SectionLabel>moments</SectionLabel>
+        <UploadButton
+          defaultSection="amnie-moments"
+          label="+"
+          style={{
+            marginBottom: "0.75rem",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            border: "1px solid rgba(255,220,180,0.25)",
+            background: "transparent",
+            color: "rgba(255,220,180,0.5)",
+            fontSize: "13px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            flexShrink: 0,
+          }}
+        />
+      </div>
       {photos.length > 0 && <ScatterSection photos={photos} />}
     </section>
   );

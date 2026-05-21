@@ -4,6 +4,7 @@ import Image from "next/image";
 import Providers from "../providers";
 import MasonryGallery from "@/components/features/MasonryGallery";
 import { getPhotoUrl } from "@/utils/photo";
+import { UploadButton } from "@/components/features/UploadLightbox";
 
 // ── constants ────────────────────────────────────────────────────────────────
 
@@ -226,7 +227,29 @@ function FamilyCards() {
 function FamPhotoDump() {
   return (
     <section style={{ background: BG, padding: "0 1.25rem 4rem" }}>
-      <SectionLabel>memories</SectionLabel>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0.5rem" }}>
+        <SectionLabel>memories</SectionLabel>
+        <UploadButton
+          defaultSection="family"
+          label="+"
+          style={{
+            marginBottom: "0.75rem",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            border: "1px solid rgba(255,220,180,0.25)",
+            background: "transparent",
+            color: "rgba(255,220,180,0.5)",
+            fontSize: "13px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            flexShrink: 0,
+          }}
+        />
+      </div>
       <MasonryGallery page="family" />
     </section>
   );

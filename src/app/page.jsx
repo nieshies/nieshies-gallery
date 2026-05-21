@@ -8,6 +8,7 @@ import ScatterSection from "@/components/sections/ScatterSection";
 import StoryViewer from "@/components/features/StoryViewer";
 import MasonryGallery from "@/components/features/MasonryGallery";
 import EndCard from "@/components/sections/EndCard";
+import { UploadButton } from "@/components/features/UploadLightbox";
 
 function shuffle(arr) {
   const a = [...arr];
@@ -17,6 +18,8 @@ function shuffle(arr) {
   }
   return a;
 }
+
+const isLandscape = (p) => p.width && p.height && p.width > p.height;
 
 const LABEL = {
   display: "block",
@@ -42,23 +45,30 @@ export default function Page() {
       .catch(() => {});
   }, []);
 
-  const n = photos.length;
+  const all    = photos;
+  const horiz  = all.filter(isLandscape);
+  const vert   = all.filter((p) => !isLandscape(p));
 
-  // Distribute photos across sections with NO repeats (except endcard which reuses all)
-  // Section sizes tuned for 30+ photos; each section gets a distinct slice
+  // Gallery: landscape-first, up to 5
+  const gallery = [...horiz, ...vert].slice(0, 5);
+  const usedIds = new Set(gallery.map((p) => p.id));
+
+  // Remaining photos in original shuffle order
+  const rest    = all.filter((p) => !usedIds.has(p.id));
+  const n       = rest.length;
+
   const s0 = 0;
-  const s1 = Math.min(s0 + 6, n);   // moments:  6 photos
-  const s2 = Math.min(s1 + 5, n);   // gallery:  5 photos
-  const s3 = Math.min(s2 + 10, n);  // scattered: 10 photos
-  const s4 = Math.min(s3 + 8, n);   // stories:  8 photos
-  const s5 = n;                      // memories: remainder
+  const s1 = Math.min(s0 + 6, n);   // moments:   6 photos
+  const s2 = Math.min(s1 + 10, n);  // scattered: 10 photos
+  const s3 = Math.min(s2 + 8, n);   // stories:    8 photos
+  const s4 = n;                      // masonry:   remainder
 
-  const strip   = photos.slice(s0, s1);
-  const gallery = photos.slice(s1, s2);
-  const scatter = photos.slice(s2, s3);
-  const story   = photos.slice(s3, s4);
-  const masonry = photos.slice(s4, s5);
-  const endcard = photos; // all — EndCard is the summary
+  const strip   = rest.slice(s0, s1);
+  const scatter = rest.slice(s1, s2);
+  const story   = rest.slice(s2, s3);
+  const masonry = rest.slice(s3, s4);
+  // EndCard: landscape-first summary of all photos
+  const endcard = [...horiz, ...vert];
 
   return (
     <Providers>
@@ -109,6 +119,31 @@ export default function Page() {
           <EndCard photos={endcard} />
         </div>
       )}
+
+      <UploadButton
+        defaultSection="home"
+        label="+"
+        style={{
+          position: "fixed",
+          bottom: "1.5rem",
+          right: "1.5rem",
+          zIndex: 50,
+          width: "42px",
+          height: "42px",
+          borderRadius: "50%",
+          border: "1px solid rgba(244,140,54,0.4)",
+          background: "rgba(0,0,0,0.7)",
+          color: "rgba(244,140,54,0.85)",
+          fontSize: "22px",
+          cursor: "pointer",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 0,
+          lineHeight: 1,
+        }}
+      />
     </Providers>
   );
 }

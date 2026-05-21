@@ -23,17 +23,36 @@ export async function GET(request) {
     });
     if (error) throw error;
 
-    const photos = (data || [])
-      .filter(
-        (f) =>
-          f.metadata?.mimetype?.startsWith("image/") &&
-          !/\.(heic|heif|HEIC|HEIF)$/i.test(f.name)
-      )
-      .map((f) => {
-        const filePath = folder ? `${folder}/${f.name}` : f.name;
-        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-        return { id: f.id || f.name, name: f.name, url: urlData.publicUrl, caption: "" };
-      });
+    const files = (data || []).filter(
+      (f) =>
+        f.metadata?.mimetype?.startsWith("image/") &&
+        !/\.(heic|heif|HEIC|HEIF)$/i.test(f.name)
+    );
+
+    const mapped = files.map((f) => {
+      const filePath = folder ? `${folder}/${f.name}` : f.name;
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      return { f, url: urlData.publicUrl };
+    });
+
+    const urls = mapped.map((m) => m.url);
+    const dbRows = await prisma.galleryPhoto.findMany({
+      where: { url: { in: urls } },
+      select: { url: true, width: true, height: true, caption: true },
+    });
+    const dbMap = new Map(dbRows.map((p) => [p.url, p]));
+
+    const photos = mapped.map(({ f, url }) => {
+      const db = dbMap.get(url);
+      return {
+        id: f.id || f.name,
+        name: f.name,
+        url,
+        caption: db?.caption || "",
+        width: db?.width ?? null,
+        height: db?.height ?? null,
+      };
+    });
 
     return NextResponse.json({ photos });
   } catch (err) {
