@@ -155,7 +155,9 @@ function MemberModal({ member, photos, onClose }) {
   const playerRef  = useRef(null);
   const loopRef    = useRef(null);
   const mountedRef = useRef(true);
-  const [muted, setMuted] = useState(false);
+  const startedRef = useRef(false);
+  // "idle" → "playing" → "muted" (idle = not yet started; iOS needs gesture)
+  const [audioState, setAudioState] = useState("idle");
 
   // ── keyboard + scroll lock ────────────────────────────────────────────────
   useEffect(() => {
@@ -165,7 +167,7 @@ function MemberModal({ member, photos, onClose }) {
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [onClose]);
 
-  // ── youtube player ────────────────────────────────────────────────────────
+  // ── youtube player (no autoplay — pill tap triggers start for iOS compat) ─
   useEffect(() => {
     if (!song) return;
     mountedRef.current = true;
@@ -181,15 +183,13 @@ function MemberModal({ member, photos, onClose }) {
         width: 1, height: 1,
         videoId: song.videoId,
         playerVars: {
-          autoplay: 1, controls: 0, disablekb: 1,
+          autoplay: 0, controls: 0, disablekb: 1,
           fs: 0, rel: 0, start: song.start,
           loop: 0, playsinline: 1,
         },
         events: {
-          onReady: e => {
+          onReady: () => {
             if (!mountedRef.current) return;
-            e.target.setVolume(35);
-            e.target.playVideo();
             loopRef.current = setInterval(() => {
               try {
                 const t = playerRef.current?.getCurrentTime?.();
@@ -198,6 +198,10 @@ function MemberModal({ member, photos, onClose }) {
                 }
               } catch {}
             }, 500);
+            // pill was tapped before player was ready — start now
+            if (startedRef.current) {
+              try { playerRef.current.setVolume(35); playerRef.current.playVideo(); } catch {}
+            }
           },
         },
       });
@@ -226,16 +230,27 @@ function MemberModal({ member, photos, onClose }) {
     };
   }, [song]);
 
-  const toggleMute = e => {
+  // called directly from tap event → satisfies iOS gesture requirement
+  const handlePill = e => {
     e.stopPropagation();
-    if (muted) {
-      try { playerRef.current?.unMute(); } catch {}
-      setMuted(false);
-    } else {
+    if (audioState === "idle") {
+      startedRef.current = true;
+      try { playerRef.current?.setVolume(35); playerRef.current?.playVideo(); } catch {}
+      setAudioState("playing");
+    } else if (audioState === "playing") {
       try { playerRef.current?.mute(); } catch {}
-      setMuted(true);
+      setAudioState("muted");
+    } else {
+      try { playerRef.current?.unMute(); } catch {}
+      setAudioState("playing");
     }
   };
+
+  const pillLabel  = audioState === "idle"    ? "♪ tap to play" :
+                     audioState === "playing"  ? "♪ playing"     : "♪ muted";
+  const pillColor  = audioState === "playing"  ? "#c8854a"       :
+                     audioState === "muted"    ? "#5a4838"       : "rgba(200,133,74,0.5)";
+  const pillBorder = audioState === "playing"  ? "rgba(200,133,74,0.3)" : "rgba(90,72,56,0.4)";
 
   return (
     <div
@@ -312,21 +327,22 @@ function MemberModal({ member, photos, onClose }) {
         {song && (
           <div style={{ padding: "0 1.4rem 1.1rem", display: "flex", justifyContent: "flex-end" }}>
             <button
-              onClick={toggleMute}
+              onClick={handlePill}
               style={{
                 background: "rgba(0,0,0,0.35)",
-                border: `0.5px solid ${muted ? "rgba(90,72,56,0.45)" : "rgba(200,133,74,0.3)"}`,
+                border: `0.5px solid ${pillBorder}`,
                 borderRadius: "20px",
                 padding: "5px 13px",
                 display: "flex", alignItems: "center", gap: "5px",
-                color: muted ? "#5a4838" : "#c8854a",
+                color: pillColor,
                 fontSize: "10px", letterSpacing: "0.08em",
                 cursor: "pointer", fontFamily: "inherit",
                 transition: "border-color 0.2s, color 0.2s",
-                minHeight: "30px", touchAction: "manipulation",
+                minHeight: "44px", minWidth: "44px",
+                touchAction: "manipulation",
               }}
             >
-              {muted ? "♪ muted" : "♪ playing"}
+              {pillLabel}
             </button>
           </div>
         )}
