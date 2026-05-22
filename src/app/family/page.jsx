@@ -147,7 +147,7 @@ function FamStrip({ photos }) {
 
 // ── 3. Member cards ───────────────────────────────────────────────────────────
 
-function MemberModal({ member, photos, onClose }) {
+function MemberModal({ member, photos, onClose, onBioSaved }) {
   const hero = photos[0];
   const song = MEMBER_SONGS[member.folder];
 
@@ -277,6 +277,7 @@ function MemberModal({ member, photos, onClose }) {
       const d = await r.json();
       setCurrentBio(d.bio);
       setEditingBio(false);
+      onBioSaved?.(member.folder, d.bio);
     } catch {}
     setSavingBio(false);
   };
@@ -453,23 +454,29 @@ function MemberModal({ member, photos, onClose }) {
 }
 
 function FamMemberCards() {
-  // Load member cover photos progressively — each updates state independently
   const [memberPhotos, setMemberPhotos] = useState({});
+  const [memberBios,   setMemberBios]   = useState({});
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
     MEMBERS.forEach(m => {
       fetchPhotos(`/api/family/member?folder=${m.folder}`).then(photos => {
-        if (photos.length) {
-          setMemberPhotos(prev => ({ ...prev, [m.folder]: photos }));
-        }
+        if (photos.length) setMemberPhotos(prev => ({ ...prev, [m.folder]: photos }));
       });
+      fetch(`/api/family/member-bio?folder=${m.folder}`)
+        .then(r => r.json())
+        .then(d => { if (d.bio) setMemberBios(prev => ({ ...prev, [m.folder]: d.bio })); })
+        .catch(() => {});
     });
   }, []);
 
   const openModal = member => {
     const photos = memberPhotos[member.folder] || [];
     setModal({ member, photos });
+  };
+
+  const handleBioSaved = (folder, bio) => {
+    setMemberBios(prev => ({ ...prev, [folder]: bio }));
   };
 
   return (
@@ -534,7 +541,7 @@ function FamMemberCards() {
                     {member.displayName}
                   </p>
                   <p style={{ margin: 0, color: "rgba(255,255,255,0.3)", fontSize: "0.64rem", fontStyle: "italic", lineHeight: 1.4 }}>
-                    {member.bio}
+                    {memberBios[member.folder] || member.bio}
                   </p>
                 </div>
               </div>
@@ -548,6 +555,7 @@ function FamMemberCards() {
           member={modal.member}
           photos={modal.photos}
           onClose={() => setModal(null)}
+          onBioSaved={handleBioSaved}
         />
       )}
     </>
