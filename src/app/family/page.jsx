@@ -456,7 +456,10 @@ function MemberModal({ member, photos, onClose, onBioSaved }) {
 function FamMemberCards() {
   const [memberPhotos, setMemberPhotos] = useState({});
   const [memberBios,   setMemberBios]   = useState({});
-  const [modal, setModal] = useState(null);
+  const [modal,        setModal]        = useState(null);
+  const [editingCard,  setEditingCard]  = useState(null); // folder key
+  const [cardDraft,    setCardDraft]    = useState("");
+  const [savingCard,   setSavingCard]   = useState(false);
 
   useEffect(() => {
     MEMBERS.forEach(m => {
@@ -465,7 +468,7 @@ function FamMemberCards() {
       });
       fetch(`/api/family/member-bio?folder=${m.folder}`)
         .then(r => r.json())
-        .then(d => { if (d.bio) setMemberBios(prev => ({ ...prev, [m.folder]: d.bio })); })
+        .then(d => { setMemberBios(prev => ({ ...prev, [m.folder]: d.bio || "" })); })
         .catch(() => {});
     });
   }, []);
@@ -477,6 +480,28 @@ function FamMemberCards() {
 
   const handleBioSaved = (folder, bio) => {
     setMemberBios(prev => ({ ...prev, [folder]: bio }));
+  };
+
+  const startCardEdit = (e, folder) => {
+    e.stopPropagation();
+    setCardDraft(memberBios[folder] || MEMBERS.find(m => m.folder === folder)?.bio || "");
+    setEditingCard(folder);
+  };
+
+  const saveCardBio = async (e, folder) => {
+    e.stopPropagation();
+    setSavingCard(true);
+    try {
+      const r = await fetch("/api/family/member-bio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder, bio: cardDraft }),
+      });
+      const d = await r.json();
+      setMemberBios(prev => ({ ...prev, [folder]: d.bio }));
+      setEditingCard(null);
+    } catch {}
+    setSavingCard(false);
   };
 
   return (
@@ -515,9 +540,16 @@ function FamMemberCards() {
           {MEMBERS.map(member => {
             const photos = memberPhotos[member.folder] || [];
             const cover  = photos[0];
+            const displayBio = memberBios[member.folder] !== undefined
+              ? (memberBios[member.folder] || member.bio)
+              : member.bio;
             return (
-              <div key={member.folder} className="fam-card" onClick={() => openModal(member)}>
-                <div style={{ position: "relative", width: "100%", height: "160px" }}>
+              <div key={member.folder} className="fam-card">
+                {/* image area — click opens modal */}
+                <div
+                  style={{ position: "relative", width: "100%", height: "160px", cursor: "pointer" }}
+                  onClick={() => openModal(member)}
+                >
                   {cover ? (
                     <Image
                       src={getPhotoUrl(cover.url, "thumb")}
@@ -536,13 +568,71 @@ function FamMemberCards() {
                     </span>
                   </div>
                 </div>
-                <div style={{ padding: "0.55rem 0.7rem 0.65rem" }}>
+
+                {/* text area — bio is editable inline */}
+                <div style={{ padding: "0.55rem 0.7rem 0.65rem" }} onClick={e => e.stopPropagation()}>
                   <p style={{ margin: 0, color: TEXT, fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.03em", textTransform: "capitalize" }}>
                     {member.displayName}
                   </p>
-                  <p style={{ margin: 0, color: "rgba(255,255,255,0.3)", fontSize: "0.64rem", fontStyle: "italic", lineHeight: 1.4 }}>
-                    {memberBios[member.folder] || member.bio}
-                  </p>
+                  {editingCard === member.folder ? (
+                    <div>
+                      <input
+                        value={cardDraft}
+                        onChange={e => setCardDraft(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") saveCardBio(e, member.folder);
+                          if (e.key === "Escape") setEditingCard(null);
+                        }}
+                        autoFocus
+                        style={{
+                          width: "100%", boxSizing: "border-box",
+                          background: "rgba(0,0,0,0.3)",
+                          border: "1px solid rgba(200,133,74,0.2)",
+                          borderRadius: "4px",
+                          color: "rgba(255,255,255,0.6)",
+                          fontSize: "0.64rem", fontStyle: "italic",
+                          padding: "3px 6px", fontFamily: "inherit", outline: "none",
+                        }}
+                      />
+                      <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.3rem" }}>
+                        <button
+                          onClick={e => saveCardBio(e, member.folder)}
+                          disabled={savingCard}
+                          style={{
+                            background: "rgba(200,133,74,0.15)",
+                            border: "1px solid rgba(200,133,74,0.3)",
+                            borderRadius: "4px", padding: "2px 10px",
+                            color: "#c8854a", fontSize: "0.6rem",
+                            cursor: "pointer", fontFamily: "inherit",
+                            minHeight: "24px", touchAction: "manipulation",
+                          }}
+                        >{savingCard ? "…" : "save"}</button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setEditingCard(null); }}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "4px", padding: "2px 10px",
+                            color: "rgba(255,255,255,0.3)", fontSize: "0.6rem",
+                            cursor: "pointer", fontFamily: "inherit",
+                            minHeight: "24px", touchAction: "manipulation",
+                          }}
+                        >✕</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p
+                      onClick={e => startCardEdit(e, member.folder)}
+                      title="tap to edit"
+                      style={{
+                        margin: 0, color: "rgba(255,255,255,0.3)",
+                        fontSize: "0.64rem", fontStyle: "italic", lineHeight: 1.4,
+                        cursor: "text", borderBottom: "1px dashed rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      {displayBio}
+                    </p>
+                  )}
                 </div>
               </div>
             );
