@@ -252,6 +252,35 @@ function MemberModal({ member, photos, onClose }) {
                      audioState === "muted"    ? "#5a4838"       : "rgba(200,133,74,0.5)";
   const pillBorder = audioState === "playing"  ? "rgba(200,133,74,0.3)" : "rgba(90,72,56,0.4)";
 
+  // ── editable bio ──────────────────────────────────────────────────────────
+  const [currentBio,  setCurrentBio]  = useState(member.bio);
+  const [draftBio,    setDraftBio]    = useState(member.bio);
+  const [editingBio,  setEditingBio]  = useState(false);
+  const [savingBio,   setSavingBio]   = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/family/member-bio?folder=${member.folder}`)
+      .then(r => r.json())
+      .then(d => { if (d.bio) { setCurrentBio(d.bio); setDraftBio(d.bio); } })
+      .catch(() => {});
+  }, [member.folder]);
+
+  const saveBio = async e => {
+    e.stopPropagation();
+    setSavingBio(true);
+    try {
+      const r = await fetch("/api/family/member-bio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: member.folder, bio: draftBio }),
+      });
+      const d = await r.json();
+      setCurrentBio(d.bio);
+      setEditingBio(false);
+    } catch {}
+    setSavingBio(false);
+  };
+
   return (
     <div
       onClick={onClose}
@@ -270,7 +299,7 @@ function MemberModal({ member, photos, onClose }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: "560px",
+          maxWidth: "640px",
           background: SURFACE,
           borderRadius: "18px",
           overflow: "hidden",
@@ -279,18 +308,18 @@ function MemberModal({ member, photos, onClose }) {
         }}
       >
         {hero ? (
-          <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }}>
+          <div style={{ position: "relative", width: "100%", aspectRatio: "4/3" }}>
             <Image
               src={getPhotoUrl(hero.url, "medium")}
               alt=""
               fill
-              style={{ objectFit: "cover", filter: "brightness(0.85)" }}
-              sizes="560px"
+              style={{ objectFit: "cover", filter: "brightness(0.88)" }}
+              sizes="640px"
               priority
             />
           </div>
         ) : (
-          <div style={{ width: "100%", aspectRatio: "16/9", background: "rgba(200,133,74,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: "100%", aspectRatio: "4/3", background: "rgba(200,133,74,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <p style={{ margin: 0, color: "rgba(200,133,74,0.3)", fontSize: "11px", letterSpacing: "0.2em" }}>no photos yet</p>
           </div>
         )}
@@ -299,12 +328,74 @@ function MemberModal({ member, photos, onClose }) {
           <p style={{ margin: 0, color: "#fff", fontSize: "1.15rem", fontWeight: 600, letterSpacing: "0.02em", textTransform: "capitalize" }}>
             {member.displayName}
           </p>
-          <p style={{ margin: "0.2rem 0 0.4rem", color: ACCENT, fontSize: "0.68rem", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+          <p style={{ margin: "0.2rem 0 0.5rem", color: ACCENT, fontSize: "0.68rem", letterSpacing: "0.2em", textTransform: "uppercase" }}>
             {member.role}
           </p>
-          <p style={{ margin: 0, color: "rgba(255,255,255,0.38)", fontSize: "0.78rem", fontStyle: "italic", lineHeight: 1.5 }}>
-            {member.bio}
-          </p>
+
+          {editingBio ? (
+            <div onClick={e => e.stopPropagation()}>
+              <textarea
+                value={draftBio}
+                onChange={e => setDraftBio(e.target.value)}
+                rows={3}
+                autoFocus
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  background: "rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(200,133,74,0.2)",
+                  borderRadius: "6px",
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: "0.78rem", fontStyle: "italic",
+                  lineHeight: 1.5, padding: "0.45rem 0.6rem",
+                  resize: "none", fontFamily: "inherit", outline: "none",
+                }}
+              />
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.45rem" }}>
+                <button
+                  onClick={saveBio}
+                  disabled={savingBio}
+                  style={{
+                    background: "rgba(200,133,74,0.15)",
+                    border: "1px solid rgba(200,133,74,0.3)",
+                    borderRadius: "6px", padding: "4px 14px",
+                    color: "#c8854a", fontSize: "0.72rem",
+                    cursor: savingBio ? "default" : "pointer",
+                    fontFamily: "inherit", letterSpacing: "0.05em",
+                    minHeight: "32px", touchAction: "manipulation",
+                  }}
+                >
+                  {savingBio ? "saving…" : "save"}
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setDraftBio(currentBio); setEditingBio(false); }}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "6px", padding: "4px 14px",
+                    color: "rgba(255,255,255,0.3)", fontSize: "0.72rem",
+                    cursor: "pointer", fontFamily: "inherit",
+                    letterSpacing: "0.05em", minHeight: "32px",
+                    touchAction: "manipulation",
+                  }}
+                >
+                  cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p
+              onClick={e => { e.stopPropagation(); setEditingBio(true); setDraftBio(currentBio); }}
+              title="tap to edit"
+              style={{
+                margin: 0, color: "rgba(255,255,255,0.38)",
+                fontSize: "0.78rem", fontStyle: "italic", lineHeight: 1.5,
+                cursor: "text", borderBottom: "1px dashed rgba(255,255,255,0.08)",
+                paddingBottom: "2px",
+              }}
+            >
+              {currentBio}
+            </p>
+          )}
         </div>
 
         {photos.length > 1 && (

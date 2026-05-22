@@ -120,3 +120,10 @@ model StatusUpdate {
   author    String
   createdAt DateTime @default(now())
 }
+
+model FamilyMember {
+  id        String   @id @default(cuid())
+  folder    String   @unique
+  bio       String   @default("")
+  updatedAt DateTime @updatedAt
+}
