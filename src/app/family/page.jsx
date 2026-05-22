@@ -35,6 +35,12 @@ const MEMBERS = [
   { displayName: "ain qissy", role: "family",  bio: "the one who feeds everyone.",     folder: "ain"      },
 ];
 
+// yt ambient per member — folder key matches MEMBERS[].folder
+const MEMBER_SONGS = {
+  ain:      { videoId: "B402rKl4bUg", start: 190, loopAt: 258 }, // 3:10 → 4:18
+  sabriena: { videoId: "h-Y97xErGL8", start:  50, loopAt: 118 }, // 0:50 → 1:58
+};
+
 const PI2 = Math.PI * 2;
 
 const SCATTER_POS = [
@@ -143,13 +149,93 @@ function FamStrip({ photos }) {
 
 function MemberModal({ member, photos, onClose }) {
   const hero = photos[0];
+  const song = MEMBER_SONGS[member.folder];
 
+  // ── music refs ───────────────────────────────────────────────────────────
+  const playerRef  = useRef(null);
+  const loopRef    = useRef(null);
+  const mountedRef = useRef(true);
+  const [muted, setMuted] = useState(false);
+
+  // ── keyboard + scroll lock ────────────────────────────────────────────────
   useEffect(() => {
     const onKey = e => { if (e.key === "Escape") onClose(); };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [onClose]);
+
+  // ── youtube player ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!song) return;
+    mountedRef.current = true;
+
+    const container = document.createElement("div");
+    container.style.cssText =
+      "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;pointer-events:none;";
+    document.body.appendChild(container);
+
+    const initPlayer = () => {
+      if (!mountedRef.current || playerRef.current) return;
+      playerRef.current = new window.YT.Player(container, {
+        width: 1, height: 1,
+        videoId: song.videoId,
+        playerVars: {
+          autoplay: 1, controls: 0, disablekb: 1,
+          fs: 0, rel: 0, start: song.start,
+          loop: 0, playsinline: 1,
+        },
+        events: {
+          onReady: e => {
+            if (!mountedRef.current) return;
+            e.target.setVolume(35);
+            e.target.playVideo();
+            loopRef.current = setInterval(() => {
+              try {
+                const t = playerRef.current?.getCurrentTime?.();
+                if (t !== undefined && t >= song.loopAt) {
+                  playerRef.current.seekTo(song.start, true);
+                }
+              } catch {}
+            }, 500);
+          },
+        },
+      });
+    };
+
+    const prevReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof prevReady === "function") prevReady();
+      initPlayer();
+    };
+
+    if (window.YT?.Player) {
+      initPlayer();
+    } else if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    }
+
+    return () => {
+      mountedRef.current = false;
+      if (loopRef.current) clearInterval(loopRef.current);
+      try { playerRef.current?.stopVideo(); playerRef.current?.destroy(); } catch {}
+      playerRef.current = null;
+      container.remove();
+    };
+  }, [song]);
+
+  const toggleMute = e => {
+    e.stopPropagation();
+    if (muted) {
+      try { playerRef.current?.unMute(); } catch {}
+      setMuted(false);
+    } else {
+      try { playerRef.current?.mute(); } catch {}
+      setMuted(true);
+    }
+  };
 
   return (
     <div
@@ -169,7 +255,7 @@ function MemberModal({ member, photos, onClose }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: "480px",
+          maxWidth: "560px",
           background: SURFACE,
           borderRadius: "18px",
           overflow: "hidden",
@@ -184,7 +270,7 @@ function MemberModal({ member, photos, onClose }) {
               alt=""
               fill
               style={{ objectFit: "cover", filter: "brightness(0.85)" }}
-              sizes="480px"
+              sizes="560px"
               priority
             />
           </div>
@@ -215,11 +301,33 @@ function MemberModal({ member, photos, onClose }) {
                   alt=""
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes="120px"
+                  sizes="140px"
                   loading={i < 3 ? "eager" : "lazy"}
                 />
               </div>
             ))}
+          </div>
+        )}
+
+        {song && (
+          <div style={{ padding: "0 1.4rem 1.1rem", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={toggleMute}
+              style={{
+                background: "rgba(0,0,0,0.35)",
+                border: `0.5px solid ${muted ? "rgba(90,72,56,0.45)" : "rgba(200,133,74,0.3)"}`,
+                borderRadius: "20px",
+                padding: "5px 13px",
+                display: "flex", alignItems: "center", gap: "5px",
+                color: muted ? "#5a4838" : "#c8854a",
+                fontSize: "10px", letterSpacing: "0.08em",
+                cursor: "pointer", fontFamily: "inherit",
+                transition: "border-color 0.2s, color 0.2s",
+                minHeight: "30px", touchAction: "manipulation",
+              }}
+            >
+              {muted ? "♪ muted" : "♪ playing"}
+            </button>
           </div>
         )}
       </div>
@@ -268,7 +376,8 @@ function FamMemberCards() {
           border-radius: 12px;
           overflow: hidden;
         }
-        .fam-card:hover { transform: scale(1.02); }
+        .fam-card:hover  { transform: scale(1.02); }
+        .fam-card:active { transform: scale(1.06); }
         .fam-card-overlay {
           position: absolute; inset: 0;
           background: rgba(0,0,0,0.52);
