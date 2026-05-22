@@ -460,6 +460,8 @@ function FamMemberCards() {
   const [editingCard,  setEditingCard]  = useState(null); // folder key
   const [cardDraft,    setCardDraft]    = useState("");
   const [savingCard,   setSavingCard]   = useState(false);
+  const [cardError,    setCardError]    = useState("");
+  const cardDraftRef = useRef("");
 
   useEffect(() => {
     MEMBERS.forEach(m => {
@@ -484,23 +486,38 @@ function FamMemberCards() {
 
   const startCardEdit = (e, folder) => {
     e.stopPropagation();
-    setCardDraft(memberBios[folder] || MEMBERS.find(m => m.folder === folder)?.bio || "");
+    const initial = memberBios[folder] || MEMBERS.find(m => m.folder === folder)?.bio || "";
+    cardDraftRef.current = initial;
+    setCardDraft(initial);
+    setCardError("");
     setEditingCard(folder);
   };
 
   const saveCardBio = async (e, folder) => {
     e.stopPropagation();
+    setCardError("");
     setSavingCard(true);
+    const bio = cardDraftRef.current;
     try {
       const r = await fetch("/api/family/member-bio", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder, bio: cardDraft }),
+        body: JSON.stringify({ folder, bio }),
       });
+      if (!r.ok) {
+        const err = await r.text();
+        setCardError("save failed — try again");
+        console.error("member-bio PATCH error:", err);
+        setSavingCard(false);
+        return;
+      }
       const d = await r.json();
-      setMemberBios(prev => ({ ...prev, [folder]: d.bio }));
+      setMemberBios(prev => ({ ...prev, [folder]: d.bio ?? bio }));
       setEditingCard(null);
-    } catch {}
+    } catch (err) {
+      setCardError("network error — try again");
+      console.error("member-bio PATCH:", err);
+    }
     setSavingCard(false);
   };
 
@@ -578,7 +595,10 @@ function FamMemberCards() {
                     <div>
                       <input
                         value={cardDraft}
-                        onChange={e => setCardDraft(e.target.value)}
+                        onChange={e => {
+                          cardDraftRef.current = e.target.value;
+                          setCardDraft(e.target.value);
+                        }}
                         onKeyDown={e => {
                           if (e.key === "Enter") saveCardBio(e, member.folder);
                           if (e.key === "Escape") setEditingCard(null);
@@ -594,6 +614,11 @@ function FamMemberCards() {
                           padding: "3px 6px", fontFamily: "inherit", outline: "none",
                         }}
                       />
+                      {cardError && (
+                        <p style={{ margin: "2px 0 0", color: "#e07878", fontSize: "0.58rem" }}>
+                          {cardError}
+                        </p>
+                      )}
                       <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.3rem" }}>
                         <button
                           onClick={e => saveCardBio(e, member.folder)}
