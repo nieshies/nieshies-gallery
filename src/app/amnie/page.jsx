@@ -40,10 +40,11 @@ function SectionLabel({ children }) {
       fontSize: "9px",
       letterSpacing: "0.3em",
       textTransform: "uppercase",
-      color: LABEL_C,
+      color: "transparent",
       paddingTop: "3.5rem",
       paddingBottom: "0.75rem",
       userSelect: "none",
+      pointerEvents: "none",
     }}>
       {children}
     </p>

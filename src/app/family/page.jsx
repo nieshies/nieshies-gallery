@@ -20,10 +20,11 @@ const LABEL_STYLE = {
   fontSize: "9px",
   letterSpacing: "0.3em",
   textTransform: "uppercase",
-  color: "rgba(200,133,74,0.55)",
+  color: "transparent",
   paddingTop: "3.5rem",
   paddingBottom: "0.75rem",
   userSelect: "none",
+  pointerEvents: "none",
 };
 
 const MEMBERS = [
@@ -453,6 +454,174 @@ function MemberModal({ member, photos, onClose, onBioSaved }) {
   );
 }
 
+// ── 3a. Family Tree ──────────────────────────────────────────────────────────
+
+const TREE_LAYOUT = {
+  parents: [
+    { folder: "ayah",  role: "father" },
+    { folder: "mummy", role: "mother" },
+  ],
+  kids: [
+    { folder: "sabriena", role: "1st sister"  },
+    { folder: "nishi",    role: "2nd brother" },
+    { folder: "wanman",   role: "3rd brother" },
+    { folder: "ain",      role: "last sister" },
+  ],
+};
+
+const TREE_LINE = "rgba(200,133,74,0.35)";
+
+function FamilyTree({ memberPhotos, openModal }) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const NODE = isMobile ? 54 : 78;
+  const LABEL_AREA = 36;
+  const CONNECTOR_H = isMobile ? 48 : 62;
+
+  const findMember = folder => MEMBERS.find(m => m.folder === folder);
+
+  const renderNode = ({ folder, role }) => {
+    const member = findMember(folder);
+    if (!member) return null;
+    const photos = memberPhotos[folder] || [];
+    const cover  = photos[0];
+    return (
+      <button
+        key={folder}
+        onClick={() => openModal(member)}
+        className="tree-node"
+        style={{ width: NODE, height: NODE }}
+        aria-label={member.displayName}
+      >
+        <span className="tree-node-img">
+          {cover ? (
+            <Image
+              src={getPhotoUrl(cover.url, "thumb")}
+              alt=""
+              fill
+              sizes={`${NODE}px`}
+              style={{ objectFit: "cover" }}
+              loading="lazy"
+            />
+          ) : (
+            <span className="tree-node-empty" />
+          )}
+        </span>
+        <span className="tree-node-name" style={{ fontSize: isMobile ? "0.62rem" : "0.72rem" }}>
+          {member.displayName}
+        </span>
+        <span className="tree-node-role" style={{ fontSize: isMobile ? "0.46rem" : "0.52rem" }}>
+          {role}
+        </span>
+      </button>
+    );
+  };
+
+  return (
+    <section style={{ padding: isMobile ? "1.5rem 0.75rem 0.5rem" : "2rem 1.25rem 1rem", maxWidth: 720, margin: "0 auto" }}>
+      <style>{`
+        .tree-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          justify-items: center;
+          align-items: start;
+          row-gap: 0;
+        }
+        .tree-node {
+          position: relative;
+          background: transparent;
+          border: none;
+          padding: 0;
+          margin: 0;
+          cursor: pointer;
+          z-index: 2;
+          touch-action: manipulation;
+          transition: transform 0.25s ease;
+        }
+        .tree-node:hover  { transform: scale(1.08); }
+        .tree-node:active { transform: scale(0.94); }
+        .tree-node-img {
+          position: relative;
+          display: block;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 1.5px solid ${TREE_LINE};
+          background: rgba(200,133,74,0.05);
+          filter: brightness(0.85);
+          transition: border-color 0.25s ease, filter 0.25s ease;
+        }
+        .tree-node:hover .tree-node-img { border-color: ${ACCENT}; filter: brightness(1); }
+        .tree-node-empty {
+          display: block; width: 100%; height: 100%;
+          background: rgba(200,133,74,0.08);
+        }
+        .tree-node-name {
+          position: absolute; top: 100%; left: 50%;
+          transform: translateX(-50%);
+          padding-top: 6px;
+          color: #fff;
+          font-weight: 600;
+          letter-spacing: 0.03em;
+          text-transform: capitalize;
+          white-space: nowrap;
+        }
+        .tree-node-role {
+          position: absolute; top: 100%; left: 50%;
+          transform: translateX(-50%);
+          padding-top: 22px;
+          color: ${TREE_LINE};
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+      `}</style>
+
+      {/* parents row — placed in columns 2 & 3 of a 4-col grid so the
+          midpoint (50%) lines up with the kids' bar below */}
+      <div className="tree-grid" style={{ height: NODE + LABEL_AREA }}>
+        <div />
+        {renderNode(TREE_LAYOUT.parents[0])}
+        {renderNode(TREE_LAYOUT.parents[1])}
+        <div />
+      </div>
+
+      {/* connector lines */}
+      <div style={{ position: "relative", height: CONNECTOR_H }}>
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        >
+          {/* drop from parent midpoint to horizontal bar */}
+          <line x1="50" y1="0" x2="50" y2="50"
+                stroke={TREE_LINE} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          {/* horizontal bar across kids */}
+          <line x1="12.5" y1="50" x2="87.5" y2="50"
+                stroke={TREE_LINE} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          {/* drops to each kid (cols at 12.5/37.5/62.5/87.5) */}
+          {[12.5, 37.5, 62.5, 87.5].map(x => (
+            <line key={x} x1={x} y1="50" x2={x} y2="100"
+                  stroke={TREE_LINE} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          ))}
+        </svg>
+      </div>
+
+      {/* kids row */}
+      <div className="tree-grid" style={{ height: NODE + LABEL_AREA }}>
+        {TREE_LAYOUT.kids.map(renderNode)}
+      </div>
+    </section>
+  );
+}
+
 function FamMemberCards() {
   const [memberPhotos, setMemberPhotos] = useState({});
   const [memberBios,   setMemberBios]   = useState({});
@@ -494,10 +663,17 @@ function FamMemberCards() {
   };
 
   const saveCardBio = async (e, folder) => {
-    e.stopPropagation();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (e && e.preventDefault)  e.preventDefault();
+    const bio = cardDraftRef.current;
+    const previous = memberBios[folder];
+
+    // optimistic: update card immediately, exit edit mode, then sync to DB
+    setMemberBios(prev => ({ ...prev, [folder]: bio }));
+    setEditingCard(null);
     setCardError("");
     setSavingCard(true);
-    const bio = cardDraftRef.current;
+
     try {
       const r = await fetch("/api/family/member-bio", {
         method: "PATCH",
@@ -506,17 +682,24 @@ function FamMemberCards() {
       });
       if (!r.ok) {
         const err = await r.text();
-        setCardError("save failed — try again");
         console.error("member-bio PATCH error:", err);
-        setSavingCard(false);
-        return;
+        // revert + surface failure
+        setMemberBios(prev => ({ ...prev, [folder]: previous ?? "" }));
+        setCardError(`save failed for ${folder} — try again`);
+        setEditingCard(folder);
+        cardDraftRef.current = bio;
+        setCardDraft(bio);
+      } else {
+        const d = await r.json();
+        setMemberBios(prev => ({ ...prev, [folder]: d.bio ?? bio }));
       }
-      const d = await r.json();
-      setMemberBios(prev => ({ ...prev, [folder]: d.bio ?? bio }));
-      setEditingCard(null);
     } catch (err) {
-      setCardError("network error — try again");
       console.error("member-bio PATCH:", err);
+      setMemberBios(prev => ({ ...prev, [folder]: previous ?? "" }));
+      setCardError(`network error for ${folder} — try again`);
+      setEditingCard(folder);
+      cardDraftRef.current = bio;
+      setCardDraft(bio);
     }
     setSavingCard(false);
   };
@@ -551,14 +734,17 @@ function FamMemberCards() {
         @media (max-width: 639px) { .fam-cards-grid { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
 
+      <FamilyTree memberPhotos={memberPhotos} openModal={openModal} />
+
       <section style={{ padding: "0 1.25rem" }}>
         <span style={LABEL_STYLE}>the team</span>
         <div className="fam-cards-grid">
           {MEMBERS.map(member => {
             const photos = memberPhotos[member.folder] || [];
             const cover  = photos[0];
-            const displayBio = memberBios[member.folder] !== undefined
-              ? (memberBios[member.folder] || member.bio)
+            const savedBio   = memberBios[member.folder];
+            const displayBio = savedBio !== undefined && savedBio !== ""
+              ? savedBio
               : member.bio;
             return (
               <div key={member.folder} className="fam-card">
@@ -592,7 +778,10 @@ function FamMemberCards() {
                     {member.displayName}
                   </p>
                   {editingCard === member.folder ? (
-                    <div>
+                    <form
+                      onSubmit={e => saveCardBio(e, member.folder)}
+                      onClick={e => e.stopPropagation()}
+                    >
                       <input
                         value={cardDraft}
                         onChange={e => {
@@ -600,51 +789,54 @@ function FamMemberCards() {
                           setCardDraft(e.target.value);
                         }}
                         onKeyDown={e => {
-                          if (e.key === "Enter") saveCardBio(e, member.folder);
-                          if (e.key === "Escape") setEditingCard(null);
+                          if (e.key === "Escape") { e.preventDefault(); setEditingCard(null); }
                         }}
                         autoFocus
                         style={{
                           width: "100%", boxSizing: "border-box",
                           background: "rgba(0,0,0,0.3)",
-                          border: "1px solid rgba(200,133,74,0.2)",
+                          border: "1px solid rgba(200,133,74,0.3)",
                           borderRadius: "4px",
-                          color: "rgba(255,255,255,0.6)",
-                          fontSize: "0.64rem", fontStyle: "italic",
-                          padding: "3px 6px", fontFamily: "inherit", outline: "none",
+                          color: "#fff",
+                          fontSize: "0.7rem", fontStyle: "italic",
+                          padding: "5px 7px", fontFamily: "inherit", outline: "none",
                         }}
                       />
                       {cardError && (
-                        <p style={{ margin: "2px 0 0", color: "#e07878", fontSize: "0.58rem" }}>
+                        <p style={{ margin: "3px 0 0", color: "#e07878", fontSize: "0.6rem" }}>
                           {cardError}
                         </p>
                       )}
-                      <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.3rem" }}>
+                      <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.35rem" }}>
                         <button
-                          onClick={e => saveCardBio(e, member.folder)}
+                          type="submit"
                           disabled={savingCard}
+                          onMouseDown={e => e.preventDefault()}
                           style={{
-                            background: "rgba(200,133,74,0.15)",
-                            border: "1px solid rgba(200,133,74,0.3)",
-                            borderRadius: "4px", padding: "2px 10px",
-                            color: "#c8854a", fontSize: "0.6rem",
+                            background: "rgba(200,133,74,0.2)",
+                            border: "1px solid rgba(200,133,74,0.45)",
+                            borderRadius: "4px", padding: "3px 12px",
+                            color: "#c8854a", fontSize: "0.6rem", fontWeight: 600,
+                            letterSpacing: "0.08em", textTransform: "uppercase",
                             cursor: "pointer", fontFamily: "inherit",
-                            minHeight: "24px", touchAction: "manipulation",
+                            minHeight: "26px", touchAction: "manipulation",
                           }}
                         >{savingCard ? "…" : "save"}</button>
                         <button
-                          onClick={e => { e.stopPropagation(); setEditingCard(null); }}
+                          type="button"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={e => { e.stopPropagation(); setEditingCard(null); setCardError(""); }}
                           style={{
                             background: "transparent",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            borderRadius: "4px", padding: "2px 10px",
-                            color: "rgba(255,255,255,0.3)", fontSize: "0.6rem",
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            borderRadius: "4px", padding: "3px 12px",
+                            color: "rgba(255,255,255,0.4)", fontSize: "0.6rem",
                             cursor: "pointer", fontFamily: "inherit",
-                            minHeight: "24px", touchAction: "manipulation",
+                            minHeight: "26px", touchAction: "manipulation",
                           }}
-                        >✕</button>
+                        >cancel</button>
                       </div>
-                    </div>
+                    </form>
                   ) : (
                     <p
                       onClick={e => startCardEdit(e, member.folder)}

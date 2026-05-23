@@ -27,10 +27,11 @@ const LABEL = {
   fontSize: "9px",
   letterSpacing: "0.3em",
   textTransform: "uppercase",
-  color: "rgba(244,140,54,0.55)",
+  color: "transparent",
   paddingTop: "3.5rem",
   paddingBottom: "0.75rem",
   userSelect: "none",
+  pointerEvents: "none",
 };
 
 const SEC = { paddingBottom: "2rem" };
