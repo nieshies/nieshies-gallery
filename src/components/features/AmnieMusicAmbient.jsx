@@ -225,8 +225,8 @@ export default function AmnieMusicAmbient() {
         }
         style={{
           position:             "fixed",
-          bottom:               "20px",
-          right:                "20px",
+          bottom:               "max(20px, calc(env(safe-area-inset-bottom) + 12px))",
+          right:                "max(20px, calc(env(safe-area-inset-right) + 12px))",
           zIndex:               999,
           background:           "rgba(14,12,8,0.85)",
           border:               `0.5px solid ${hovered ? "rgba(200,133,74,0.35)" : "#3a2e20"}`,

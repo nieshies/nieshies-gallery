@@ -84,7 +84,13 @@ export default function Sidebar() {
 
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className={`fixed top-4 left-4 z-50 lg:hidden glass-panel shadow-glass rounded-xl w-10 h-10 flex items-center justify-center dotnav-mobile ${loaded ? "visible" : ""}`}
+        aria-label={mobileOpen ? "Close menu" : "Open menu"}
+        className={`fixed z-50 lg:hidden glass-panel shadow-glass rounded-xl w-11 h-11 flex items-center justify-center dotnav-mobile ${loaded ? "visible" : ""}`}
+        style={{
+          top:  "max(1rem, calc(env(safe-area-inset-top) + 0.5rem))",
+          left: "max(1rem, calc(env(safe-area-inset-left) + 0.5rem))",
+          touchAction: "manipulation",
+        }}
       >
         <div className="space-y-1">
           <span className={`block w-4 h-[1.5px] bg-white/60 transition-all duration-200 ${mobileOpen ? "rotate-45 translate-y-[3.5px]" : ""}`} />

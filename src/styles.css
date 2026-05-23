@@ -42,6 +42,7 @@ html, body {
 
 body {
   overflow-y: scroll;
+  overflow-x: hidden;            /* prevent accidental horizontal scroll on mobile */
   /* Safe area insets for iPhone notch / home bar */
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }

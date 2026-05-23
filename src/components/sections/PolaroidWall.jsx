@@ -94,10 +94,17 @@ export default function PolaroidWall({ photos = [] }) {
           transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
           perspective: 1400px;
           -webkit-perspective: 1400px;
+          z-index: 1;
         }
         .pw-wrap.pw-revealed {
           opacity: 1;
           transform: translateY(0);
+        }
+        .pw-wrap.pw-active {
+          z-index: 20;
+        }
+        .pw-wrap:hover {
+          z-index: 10;
         }
 
         .pw-card {
@@ -258,7 +265,7 @@ export default function PolaroidWall({ photos = [] }) {
             <div
               key={photo.id}
               ref={el => { itemRefs.current[i] = el; }}
-              className={`pw-wrap ${isShown ? "pw-revealed" : ""}`}
+              className={`pw-wrap ${isShown ? "pw-revealed" : ""} ${isFlipped ? "pw-active" : ""}`}
               style={{ transform: isShown
                 ? `translateY(0) rotate(${rot}deg)`
                 : `translateY(14px) rotate(${rot}deg)` }}

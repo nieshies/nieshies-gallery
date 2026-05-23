@@ -139,11 +139,11 @@ export default function Page() {
         label="+"
         style={{
           position: "fixed",
-          bottom: "1.5rem",
-          right: "1.5rem",
+          bottom: "max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))",
+          right:  "max(1.5rem, calc(env(safe-area-inset-right) + 0.75rem))",
           zIndex: 50,
-          width: "42px",
-          height: "42px",
+          width: "48px",
+          height: "48px",
           borderRadius: "50%",
           border: "1px solid rgba(244,140,54,0.4)",
           background: "rgba(0,0,0,0.7)",
@@ -151,11 +151,13 @@ export default function Page() {
           fontSize: "22px",
           cursor: "pointer",
           backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           padding: 0,
           lineHeight: 1,
+          touchAction: "manipulation",
         }}
       />
     </Providers>
