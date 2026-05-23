@@ -43,7 +43,7 @@ export async function GET(request) {
       if (urls.length) {
         const dbRows = await prisma.galleryPhoto.findMany({
           where: { url: { in: urls } },
-          select: { url: true, width: true, height: true, caption: true },
+          select: { url: true, width: true, height: true, caption: true, uploadedAt: true },
         });
         dbMap = new Map(dbRows.map((p) => [p.url, p]));
       }
@@ -60,6 +60,7 @@ export async function GET(request) {
         caption: db?.caption || "",
         width: db?.width ?? null,
         height: db?.height ?? null,
+        uploadedAt: db?.uploadedAt ? db.uploadedAt.toISOString() : null,
       };
     });
 

@@ -8,6 +8,8 @@ import ScatterSection from "@/components/sections/ScatterSection";
 import StoryViewer from "@/components/features/StoryViewer";
 import MasonryGallery from "@/components/features/MasonryGallery";
 import EndCard from "@/components/sections/EndCard";
+import OnThisDay from "@/components/sections/OnThisDay";
+import PolaroidWall from "@/components/sections/PolaroidWall";
 import { UploadButton } from "@/components/features/UploadLightbox";
 
 function shuffle(arr) {
@@ -62,12 +64,14 @@ export default function Page() {
   const s1 = Math.min(s0 + 6, n);   // moments:   6 photos
   const s2 = Math.min(s1 + 10, n);  // scattered: 10 photos
   const s3 = Math.min(s2 + 8, n);   // stories:    8 photos
-  const s4 = n;                      // masonry:   remainder
+  const s4 = Math.min(s3 + 8, n);   // polaroids:  8 photos (flip)
+  const s5 = n;                      // masonry:   remainder
 
-  const strip   = rest.slice(s0, s1);
-  const scatter = rest.slice(s1, s2);
-  const story   = rest.slice(s2, s3);
-  const masonry = rest.slice(s3, s4);
+  const strip     = rest.slice(s0, s1);
+  const scatter   = rest.slice(s1, s2);
+  const story     = rest.slice(s2, s3);
+  const polaroids = rest.slice(s3, s4);
+  const masonry   = rest.slice(s4, s5);
   // EndCard: landscape-first summary of all photos
   const endcard = [...horiz, ...vert];
 
@@ -76,6 +80,8 @@ export default function Page() {
       <div data-hero>
         <HeroSection />
       </div>
+
+      <OnThisDay page="home" />
 
       {strip.length > 0 && (
         <div style={SEC}>
@@ -104,6 +110,13 @@ export default function Page() {
         <div style={{ ...SEC, display: "flex", flexDirection: "column", alignItems: "center", padding: "0 1rem 2rem" }}>
           <span style={LABEL}>stories</span>
           <StoryViewer photos={story} />
+        </div>
+      )}
+
+      {polaroids.length > 0 && (
+        <div>
+          <span style={LABEL}>polaroids</span>
+          <PolaroidWall photos={polaroids} />
         </div>
       )}
 
