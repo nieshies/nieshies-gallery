@@ -220,9 +220,33 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   // photo zoom (click a scattered photo)
   const [zoomed, setZoomed] = useState(null);
 
-  // per-photo mutation state (pin/delete)
+  // per-photo mutation state (pin/delete/caption)
   const [confirmingDelete, setConfirmingDelete] = useState(null); // photo url
+  const [editingCaption,   setEditingCaption]   = useState(null); // photo url
+  const [captionDraft,     setCaptionDraft]     = useState("");
   const [busy,             setBusy]             = useState(null); // photo url
+
+  const startCaptionEdit = (photo) => {
+    setEditingCaption(photo.url);
+    setCaptionDraft(photo.caption || "");
+  };
+
+  const saveCaption = async (photo) => {
+    const draft = (captionDraft || "").slice(0, 140);
+    setEditingCaption(null);
+    // Optimistic
+    setPhotos(prev => prev.map(p => p.url === photo.url ? { ...p, caption: draft } : p));
+    try {
+      const r = await fetch("/api/family/member/photo", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: photo.url, caption: draft }),
+      });
+      if (!r.ok) throw new Error("caption save failed");
+    } catch {
+      reloadPhotos();
+    }
+  };
 
   const togglePin = async (photo) => {
     if (busy === photo.url) return;
@@ -595,6 +619,26 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          cursor: text;
+        }
+        .mc-photo-caption.mc-caption-empty {
+          color: rgba(91, 74, 55, 0.32);
+          font-style: italic;
+        }
+        .mc-photo-caption-input {
+          margin: 4px 2px 0;
+          width: calc(100% - 4px);
+          background: rgba(255, 255, 255, 0.7);
+          border: none;
+          border-bottom: 0.5px solid rgba(91, 74, 55, 0.4);
+          outline: none;
+          color: #3a2f24;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 13px;
+          line-height: 1.1;
+          text-align: center;
+          padding: 2px 4px;
+          box-sizing: border-box;
         }
 
         /* ── per-photo actions (pin / delete) ───────────────────── */
@@ -928,7 +972,31 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                     loading={i < 4 ? "eager" : "lazy"}
                   />
                 </div>
-                {p.caption && <div className="mc-photo-caption">{p.caption}</div>}
+                {editingCaption === p.url ? (
+                  <input
+                    className="mc-photo-caption-input"
+                    autoFocus
+                    value={captionDraft}
+                    maxLength={140}
+                    placeholder="a caption…"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onChange={(e) => setCaptionDraft(e.target.value)}
+                    onBlur={() => saveCaption(p)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); saveCaption(p); }
+                      if (e.key === "Escape") { e.preventDefault(); setEditingCaption(null); }
+                    }}
+                  />
+                ) : (
+                  <div
+                    className={`mc-photo-caption ${p.caption ? "" : "mc-caption-empty"}`}
+                    onClick={(e) => { e.stopPropagation(); startCaptionEdit(p); }}
+                    title="tap to edit caption"
+                  >
+                    {p.caption || "+ add a caption"}
+                  </div>
+                )}
 
                 {confirmingDelete === p.url ? (
                   <div
