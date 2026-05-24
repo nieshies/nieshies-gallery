@@ -150,22 +150,30 @@ function FamStrip({ photos }) {
 
 // scatter coordinates — deterministic per-index position for burst layout
 function scatterPos(i, isMobile, canvasW) {
+  const j1 = ((i * 9301  +  7) % 233) / 233;
+  const j2 = ((i * 49297 + 13) % 233) / 233;
+  const j3 = ((i * 7919  +  5) % 233) / 233;
+
   if (isMobile) {
+    // 2-col scattered with tighter overlap + smaller photos
+    const cols  = 2;
+    const cellW = 100 / cols;
+    const rowH  = 190;
+    const col   = i % cols;
+    const row   = Math.floor(i / cols);
     return {
-      leftPct: 50,
-      topPx:   60 + i * 250,
-      width:   Math.min(260, canvasW - 40),
-      tilt:    ((i * 37 + 11) % 14) - 7,
+      leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.55,
+      topPx:   row * rowH + rowH / 2 + 90 + (j2 - 0.5) * rowH * 0.35,
+      width:   130 + j3 * 50,        // 130-180 px
+      tilt:    (j1 - 0.5) * 22,      // wider tilt → more scattered feel
     };
   }
+
   const cols  = 4;
   const cellW = 100 / cols;
   const rowH  = canvasW < 900 ? 220 : 280;
   const col   = i % cols;
   const row   = Math.floor(i / cols);
-  const j1    = ((i * 9301 + 7) % 233) / 233;
-  const j2    = ((i * 49297 + 13) % 233) / 233;
-  const j3    = ((i * 7919 + 5) % 233) / 233;
   return {
     leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.45,
     topPx:   row * rowH + rowH / 2 + 60 + (j2 - 0.5) * rowH * 0.35,
@@ -211,6 +219,58 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
 
   // photo zoom (click a scattered photo)
   const [zoomed, setZoomed] = useState(null);
+
+  // per-photo mutation state (pin/delete)
+  const [confirmingDelete, setConfirmingDelete] = useState(null); // photo url
+  const [busy,             setBusy]             = useState(null); // photo url
+
+  const togglePin = async (photo) => {
+    if (busy === photo.url) return;
+    setBusy(photo.url);
+    const willPin = !photo.isCover;
+    // Optimistic: update local — exactly one photo can hold isCover
+    setPhotos(prev => prev.map(p => ({
+      ...p,
+      isCover: p.url === photo.url ? willPin : false,
+    })));
+    try {
+      if (willPin) {
+        const r = await fetch("/api/family/member-cover", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder: member.folder, photoUrl: photo.url }),
+        });
+        if (!r.ok) throw new Error("pin failed");
+      } else {
+        const r = await fetch(`/api/family/member-cover?folder=${member.folder}`, { method: "DELETE" });
+        if (!r.ok) throw new Error("unpin failed");
+      }
+    } catch (err) {
+      // Revert by re-fetching truth from server
+      reloadPhotos();
+    }
+    setBusy(null);
+  };
+
+  const confirmDelete = async (photo) => {
+    if (busy === photo.url) return;
+    setBusy(photo.url);
+    setConfirmingDelete(null);
+    // Optimistic: remove from local
+    setPhotos(prev => prev.filter(p => p.url !== photo.url));
+    try {
+      const r = await fetch("/api/family/member/photo", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: photo.url }),
+      });
+      if (!r.ok) throw new Error("delete failed");
+    } catch (err) {
+      // Restore by refetching truth
+      reloadPhotos();
+    }
+    setBusy(null);
+  };
 
   // ── music refs ───────────────────────────────────────────────────────────
   const playerRef  = useRef(null);
@@ -356,7 +416,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const layout = photos.map((_, i) => scatterPos(i, isMobile, canvasW));
   const winH = typeof window !== "undefined" ? window.innerHeight : 800;
   const canvasH = isMobile
-    ? Math.max(winH, 120 + photos.length * 250)
+    ? Math.max(winH, 200 + Math.ceil(photos.length / 2) * 190)
     : Math.max(winH, 220 + Math.ceil(photos.length / 4) * 280);
 
   // burst origin (clicked card)
@@ -535,6 +595,98 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        /* ── per-photo actions (pin / delete) ───────────────────── */
+        .mc-photo-actions {
+          position: absolute;
+          top: 14px; left: 14px; right: 14px;
+          display: flex;
+          justify-content: space-between;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+          pointer-events: none;
+          z-index: 2;
+        }
+        .mc-photo:hover .mc-photo-actions { opacity: 1; pointer-events: auto; }
+        @media (hover: none) {
+          .mc-photo-actions { opacity: 0.85; pointer-events: auto; }
+        }
+        .mc-photo-action {
+          width: 24px; height: 24px;
+          border-radius: 50%;
+          border: 0.5px solid rgba(255, 255, 255, 0.32);
+          background: rgba(0, 0, 0, 0.55);
+          color: rgba(255, 255, 255, 0.7);
+          cursor: pointer;
+          font-size: 14px; line-height: 1;
+          display: flex; align-items: center; justify-content: center;
+          padding: 0;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
+          touch-action: manipulation;
+        }
+        .mc-photo-action:hover {
+          color: #fff;
+          border-color: rgba(255, 255, 255, 0.65);
+          background: rgba(0, 0, 0, 0.7);
+          transform: scale(1.08);
+        }
+        .mc-photo-action.mc-pinned {
+          color: #f48c36;
+          border-color: rgba(244, 140, 54, 0.6);
+          background: rgba(244, 140, 54, 0.15);
+        }
+        .mc-photo-action.mc-photo-delete:hover {
+          color: #ff8a8a;
+          border-color: rgba(255, 100, 100, 0.6);
+        }
+
+        /* ── inline delete confirm ──────────────────────────────── */
+        .mc-photo-confirm {
+          position: absolute;
+          inset: 8px 8px 22px;
+          background: rgba(0, 0, 0, 0.88);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          color: rgba(255, 245, 230, 0.92);
+          z-index: 3;
+          cursor: default;
+        }
+        .mc-photo-confirm span {
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 19px;
+        }
+        .mc-photo-confirm button {
+          background: transparent;
+          border: 0.5px solid rgba(255, 245, 230, 0.35);
+          color: rgba(255, 245, 230, 0.8);
+          padding: 7px 16px;
+          border-radius: 3px;
+          font-family: inherit;
+          font-size: 9px;
+          letter-spacing: 0.36em;
+          text-transform: uppercase;
+          cursor: pointer;
+          min-height: 30px;
+          touch-action: manipulation;
+        }
+        .mc-photo-confirm button.mc-confirm-yes {
+          color: #ff8a8a;
+          border-color: rgba(255, 100, 100, 0.55);
+        }
+        .mc-photo-confirm button.mc-confirm-yes:hover {
+          background: rgba(255, 100, 100, 0.1);
+        }
+        .mc-photo-confirm button.mc-confirm-no:hover {
+          color: #fff;
+          border-color: rgba(255, 245, 230, 0.6);
         }
 
         /* ── empty state ──────────────────────────────────────────── */
@@ -758,7 +910,10 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                   ["--mc-delay"]: `${i * 65}ms`,
                   transform: `translate(-50%, -50%) rotate(${pos.tilt}deg)`,
                 }}
-                onClick={() => setZoomed(p)}
+                onClick={() => {
+                  if (confirmingDelete === p.url) return;
+                  setZoomed(p);
+                }}
               >
                 <div
                   className="mc-photo-img"
@@ -774,6 +929,46 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                   />
                 </div>
                 {p.caption && <div className="mc-photo-caption">{p.caption}</div>}
+
+                {confirmingDelete === p.url ? (
+                  <div
+                    className="mc-photo-confirm"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <span>delete?</span>
+                    <button
+                      type="button"
+                      className="mc-confirm-yes"
+                      onClick={(e) => { e.stopPropagation(); confirmDelete(p); }}
+                    >yes</button>
+                    <button
+                      type="button"
+                      className="mc-confirm-no"
+                      onClick={(e) => { e.stopPropagation(); setConfirmingDelete(null); }}
+                    >no</button>
+                  </div>
+                ) : (
+                  <div className="mc-photo-actions">
+                    <button
+                      type="button"
+                      className={`mc-photo-action ${p.isCover ? "mc-pinned" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); togglePin(p); }}
+                      aria-label={p.isCover ? "Unpin cover" : "Pin as cover"}
+                      title={p.isCover ? "Unpin cover" : "Pin as cover"}
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <path d="M12 2l2.5 6.5 6.5.5-5 4.5 1.5 7-5.5-4-5.5 4 1.5-7-5-4.5 6.5-.5z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="mc-photo-action mc-photo-delete"
+                      onClick={(e) => { e.stopPropagation(); setConfirmingDelete(p.url); }}
+                      aria-label="Delete photo"
+                      title="Delete photo"
+                    >×</button>
+                  </div>
+                )}
               </div>
             );
           })
