@@ -85,22 +85,45 @@ export async function POST(request) {
     const bucket = BUCKET_MAP[page] ?? "uploads";
     const result = await saveUpload(file, bucket, folder);
 
-    const photo = await prisma.galleryPhoto.create({
-      data: {
-        name:      file.name,
-        caption,
-        filename:  result.filename,
-        url:       result.url,
-        sizeBytes: result.sizeBytes,
-        width:     result.width,
-        height:    result.height,
-        page,
-        tags:      [page, ...(folder ? [folder] : [])],
-      },
-    });
+    // Prisma metadata is best-effort: if Postgres hiccups (cold start,
+    // pooler timeout) the file is still in Supabase storage and will
+    // appear on next list, so the upload should NOT be reported as failed.
+    let photoRecord = null;
+    let dbError = null;
+    try {
+      photoRecord = await prisma.galleryPhoto.create({
+        data: {
+          name:      file.name,
+          caption,
+          filename:  result.filename,
+          url:       result.url,
+          sizeBytes: result.sizeBytes,
+          width:     result.width,
+          height:    result.height,
+          page,
+          tags:      [page, ...(folder ? [folder] : [])],
+        },
+      });
+    } catch (e) {
+      dbError = e.message;
+      console.warn("GalleryPhoto.create failed (file uploaded OK):", e.message);
+    }
+
+    const photoOut = photoRecord
+      ? { ...photoRecord, uploadedAt: photoRecord.uploadedAt.getTime() }
+      : {
+          name:       file.name,
+          caption,
+          filename:   result.filename,
+          url:        result.url,
+          sizeBytes:  result.sizeBytes,
+          width:      result.width,
+          height:     result.height,
+          uploadedAt: Date.now(),
+        };
 
     return NextResponse.json(
-      { ok: true, photo: { ...photo, uploadedAt: photo.uploadedAt.getTime() } },
+      { ok: true, photo: photoOut, ...(dbError ? { metadataWarning: dbError } : {}) },
       { status: 201 }
     );
   } catch (err) {

@@ -93,9 +93,15 @@ export default function UploadLightbox({
         errors.push(`${file.name}: ${err.message}`);
       }
     }
-    if (errors.length) {
+    if (done === 0 && errors.length) {
+      // total failure — keep modal open so user can retry
       setStatus(errors[0]);
       setUploading(false);
+    } else if (errors.length) {
+      // partial success — flash a summary then close so the user can see the
+      // photos appear (they did actually save)
+      setStatus(`${done} saved · ${errors.length} failed`);
+      setTimeout(close, 1200);
     } else {
       setStatus(done === 1 ? "saved" : `${done} saved`);
       setTimeout(close, 750);
