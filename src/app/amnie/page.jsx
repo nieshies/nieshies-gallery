@@ -199,12 +199,10 @@ function DualCountdown() {
   );
 }
 
-// ── 3. Achievements ──────────────────────────────────────────────────────────
+// ── 3. Milestones (vertical timeline of polaroids) ───────────────────────────
 
-function AchievementsGrid() {
+function MilestonesTimeline() {
   const [photos, setPhotos] = useState([]);
-  const [lightbox, setLightbox] = useState({ open: false, idx: 0 });
-  const touchStartX = useRef(null);
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=achievement")
@@ -213,37 +211,126 @@ function AchievementsGrid() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!lightbox.open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") setLightbox((p) => ({ ...p, open: false }));
-      if (e.key === "ArrowRight") setLightbox((p) => ({ ...p, idx: Math.min(p.idx + 1, photos.length - 1) }));
-      if (e.key === "ArrowLeft")  setLightbox((p) => ({ ...p, idx: Math.max(p.idx - 1, 0) }));
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
-  }, [lightbox.open, photos.length]);
-
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 40) return;
-    setLightbox((p) => ({
-      ...p,
-      idx: dx < 0 ? Math.min(p.idx + 1, photos.length - 1) : Math.max(p.idx - 1, 0),
-    }));
-  };
-
-  if (photos.length === 0) return null;
-
-  const current = photos[lightbox.idx];
+  // Latest milestone at top
+  const sorted = [...photos].sort((a, b) => {
+    const ta = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+    const tb = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+    return tb - ta;
+  });
 
   return (
-    <section style={{ padding: "0 1.25rem 0" }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "0.5rem" }}>
+    <section style={{ padding: "0 1.25rem" }}>
+      <style>{`
+        .ml-head {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+        .ml-empty {
+          text-align: center;
+          color: rgba(255, 220, 180, 0.35);
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 20px;
+          padding: 60px 0;
+        }
+        .ml-timeline {
+          position: relative;
+          max-width: 640px;
+          margin: 0 auto;
+          padding: 1.5rem 0 0;
+        }
+        .ml-timeline::before {
+          content: "";
+          position: absolute;
+          top: 12px;
+          bottom: 24px;
+          left: 96px;
+          width: 0.5px;
+          background: linear-gradient(180deg,
+            transparent 0%,
+            rgba(255, 220, 180, 0.22) 8%,
+            rgba(255, 220, 180, 0.22) 92%,
+            transparent 100%);
+        }
+        .ml-row {
+          display: grid;
+          grid-template-columns: 80px 16px 1fr;
+          gap: 16px;
+          align-items: start;
+          margin-bottom: 64px;
+          position: relative;
+        }
+        .ml-year {
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 22px;
+          color: rgba(255, 220, 180, 0.7);
+          text-align: right;
+          padding-top: 18px;
+          line-height: 1;
+        }
+        .ml-dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: rgba(255, 220, 180, 0.6);
+          margin: 22px 3px 0;
+          position: relative;
+          z-index: 2;
+          box-shadow: 0 0 0 4px rgba(12, 8, 4, 1);
+        }
+        .ml-polaroid-wrap {
+          max-width: 320px;
+          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .ml-polaroid-wrap:hover { transform: rotate(0deg) scale(1.03) !important; }
+        .ml-polaroid {
+          background: linear-gradient(180deg, #f7eedd 0%, #ecdfc8 100%);
+          padding: 9px 9px 26px;
+          box-shadow:
+            0 1px 1px rgba(0, 0, 0, 0.45),
+            0 12px 26px rgba(0, 0, 0, 0.55),
+            0 24px 55px rgba(0, 0, 0, 0.4);
+        }
+        .ml-img {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 4 / 3;
+          background: #0c0804;
+          overflow: hidden;
+        }
+        .ml-caption {
+          margin: 8px 4px 0;
+          color: #5b4a37;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 16px;
+          text-align: center;
+          line-height: 1.15;
+          min-height: 18px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .ml-note {
+          margin: 10px 0 0 4px;
+          color: rgba(255, 220, 180, 0.45);
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 15px;
+          font-style: italic;
+          line-height: 1.3;
+        }
+        @media (max-width: 640px) {
+          .ml-timeline::before { left: 56px; }
+          .ml-row { grid-template-columns: 46px 12px 1fr; gap: 10px; margin-bottom: 48px; }
+          .ml-year { font-size: 16px; padding-top: 14px; }
+          .ml-dot { margin-top: 18px; }
+          .ml-polaroid-wrap { max-width: 240px; }
+          .ml-caption { font-size: 14px; }
+          .ml-note { font-size: 13px; }
+        }
+      `}</style>
+
+      <div className="ml-head">
         <SectionLabel>milestones</SectionLabel>
         <UploadButton
           defaultSection="amnie-achievement"
@@ -254,84 +341,301 @@ function AchievementsGrid() {
           <span className="ng-inline-plus" aria-hidden="true" />
         </UploadButton>
       </div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gap: "0.65rem",
-        maxWidth: "680px",
-        margin: "0 auto",
-      }}>
-        {photos.map((photo, i) => (
-          <div
-            key={photo.id}
-            onClick={() => setLightbox({ open: true, idx: i })}
-            style={{
-              background: SURFACE,
-              border: `1px solid ${BORDER}`,
-              borderRadius: "12px",
-              overflow: "hidden",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ position: "relative", width: "100%", aspectRatio: "4 / 3" }}>
-              <Image
-                src={getPhotoUrl(photo.url, "thumb")}
-                alt=""
-                fill
-                style={{ objectFit: "cover", filter: "brightness(0.82)" }}
-                sizes="(max-width: 680px) 50vw, 340px"
-                loading="lazy"
-              />
-            </div>
-            {photo.caption && (
-              <p style={{
-                margin: 0,
-                padding: "0.5rem 0.7rem 0.65rem",
-                fontSize: "0.72rem",
-                color: "rgba(255,255,255,0.52)",
-                lineHeight: 1.45,
-                letterSpacing: "0.02em",
-              }}>
-                {photo.caption}
-              </p>
-            )}
-          </div>
-        ))}
+
+      {sorted.length === 0 ? (
+        <p className="ml-empty">no milestones yet · tap + to add the first</p>
+      ) : (
+        <div className="ml-timeline">
+          {sorted.map((p, i) => {
+            const year = p.uploadedAt ? new Date(p.uploadedAt).getFullYear() : "";
+            const tilt = ((i * 53) % 7) - 3; // -3 to +3 deg, deterministic
+            return (
+              <div className="ml-row" key={p.id || i}>
+                <div className="ml-year">{year}</div>
+                <div className="ml-dot" />
+                <div>
+                  <div
+                    className="ml-polaroid-wrap"
+                    style={{ transform: `rotate(${tilt}deg)` }}
+                  >
+                    <div className="ml-polaroid">
+                      <div
+                        className="ml-img"
+                        style={{ aspectRatio: p.width && p.height ? `${p.width} / ${p.height}` : "4 / 3" }}
+                      >
+                        <Image
+                          src={getPhotoUrl(p.url, "medium")}
+                          alt={p.caption || ""}
+                          fill
+                          sizes="(max-width: 640px) 220px, 300px"
+                          style={{ objectFit: "cover" }}
+                          loading={i < 2 ? "eager" : "lazy"}
+                        />
+                      </div>
+                      <div className="ml-caption">{p.caption || "·"}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── 3b. Polaroid Slides (manual swipeable slideshow) ─────────────────────────
+
+function PolaroidSlides() {
+  const [photos, setPhotos] = useState([]);
+  const [active, setActive] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+  const touchX = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/photos?page=amnie&folder=album")
+      .then((r) => r.json())
+      .then((d) => setPhotos(d.photos || []))
+      .catch(() => {});
+  }, []);
+
+  const go = (delta) => {
+    setActive((a) => (a + delta + photos.length) % photos.length);
+    setAnimKey((k) => k + 1);
+  };
+
+  const onKey = (e) => {
+    if (e.key === "ArrowRight") go(1);
+    if (e.key === "ArrowLeft")  go(-1);
+  };
+
+  const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd   = (e) => {
+    if (touchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) < 40) return;
+    go(dx < 0 ? 1 : -1);
+  };
+
+  const cur  = photos[active];
+  const prev = photos[(active - 1 + photos.length) % photos.length];
+  const next = photos[(active + 1) % photos.length];
+
+  return (
+    <section style={{ padding: "0 1.25rem", overflow: "hidden" }}>
+      <style>{`
+        .ps-head {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+        .ps-empty {
+          text-align: center;
+          color: rgba(255, 220, 180, 0.35);
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 20px;
+          padding: 50px 0;
+        }
+        .ps-stage {
+          position: relative;
+          width: 100%;
+          max-width: 720px;
+          height: 420px;
+          margin: 1.5rem auto 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
+        }
+        .ps-peek {
+          position: absolute;
+          top: 50%;
+          width: 140px;
+          height: 175px;
+          background: linear-gradient(180deg, #f7eedd 0%, #ecdfc8 100%);
+          padding: 6px;
+          box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+          opacity: 0.32;
+          cursor: pointer;
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .ps-peek:hover { opacity: 0.72; }
+        .ps-peek-left  { left: 0;   transform: translateY(-50%) rotate(-6deg); }
+        .ps-peek-right { right: 0;  transform: translateY(-50%) rotate(6deg); }
+        .ps-peek-img {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          background: #0c0804;
+          overflow: hidden;
+        }
+        .ps-active-wrap {
+          position: relative;
+          z-index: 2;
+        }
+        .ps-polaroid {
+          background: linear-gradient(180deg, #f7eedd 0%, #ecdfc8 100%);
+          padding: 12px 12px 34px;
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.5),
+            0 22px 50px rgba(0, 0, 0, 0.6),
+            0 50px 100px rgba(0, 0, 0, 0.4);
+          width: 280px;
+          animation: ps-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes ps-enter {
+          from { opacity: 0; transform: rotate(0deg) translateY(8px) scale(0.94); }
+          to   { opacity: 1; transform: rotate(-1.5deg) translateY(0) scale(1); }
+        }
+        .ps-active-img {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 4 / 5;
+          background: #0c0804;
+          overflow: hidden;
+        }
+        .ps-caption {
+          margin: 10px 4px 0;
+          color: #5b4a37;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 17px;
+          text-align: center;
+          line-height: 1.2;
+          min-height: 20px;
+        }
+        .ps-dots {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 24px;
+        }
+        .ps-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: rgba(255, 220, 180, 0.22);
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          transition: background 0.25s, transform 0.25s;
+          min-width: 6px; min-height: 6px;
+        }
+        .ps-dot:hover { background: rgba(255, 220, 180, 0.5); }
+        .ps-dot-active {
+          background: rgba(255, 220, 180, 0.9);
+          transform: scale(1.4);
+        }
+        .ps-hint {
+          margin: 12px 0 0;
+          text-align: center;
+          font-size: 9px;
+          letter-spacing: 0.4em;
+          text-transform: uppercase;
+          color: rgba(255, 220, 180, 0.22);
+        }
+        @media (max-width: 640px) {
+          .ps-stage { height: 380px; }
+          .ps-peek { width: 80px; height: 110px; }
+          .ps-polaroid { width: 230px; padding: 10px 10px 28px; }
+          .ps-caption { font-size: 15px; }
+        }
+      `}</style>
+
+      <div className="ps-head">
+        <SectionLabel>album</SectionLabel>
+        <UploadButton
+          page="amnie"
+          folder="album"
+          destLabel="amnie's album"
+          ariaLabel="Add to album"
+          className="ng-inline-add"
+          style={{ marginBottom: "0.75rem" }}
+        >
+          <span className="ng-inline-plus" aria-hidden="true" />
+        </UploadButton>
       </div>
 
-      {lightbox.open && (
-        <div
-          onClick={() => setLightbox((p) => ({ ...p, open: false }))}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)",
-            zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
-          }}
-        >
+      {photos.length === 0 ? (
+        <p className="ps-empty">album is empty · tap + to add</p>
+      ) : (
+        <>
           <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ position: "relative", width: "min(92vw, 520px)", aspectRatio: "4/3", borderRadius: "14px", overflow: "hidden" }}
+            className="ps-stage"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            onKeyDown={onKey}
+            tabIndex={0}
           >
-            <Image src={getPhotoUrl(current.url, "medium")} alt="" fill style={{ objectFit: "cover" }} sizes="min(92vw, 520px)" priority />
+            {photos.length > 1 && prev && (
+              <div className="ps-peek ps-peek-left" onClick={() => go(-1)}>
+                <div className="ps-peek-img">
+                  <Image
+                    src={getPhotoUrl(prev.url, "thumb")}
+                    alt=""
+                    fill
+                    sizes="140px"
+                    style={{ objectFit: "cover" }}
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
+
+            {cur && (
+              <div className="ps-active-wrap">
+                <div className="ps-polaroid" key={animKey}>
+                  <div
+                    className="ps-active-img"
+                    style={{ aspectRatio: cur.width && cur.height ? `${cur.width} / ${cur.height}` : "4 / 5" }}
+                  >
+                    <Image
+                      src={getPhotoUrl(cur.url, "medium")}
+                      alt={cur.caption || ""}
+                      fill
+                      sizes="(max-width: 640px) 230px, 280px"
+                      style={{ objectFit: "cover" }}
+                      priority
+                    />
+                  </div>
+                  <div className="ps-caption">{cur.caption || "·"}</div>
+                </div>
+              </div>
+            )}
+
+            {photos.length > 1 && next && next !== cur && (
+              <div className="ps-peek ps-peek-right" onClick={() => go(1)}>
+                <div className="ps-peek-img">
+                  <Image
+                    src={getPhotoUrl(next.url, "thumb")}
+                    alt=""
+                    fill
+                    sizes="140px"
+                    style={{ objectFit: "cover" }}
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => setLightbox((p) => ({ ...p, open: false }))}
-            style={{ position: "absolute", top: "1rem", right: "1.25rem", background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: "28px", cursor: "pointer", padding: "0.5rem" }}
-          >×</button>
-          {lightbox.idx > 0 && (
-            <button onClick={(e) => { e.stopPropagation(); setLightbox((p) => ({ ...p, idx: p.idx - 1 })); }}
-              style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              &#8592;
-            </button>
+
+          {photos.length > 1 && (
+            <>
+              <div className="ps-dots">
+                {photos.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`ps-dot ${i === active ? "ps-dot-active" : ""}`}
+                    onClick={() => { setActive(i); setAnimKey((k) => k + 1); }}
+                    aria-label={`Slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+              <p className="ps-hint">swipe or tap to flip</p>
+            </>
           )}
-          {lightbox.idx < photos.length - 1 && (
-            <button onClick={(e) => { e.stopPropagation(); setLightbox((p) => ({ ...p, idx: p.idx + 1 })); }}
-              style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              &#8594;
-            </button>
-          )}
-        </div>
+        </>
       )}
     </section>
   );
@@ -379,7 +683,8 @@ export default function AmniePage() {
           subtitle="my person · always & forever"
         />
         <DualCountdown />
-        <AchievementsGrid />
+        <MilestonesTimeline />
+        <PolaroidSlides />
         <AmnScatter />
         <div style={{ height: "4rem" }} />
       </div>
