@@ -203,6 +203,8 @@ function DualCountdown() {
 
 function MilestonesTimeline() {
   const [photos, setPhotos] = useState([]);
+  const [editingCaption, setEditingCaption] = useState(null);
+  const [captionDraft,   setCaptionDraft]   = useState("");
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=achievement")
@@ -210,6 +212,23 @@ function MilestonesTimeline() {
       .then((d) => setPhotos(d.photos || []))
       .catch(() => {});
   }, []);
+
+  const startEdit = (p) => {
+    setEditingCaption(p.url);
+    setCaptionDraft(p.caption || "");
+  };
+  const saveCaption = async (p) => {
+    const draft = (captionDraft || "").slice(0, 140);
+    setEditingCaption(null);
+    setPhotos(prev => prev.map(x => x.url === p.url ? { ...x, caption: draft } : x));
+    try {
+      await fetch("/api/photos/caption", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: p.url, caption: draft, page: "amnie", folder: "achievement" }),
+      });
+    } catch {/* keep optimistic */}
+  };
 
   // Latest milestone at top
   const sorted = [...photos].sort((a, b) => {
@@ -236,61 +255,71 @@ function MilestonesTimeline() {
         }
         .ml-timeline {
           position: relative;
-          max-width: 640px;
+          max-width: 560px;
           margin: 0 auto;
-          padding: 1.5rem 0 0;
+          padding: 1.25rem 0 0;
         }
         .ml-timeline::before {
           content: "";
           position: absolute;
-          top: 12px;
+          top: 18px;
           bottom: 24px;
-          left: 96px;
+          left: 70px;
           width: 0.5px;
           background: linear-gradient(180deg,
             transparent 0%,
-            rgba(255, 220, 180, 0.22) 8%,
-            rgba(255, 220, 180, 0.22) 92%,
+            rgba(255, 220, 180, 0.18) 6%,
+            rgba(255, 220, 180, 0.18) 94%,
             transparent 100%);
         }
         .ml-row {
           display: grid;
-          grid-template-columns: 80px 16px 1fr;
-          gap: 16px;
+          grid-template-columns: 60px 14px 1fr;
+          gap: 12px;
           align-items: start;
-          margin-bottom: 64px;
+          margin-bottom: 28px;
           position: relative;
         }
         .ml-year {
           font-family: "Caveat", "Bradley Hand", cursive;
-          font-size: 22px;
-          color: rgba(255, 220, 180, 0.7);
+          font-size: 19px;
+          color: rgba(255, 220, 180, 0.8);
           text-align: right;
-          padding-top: 18px;
+          padding-top: 16px;
           line-height: 1;
+          opacity: 0;
+          transition: opacity 0.3s;
         }
+        .ml-row.ml-row-newyear .ml-year { opacity: 1; }
+        .ml-row.ml-row-newyear { margin-top: 32px; }
+        .ml-row.ml-row-newyear:first-child { margin-top: 0; }
         .ml-dot {
-          width: 9px;
-          height: 9px;
+          width: 5px; height: 5px;
           border-radius: 50%;
-          background: rgba(255, 220, 180, 0.6);
-          margin: 22px 3px 0;
+          background: rgba(255, 220, 180, 0.35);
+          margin: 22px 4px 0;
           position: relative;
           z-index: 2;
-          box-shadow: 0 0 0 4px rgba(12, 8, 4, 1);
+          box-shadow: 0 0 0 4px #0c0804;
+          transition: background 0.3s, transform 0.3s;
+        }
+        .ml-row.ml-row-newyear .ml-dot {
+          background: rgba(255, 220, 180, 0.8);
+          width: 7px; height: 7px;
+          margin-top: 21px;
         }
         .ml-polaroid-wrap {
-          max-width: 320px;
+          max-width: 240px;
           transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .ml-polaroid-wrap:hover { transform: rotate(0deg) scale(1.03) !important; }
         .ml-polaroid {
           background: linear-gradient(180deg, #f7eedd 0%, #ecdfc8 100%);
-          padding: 9px 9px 26px;
+          padding: 7px 7px 22px;
           box-shadow:
             0 1px 1px rgba(0, 0, 0, 0.45),
-            0 12px 26px rgba(0, 0, 0, 0.55),
-            0 24px 55px rgba(0, 0, 0, 0.4);
+            0 10px 22px rgba(0, 0, 0, 0.5),
+            0 22px 48px rgba(0, 0, 0, 0.35);
         }
         .ml-img {
           position: relative;
@@ -300,33 +329,47 @@ function MilestonesTimeline() {
           overflow: hidden;
         }
         .ml-caption {
-          margin: 8px 4px 0;
+          margin: 6px 3px 0;
           color: #5b4a37;
           font-family: "Caveat", "Bradley Hand", cursive;
-          font-size: 16px;
+          font-size: 14px;
           text-align: center;
           line-height: 1.15;
-          min-height: 18px;
+          min-height: 16px;
+          cursor: text;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
-        .ml-note {
-          margin: 10px 0 0 4px;
-          color: rgba(255, 220, 180, 0.45);
-          font-family: "Caveat", "Bradley Hand", cursive;
-          font-size: 15px;
+        .ml-caption.ml-caption-empty {
+          color: rgba(91, 74, 55, 0.32);
           font-style: italic;
-          line-height: 1.3;
+        }
+        .ml-caption-input {
+          margin: 4px 3px 0;
+          width: calc(100% - 6px);
+          background: rgba(255, 255, 255, 0.7);
+          border: none;
+          border-bottom: 0.5px solid rgba(91, 74, 55, 0.4);
+          outline: none;
+          color: #3a2f24;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 14px;
+          line-height: 1.15;
+          text-align: center;
+          padding: 2px 4px;
+          box-sizing: border-box;
         }
         @media (max-width: 640px) {
-          .ml-timeline::before { left: 56px; }
-          .ml-row { grid-template-columns: 46px 12px 1fr; gap: 10px; margin-bottom: 48px; }
-          .ml-year { font-size: 16px; padding-top: 14px; }
-          .ml-dot { margin-top: 18px; }
-          .ml-polaroid-wrap { max-width: 240px; }
-          .ml-caption { font-size: 14px; }
-          .ml-note { font-size: 13px; }
+          .ml-timeline::before { left: 48px; }
+          .ml-row { grid-template-columns: 40px 12px 1fr; gap: 8px; margin-bottom: 22px; }
+          .ml-year { font-size: 15px; padding-top: 12px; }
+          .ml-dot { margin-top: 17px; }
+          .ml-row.ml-row-newyear .ml-dot { margin-top: 16px; }
+          .ml-row.ml-row-newyear { margin-top: 26px; }
+          .ml-polaroid-wrap { max-width: 190px; }
+          .ml-caption { font-size: 13px; }
+          .ml-caption-input { font-size: 13px; }
         }
       `}</style>
 
@@ -348,10 +391,17 @@ function MilestonesTimeline() {
         <div className="ml-timeline">
           {sorted.map((p, i) => {
             const year = p.uploadedAt ? new Date(p.uploadedAt).getFullYear() : "";
-            const tilt = ((i * 53) % 7) - 3; // -3 to +3 deg, deterministic
+            const prevYear = i > 0 && sorted[i - 1].uploadedAt
+              ? new Date(sorted[i - 1].uploadedAt).getFullYear()
+              : null;
+            const isNewYear = year && year !== prevYear;
+            const tilt = ((i * 53) % 5) - 2; // -2 to +2 deg, subtle
             return (
-              <div className="ml-row" key={p.id || i}>
-                <div className="ml-year">{year}</div>
+              <div
+                className={`ml-row ${isNewYear ? "ml-row-newyear" : ""}`}
+                key={p.id || i}
+              >
+                <div className="ml-year">{isNewYear ? year : ""}</div>
                 <div className="ml-dot" />
                 <div>
                   <div
@@ -367,12 +417,34 @@ function MilestonesTimeline() {
                           src={getPhotoUrl(p.url, "medium")}
                           alt={p.caption || ""}
                           fill
-                          sizes="(max-width: 640px) 220px, 300px"
+                          sizes="(max-width: 640px) 190px, 240px"
                           style={{ objectFit: "cover" }}
                           loading={i < 2 ? "eager" : "lazy"}
                         />
                       </div>
-                      <div className="ml-caption">{p.caption || "·"}</div>
+                      {editingCaption === p.url ? (
+                        <input
+                          className="ml-caption-input"
+                          autoFocus
+                          value={captionDraft}
+                          maxLength={140}
+                          placeholder="a caption…"
+                          onChange={(e) => setCaptionDraft(e.target.value)}
+                          onBlur={() => saveCaption(p)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")  { e.preventDefault(); saveCaption(p); }
+                            if (e.key === "Escape") { setEditingCaption(null); }
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className={`ml-caption ${p.caption ? "" : "ml-caption-empty"}`}
+                          onClick={() => startEdit(p)}
+                          title="tap to edit"
+                        >
+                          {p.caption || "+ add a caption"}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -391,6 +463,8 @@ function PolaroidSlides() {
   const [photos, setPhotos] = useState([]);
   const [active, setActive] = useState(0);
   const [animKey, setAnimKey] = useState(0);
+  const [editingCaption, setEditingCaption] = useState(null);
+  const [captionDraft,   setCaptionDraft]   = useState("");
   const touchX = useRef(null);
 
   useEffect(() => {
@@ -399,6 +473,23 @@ function PolaroidSlides() {
       .then((d) => setPhotos(d.photos || []))
       .catch(() => {});
   }, []);
+
+  const startEdit = (p) => {
+    setEditingCaption(p.url);
+    setCaptionDraft(p.caption || "");
+  };
+  const saveCaption = async (p) => {
+    const draft = (captionDraft || "").slice(0, 140);
+    setEditingCaption(null);
+    setPhotos(prev => prev.map(x => x.url === p.url ? { ...x, caption: draft } : x));
+    try {
+      await fetch("/api/photos/caption", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: p.url, caption: draft, page: "amnie", folder: "album" }),
+      });
+    } catch {/* keep optimistic */}
+  };
 
   const go = (delta) => {
     setActive((a) => (a + delta + photos.length) % photos.length);
@@ -505,6 +596,26 @@ function PolaroidSlides() {
           text-align: center;
           line-height: 1.2;
           min-height: 20px;
+          cursor: text;
+        }
+        .ps-caption.ps-caption-empty {
+          color: rgba(91, 74, 55, 0.34);
+          font-style: italic;
+        }
+        .ps-caption-input {
+          margin: 8px 4px 0;
+          width: calc(100% - 8px);
+          background: rgba(255, 255, 255, 0.7);
+          border: none;
+          border-bottom: 0.5px solid rgba(91, 74, 55, 0.45);
+          outline: none;
+          color: #3a2f24;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 17px;
+          line-height: 1.2;
+          text-align: center;
+          padding: 2px 4px;
+          box-sizing: border-box;
         }
         .ps-dots {
           display: flex;
@@ -599,7 +710,30 @@ function PolaroidSlides() {
                       priority
                     />
                   </div>
-                  <div className="ps-caption">{cur.caption || "·"}</div>
+                  {editingCaption === cur.url ? (
+                    <input
+                      className="ps-caption-input"
+                      autoFocus
+                      value={captionDraft}
+                      maxLength={140}
+                      placeholder="a caption…"
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setCaptionDraft(e.target.value)}
+                      onBlur={() => saveCaption(cur)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter")  { e.preventDefault(); saveCaption(cur); }
+                        if (e.key === "Escape") { setEditingCaption(null); }
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className={`ps-caption ${cur.caption ? "" : "ps-caption-empty"}`}
+                      onClick={(e) => { e.stopPropagation(); startEdit(cur); }}
+                      title="tap to edit"
+                    >
+                      {cur.caption || "+ add a caption"}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
