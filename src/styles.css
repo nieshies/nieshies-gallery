@@ -503,3 +503,106 @@ button, a {
     animation: none !important;
   }
 }
+
+/* Floating "add a memory" — hairline ring + thin plus */
+.ng-fab {
+  position: fixed;
+  bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem));
+  right:  max(1.25rem, calc(env(safe-area-inset-right) + 0.5rem));
+  z-index: 50;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(255, 245, 230, 0.22);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+  touch-action: manipulation;
+}
+.ng-fab:hover {
+  border-color: rgba(244, 140, 54, 0.6);
+  background: rgba(0, 0, 0, 0.55);
+}
+.ng-fab:active { transform: scale(0.96); }
+
+.ng-fab-plus {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+}
+.ng-fab:hover .ng-fab-plus { opacity: 1; }
+.ng-fab-plus::before,
+.ng-fab-plus::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 245, 230, 0.95);
+}
+.ng-fab-plus::before {
+  top: 50%; left: 0; right: 0;
+  height: 0.5px;
+  transform: translateY(-50%);
+}
+.ng-fab-plus::after {
+  left: 50%; top: 0; bottom: 0;
+  width: 0.5px;
+  transform: translateX(-50%);
+}
+.ng-fab:hover .ng-fab-plus::before,
+.ng-fab:hover .ng-fab-plus::after {
+  background: rgba(244, 140, 54, 1);
+}
+
+/* Inline "+" used next to section labels (amnie milestones/moments) */
+.ng-inline-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(255, 245, 230, 0.18);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: border-color 0.3s ease;
+}
+.ng-inline-add:hover { border-color: rgba(244, 140, 54, 0.6); }
+.ng-inline-plus {
+  position: relative;
+  display: block;
+  width: 9px;
+  height: 9px;
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+}
+.ng-inline-add:hover .ng-inline-plus { opacity: 1; }
+.ng-inline-plus::before,
+.ng-inline-plus::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 245, 230, 0.9);
+}
+.ng-inline-plus::before {
+  top: 50%; left: 0; right: 0;
+  height: 0.5px;
+  transform: translateY(-50%);
+}
+.ng-inline-plus::after {
+  left: 50%; top: 0; bottom: 0;
+  width: 0.5px;
+  transform: translateX(-50%);
+}
+.ng-inline-add:hover .ng-inline-plus::before,
+.ng-inline-add:hover .ng-inline-plus::after {
+  background: rgba(244, 140, 54, 1);
+}

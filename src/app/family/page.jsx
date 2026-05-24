@@ -1155,30 +1155,11 @@ export default function FamilyPage() {
 
         <UploadButton
           defaultSection="family"
-          label="+"
-          style={{
-            position: "fixed",
-            bottom: "max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))",
-            right:  "max(1.5rem, calc(env(safe-area-inset-right) + 0.75rem))",
-            zIndex: 50,
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            border: "1px solid rgba(200,133,74,0.4)",
-            background: "rgba(0,0,0,0.7)",
-            color: "rgba(200,133,74,0.85)",
-            fontSize: "22px",
-            cursor: "pointer",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            lineHeight: 1,
-            touchAction: "manipulation",
-          }}
-        />
+          ariaLabel="Add a memory"
+          className="ng-fab"
+        >
+          <span className="ng-fab-plus" aria-hidden="true" />
+        </UploadButton>
 
       </div>
     </Providers>

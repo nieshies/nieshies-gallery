@@ -247,24 +247,12 @@ function AchievementsGrid() {
         <SectionLabel>milestones</SectionLabel>
         <UploadButton
           defaultSection="amnie-achievement"
-          label="+"
-          style={{
-            marginBottom: "0.75rem",
-            width: "20px",
-            height: "20px",
-            borderRadius: "50%",
-            border: "1px solid rgba(255,220,180,0.25)",
-            background: "transparent",
-            color: "rgba(255,220,180,0.5)",
-            fontSize: "13px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            flexShrink: 0,
-          }}
-        />
+          ariaLabel="Add a milestone"
+          className="ng-inline-add"
+          style={{ marginBottom: "0.75rem" }}
+        >
+          <span className="ng-inline-plus" aria-hidden="true" />
+        </UploadButton>
       </div>
       <div style={{
         display: "grid",
@@ -367,24 +355,12 @@ function AmnScatter() {
         <SectionLabel>moments</SectionLabel>
         <UploadButton
           defaultSection="amnie-moments"
-          label="+"
-          style={{
-            marginBottom: "0.75rem",
-            width: "20px",
-            height: "20px",
-            borderRadius: "50%",
-            border: "1px solid rgba(255,220,180,0.25)",
-            background: "transparent",
-            color: "rgba(255,220,180,0.5)",
-            fontSize: "13px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            flexShrink: 0,
-          }}
-        />
+          ariaLabel="Add a moment"
+          className="ng-inline-add"
+          style={{ marginBottom: "0.75rem" }}
+        >
+          <span className="ng-inline-plus" aria-hidden="true" />
+        </UploadButton>
       </div>
       {photos.length > 0 && <ScatterSection photos={photos} />}
     </section>
