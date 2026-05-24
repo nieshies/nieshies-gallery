@@ -504,6 +504,15 @@ button, a {
   }
 }
 
+/* Hide site nav while the family member-collage is open
+   (prevents nav-bar overlap with the close button + music pill) */
+body.fam-collage-open nav.fixed,
+body.fam-collage-open .dotnav-mobile {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
 /* Floating "add a memory" — hairline ring + thin plus */
 .ng-fab {
   position: fixed;

@@ -219,7 +219,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const startedRef = useRef(false);
   const [audioState, setAudioState] = useState("idle");
 
-  // ── keyboard + scroll lock ────────────────────────────────────────────────
+  // ── keyboard + scroll lock + nav hide ─────────────────────────────────────
   useEffect(() => {
     const onKey = e => {
       if (e.key === "Escape") {
@@ -228,8 +228,13 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
       }
     };
     document.body.style.overflow = "hidden";
+    document.body.classList.add("fam-collage-open");
     window.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+      document.body.classList.remove("fam-collage-open");
+    };
   }, [zoomed]);
 
   // ── youtube player (no autoplay — pill tap triggers start for iOS compat) ─
@@ -377,7 +382,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         .mc-overlay {
           position: fixed;
           inset: 0;
-          z-index: 200;
+          z-index: 9999;
           background:
             radial-gradient(ellipse at 30% 10%, rgba(40, 60, 110, 0.32), transparent 55%),
             radial-gradient(ellipse at 80% 90%, rgba(60, 30, 80, 0.22),  transparent 55%),
@@ -403,7 +408,13 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           pointer-events: none;
         }
         .mc-header > * { pointer-events: auto; }
-        .mc-header-left { max-width: 70%; }
+        .mc-header-left {
+          max-width: 70%;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
         .mc-name {
           margin: 0;
           font-family: "Caveat", "Bradley Hand", cursive;
@@ -659,7 +670,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         .mc-zoom {
           position: fixed;
           inset: 0;
-          z-index: 220;
+          z-index: 10000;
           background: rgba(0, 0, 0, 0.92);
           display: flex;
           align-items: center;
@@ -696,15 +707,17 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
 
       <div className="mc-header" onClick={e => e.stopPropagation()}>
         <div className="mc-header-left">
-          <h2 className="mc-name">{member.displayName}</h2>
-          <p className="mc-role">{member.role}</p>
-        </div>
-        <div className="mc-header-right">
+          <div>
+            <h2 className="mc-name">{member.displayName}</h2>
+            <p className="mc-role">{member.role}</p>
+          </div>
           {song && (
             <button className="mc-music-pill" onClick={handlePill}>
               {pillLabel}
             </button>
           )}
+        </div>
+        <div className="mc-header-right">
           <button
             className="mc-icon-btn"
             onClick={(e) => { e.stopPropagation(); close(); }}
