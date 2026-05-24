@@ -148,25 +148,89 @@ function FamStrip({ photos }) {
 
 // ── 3. Member cards ───────────────────────────────────────────────────────────
 
-function MemberModal({ member, photos, onClose, onBioSaved }) {
-  const hero = photos[0];
+// scatter coordinates — deterministic per-index position for burst layout
+function scatterPos(i, isMobile, canvasW) {
+  if (isMobile) {
+    return {
+      leftPct: 50,
+      topPx:   60 + i * 250,
+      width:   Math.min(260, canvasW - 40),
+      tilt:    ((i * 37 + 11) % 14) - 7,
+    };
+  }
+  const cols  = 4;
+  const cellW = 100 / cols;
+  const rowH  = canvasW < 900 ? 220 : 280;
+  const col   = i % cols;
+  const row   = Math.floor(i / cols);
+  const j1    = ((i * 9301 + 7) % 233) / 233;
+  const j2    = ((i * 49297 + 13) % 233) / 233;
+  const j3    = ((i * 7919 + 5) % 233) / 233;
+  return {
+    leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.45,
+    topPx:   row * rowH + rowH / 2 + 60 + (j2 - 0.5) * rowH * 0.35,
+    width:   200 + j3 * 120,
+    tilt:    (j1 - 0.5) * 18,
+  };
+}
+
+function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBioSaved }) {
   const song = MEMBER_SONGS[member.folder];
+
+  // photos managed locally so per-member uploads can refresh in place
+  const [photos, setPhotos] = useState(initialPhotos || []);
+  useEffect(() => setPhotos(initialPhotos || []), [initialPhotos]);
+
+  const reloadPhotos = () => {
+    fetch(`/api/family/member?folder=${member.folder}`)
+      .then(r => r.json())
+      .then(d => setPhotos(d.photos || []))
+      .catch(() => {});
+  };
+
+  // viewport
+  const [isMobile, setIsMobile] = useState(false);
+  const [canvasW, setCanvasW]   = useState(1200);
+  useEffect(() => {
+    const update = () => {
+      setIsMobile(window.innerWidth < 720);
+      setCanvasW(window.innerWidth);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // close with exit animation
+  const [closing, setClosing] = useState(false);
+  const close = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 320);
+  };
+
+  // photo zoom (click a scattered photo)
+  const [zoomed, setZoomed] = useState(null);
 
   // ── music refs ───────────────────────────────────────────────────────────
   const playerRef  = useRef(null);
   const loopRef    = useRef(null);
   const mountedRef = useRef(true);
   const startedRef = useRef(false);
-  // "idle" → "playing" → "muted" (idle = not yet started; iOS needs gesture)
   const [audioState, setAudioState] = useState("idle");
 
   // ── keyboard + scroll lock ────────────────────────────────────────────────
   useEffect(() => {
-    const onKey = e => { if (e.key === "Escape") onClose(); };
+    const onKey = e => {
+      if (e.key === "Escape") {
+        if (zoomed) setZoomed(null);
+        else close();
+      }
+    };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
-  }, [onClose]);
+  }, [zoomed]);
 
   // ── youtube player (no autoplay — pill tap triggers start for iOS compat) ─
   useEffect(() => {
@@ -283,173 +347,495 @@ function MemberModal({ member, photos, onClose, onBioSaved }) {
     setSavingBio(false);
   };
 
+  // ── scatter layout ────────────────────────────────────────────────────────
+  const layout = photos.map((_, i) => scatterPos(i, isMobile, canvasW));
+  const winH = typeof window !== "undefined" ? window.innerHeight : 800;
+  const canvasH = isMobile
+    ? Math.max(winH, 120 + photos.length * 250)
+    : Math.max(winH, 220 + Math.ceil(photos.length / 4) * 280);
+
+  // burst origin (clicked card)
+  const origin = (() => {
+    if (originRect) {
+      return {
+        cx: originRect.left + originRect.width / 2,
+        cy: originRect.top  + originRect.height / 2,
+      };
+    }
+    if (typeof window !== "undefined") {
+      return { cx: window.innerWidth / 2, cy: window.innerHeight / 2 };
+    }
+    return { cx: 0, cy: 0 };
+  })();
+
   return (
     <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.92)",
-        zIndex: 200,
-        overflowY: "auto",
-        padding: "2rem 1rem 4rem",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-start",
-      }}
+      className={`mc-overlay ${closing ? "mc-closing" : ""}`}
+      onClick={close}
     >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: "640px",
-          background: SURFACE,
-          borderRadius: "18px",
-          overflow: "hidden",
-          border: `1px solid ${BORDER}`,
-          marginTop: "2rem",
-        }}
-      >
-        {hero ? (
-          <div style={{ position: "relative", width: "100%", aspectRatio: "4/3" }}>
-            <Image
-              src={getPhotoUrl(hero.url, "medium")}
-              alt=""
-              fill
-              style={{ objectFit: "cover", filter: "brightness(0.88)" }}
-              sizes="640px"
-              priority
-            />
-          </div>
-        ) : (
-          <div style={{ width: "100%", aspectRatio: "4/3", background: "rgba(200,133,74,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <p style={{ margin: 0, color: "rgba(200,133,74,0.3)", fontSize: "11px", letterSpacing: "0.2em" }}>no photos yet</p>
-          </div>
-        )}
+      <style>{`
+        .mc-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          background:
+            radial-gradient(ellipse at 30% 10%, rgba(40, 60, 110, 0.32), transparent 55%),
+            radial-gradient(ellipse at 80% 90%, rgba(60, 30, 80, 0.22),  transparent 55%),
+            linear-gradient(180deg, #050813 0%, #02040a 100%);
+          overflow-y: auto;
+          overflow-x: hidden;
+          animation: mc-fade-in 0.4s ease both;
+          -webkit-overflow-scrolling: touch;
+        }
+        .mc-overlay.mc-closing { animation: mc-fade-out 0.32s ease both; }
+        @keyframes mc-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes mc-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
-        <div style={{ padding: "1.2rem 1.4rem 0.9rem" }}>
-          <p style={{ margin: 0, color: "#fff", fontSize: "1.15rem", fontWeight: 600, letterSpacing: "0.02em", textTransform: "capitalize" }}>
-            {member.displayName}
-          </p>
-          <p style={{ margin: "0.2rem 0 0.5rem", color: ACCENT, fontSize: "0.68rem", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-            {member.role}
-          </p>
+        /* ── header bar ────────────────────────────────────────────── */
+        .mc-header {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          padding: max(20px, env(safe-area-inset-top, 0)) 24px 12px;
+          pointer-events: none;
+        }
+        .mc-header > * { pointer-events: auto; }
+        .mc-header-left { max-width: 70%; }
+        .mc-name {
+          margin: 0;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 38px;
+          line-height: 1;
+          color: rgba(255, 245, 230, 0.95);
+          text-transform: capitalize;
+        }
+        .mc-role {
+          margin: 6px 0 0;
+          font-size: 9px;
+          letter-spacing: 0.42em;
+          text-transform: uppercase;
+          color: rgba(255, 245, 230, 0.4);
+        }
+        .mc-header-right {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+        .mc-icon-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 0.5px solid rgba(255, 245, 230, 0.22);
+          background: rgba(0, 0, 0, 0.35);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          color: rgba(255, 245, 230, 0.55);
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 16px; line-height: 1;
+          transition: color 0.2s, border-color 0.2s;
+          touch-action: manipulation;
+        }
+        .mc-icon-btn:hover {
+          color: rgba(255, 245, 230, 0.95);
+          border-color: rgba(255, 245, 230, 0.5);
+        }
+        .mc-music-pill {
+          background: rgba(0, 0, 0, 0.35);
+          border: 0.5px solid rgba(244, 140, 54, 0.25);
+          border-radius: 20px;
+          padding: 7px 13px;
+          color: rgba(244, 140, 54, 0.7);
+          font-size: 10px;
+          letter-spacing: 0.1em;
+          cursor: pointer;
+          font-family: inherit;
+          min-height: 36px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          transition: color 0.2s, border-color 0.2s;
+        }
+        .mc-music-pill:hover { color: #f08a3a; border-color: rgba(244, 140, 54, 0.55); }
 
-          {editingBio ? (
-            <div onClick={e => e.stopPropagation()}>
-              <textarea
-                value={draftBio}
-                onChange={e => setDraftBio(e.target.value)}
-                rows={3}
-                autoFocus
-                style={{
-                  width: "100%", boxSizing: "border-box",
-                  background: "rgba(0,0,0,0.3)",
-                  border: "1px solid rgba(200,133,74,0.2)",
-                  borderRadius: "6px",
-                  color: "rgba(255,255,255,0.6)",
-                  fontSize: "0.78rem", fontStyle: "italic",
-                  lineHeight: 1.5, padding: "0.45rem 0.6rem",
-                  resize: "none", fontFamily: "inherit", outline: "none",
-                }}
-              />
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.45rem" }}>
-                <button
-                  onClick={saveBio}
-                  disabled={savingBio}
-                  style={{
-                    background: "rgba(200,133,74,0.15)",
-                    border: "1px solid rgba(200,133,74,0.3)",
-                    borderRadius: "6px", padding: "4px 14px",
-                    color: "#c8854a", fontSize: "0.72rem",
-                    cursor: savingBio ? "default" : "pointer",
-                    fontFamily: "inherit", letterSpacing: "0.05em",
-                    minHeight: "32px", touchAction: "manipulation",
-                  }}
-                >
-                  {savingBio ? "saving…" : "save"}
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); setDraftBio(currentBio); setEditingBio(false); }}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "6px", padding: "4px 14px",
-                    color: "rgba(255,255,255,0.3)", fontSize: "0.72rem",
-                    cursor: "pointer", fontFamily: "inherit",
-                    letterSpacing: "0.05em", minHeight: "32px",
-                    touchAction: "manipulation",
-                  }}
-                >
-                  cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p
-              onClick={e => { e.stopPropagation(); setEditingBio(true); setDraftBio(currentBio); }}
-              title="tap to edit"
-              style={{
-                margin: 0, color: "rgba(255,255,255,0.38)",
-                fontSize: "0.78rem", fontStyle: "italic", lineHeight: 1.5,
-                cursor: "text", borderBottom: "1px dashed rgba(255,255,255,0.08)",
-                paddingBottom: "2px",
-              }}
-            >
-              {currentBio}
-            </p>
-          )}
+        /* ── canvas ────────────────────────────────────────────────── */
+        .mc-canvas {
+          position: relative;
+          width: 100%;
+          margin: 0 auto;
+          padding: 0 0 140px;
+        }
+        .mc-photo {
+          position: absolute;
+          transform-origin: center;
+          cursor: pointer;
+          will-change: transform, opacity;
+          animation: mc-burst 0.95s cubic-bezier(0.22, 1.4, 0.38, 1) both;
+          animation-delay: var(--mc-delay);
+          padding: 8px 8px 22px;
+          background: linear-gradient(180deg, #f7eedd 0%, #ecdfc8 100%);
+          box-shadow:
+            0 1px 1px rgba(0, 0, 0, 0.45),
+            0 12px 26px rgba(0, 0, 0, 0.55),
+            0 24px 55px rgba(0, 0, 0, 0.42);
+          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s, z-index 0.05s;
+        }
+        .mc-photo:hover {
+          transform: translate(-50%, -50%) rotate(0deg) scale(1.06) !important;
+          z-index: 50;
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.45),
+            0 24px 50px rgba(0, 0, 0, 0.65),
+            0 50px 100px rgba(0, 0, 0, 0.45);
+        }
+        @keyframes mc-burst {
+          0% {
+            transform: translate(calc(-50% + var(--mc-dx)), calc(-50% + var(--mc-dy)))
+                       rotate(0deg) scale(0.18);
+            opacity: 0;
+          }
+          55% { opacity: 1; }
+          100% {
+            transform: translate(-50%, -50%) rotate(var(--mc-rot)) scale(1);
+            opacity: 1;
+          }
+        }
+        .mc-photo-img {
+          position: relative;
+          display: block;
+          width: 100%;
+          overflow: hidden;
+          background: #0a0805;
+        }
+        .mc-photo-img img {
+          width: 100%; height: 100%;
+          object-fit: cover; display: block;
+        }
+        .mc-photo-caption {
+          margin: 6px 2px 0;
+          color: #5b4a37;
+          font-size: 13px;
+          font-family: "Caveat", "Bradley Hand", cursive;
+          text-align: center;
+          line-height: 1.1;
+          min-height: 14px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        /* ── empty state ──────────────────────────────────────────── */
+        .mc-empty {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+          color: rgba(255, 245, 230, 0.45);
+        }
+        .mc-empty-title {
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 32px;
+          margin: 0 0 6px;
+          color: rgba(255, 245, 230, 0.7);
+        }
+        .mc-empty-sub {
+          margin: 0;
+          font-size: 10px;
+          letter-spacing: 0.4em;
+          text-transform: uppercase;
+        }
+
+        /* ── bottom dock ──────────────────────────────────────────── */
+        .mc-dock {
+          position: fixed;
+          left: 0; right: 0;
+          bottom: 0;
+          padding: 18px 22px max(18px, calc(env(safe-area-inset-bottom) + 14px));
+          background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.85) 100%);
+          z-index: 6;
+          pointer-events: none;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 16px;
+        }
+        .mc-dock > * { pointer-events: auto; }
+        .mc-bio {
+          flex: 1;
+          max-width: 540px;
+          color: rgba(255, 245, 230, 0.55);
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 18px;
+          line-height: 1.35;
+          cursor: text;
+          padding: 4px 0;
+          border-bottom: 0.5px dashed rgba(255, 245, 230, 0.12);
+          transition: color 0.2s, border-color 0.2s;
+        }
+        .mc-bio:hover { color: rgba(255, 245, 230, 0.85); border-color: rgba(255, 245, 230, 0.25); }
+        .mc-bio-edit {
+          width: 100%;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: rgba(255, 245, 230, 0.9);
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 18px;
+          line-height: 1.35;
+          resize: none;
+          padding: 4px 0;
+          border-bottom: 0.5px solid rgba(244, 140, 54, 0.5);
+        }
+        .mc-bio-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 6px;
+          font-size: 9px;
+          letter-spacing: 0.36em;
+          text-transform: uppercase;
+        }
+        .mc-bio-actions button {
+          background: transparent;
+          border: none;
+          color: rgba(244, 140, 54, 0.7);
+          font-family: inherit;
+          font-size: 9px;
+          letter-spacing: 0.36em;
+          text-transform: uppercase;
+          cursor: pointer;
+          padding: 6px 0;
+          min-height: 30px;
+        }
+        .mc-bio-actions button.mc-cancel { color: rgba(255, 245, 230, 0.35); }
+        .mc-bio-actions button:hover { color: rgba(244, 140, 54, 1); }
+
+        .mc-count {
+          font-size: 9px;
+          letter-spacing: 0.4em;
+          text-transform: uppercase;
+          color: rgba(255, 245, 230, 0.32);
+        }
+        .mc-add {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 0.5px solid rgba(255, 245, 230, 0.25);
+          background: rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          padding: 0;
+          transition: border-color 0.3s, background 0.3s;
+          touch-action: manipulation;
+        }
+        .mc-add:hover {
+          border-color: rgba(244, 140, 54, 0.7);
+          background: rgba(0, 0, 0, 0.6);
+        }
+        .mc-add-plus {
+          position: relative;
+          display: block;
+          width: 16px; height: 16px;
+          opacity: 0.6;
+          transition: opacity 0.2s;
+        }
+        .mc-add:hover .mc-add-plus { opacity: 1; }
+        .mc-add-plus::before, .mc-add-plus::after {
+          content: "";
+          position: absolute;
+          background: rgba(255, 245, 230, 0.95);
+        }
+        .mc-add-plus::before { top: 50%; left: 0; right: 0; height: 0.5px; transform: translateY(-50%); }
+        .mc-add-plus::after  { left: 50%; top: 0; bottom: 0; width: 0.5px;  transform: translateX(-50%); }
+        .mc-add:hover .mc-add-plus::before,
+        .mc-add:hover .mc-add-plus::after { background: rgba(244, 140, 54, 1); }
+
+        /* ── zoom overlay ─────────────────────────────────────────── */
+        .mc-zoom {
+          position: fixed;
+          inset: 0;
+          z-index: 220;
+          background: rgba(0, 0, 0, 0.92);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          animation: mc-fade-in 0.25s ease both;
+        }
+        .mc-zoom-img {
+          position: relative;
+          max-width: 100%;
+          max-height: 100%;
+          width: min(1100px, 100%);
+          height: min(80vh, 800px);
+        }
+        .mc-zoom-cap {
+          position: absolute;
+          bottom: -34px; left: 50%;
+          transform: translateX(-50%);
+          color: rgba(255, 245, 230, 0.75);
+          font-family: "Caveat", "Bradley Hand", cursive;
+          font-size: 16px;
+          text-align: center;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 720px) {
+          .mc-name { font-size: 30px; }
+          .mc-dock { flex-direction: column; align-items: stretch; gap: 12px; }
+          .mc-dock-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          }
+        }
+      `}</style>
+
+      <div className="mc-header" onClick={e => e.stopPropagation()}>
+        <div className="mc-header-left">
+          <h2 className="mc-name">{member.displayName}</h2>
+          <p className="mc-role">{member.role}</p>
         </div>
-
-        {photos.length > 1 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "3px", padding: "0 0.8rem 0.8rem" }}>
-            {photos.map((p, i) => (
-              <div key={p.id} style={{ position: "relative", height: "60px", borderRadius: "5px", overflow: "hidden" }}>
-                <Image
-                  src={getPhotoUrl(p.url, "thumb")}
-                  alt=""
-                  fill
-                  style={{ objectFit: "cover" }}
-                  sizes="140px"
-                  loading={i < 3 ? "eager" : "lazy"}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {song && (
-          <div style={{ padding: "0 1.4rem 1.1rem", display: "flex", justifyContent: "flex-end" }}>
-            <button
-              onClick={handlePill}
-              style={{
-                background: "rgba(0,0,0,0.35)",
-                border: `0.5px solid ${pillBorder}`,
-                borderRadius: "20px",
-                padding: "5px 13px",
-                display: "flex", alignItems: "center", gap: "5px",
-                color: pillColor,
-                fontSize: "10px", letterSpacing: "0.08em",
-                cursor: "pointer", fontFamily: "inherit",
-                transition: "border-color 0.2s, color 0.2s",
-                minHeight: "44px", minWidth: "44px",
-                touchAction: "manipulation",
-              }}
-            >
+        <div className="mc-header-right">
+          {song && (
+            <button className="mc-music-pill" onClick={handlePill}>
               {pillLabel}
             </button>
+          )}
+          <button
+            className="mc-icon-btn"
+            onClick={(e) => { e.stopPropagation(); close(); }}
+            aria-label="Close"
+          >×</button>
+        </div>
+      </div>
+
+      <div
+        className="mc-canvas"
+        style={{ minHeight: canvasH }}
+        onClick={e => e.stopPropagation()}
+      >
+        {photos.length === 0 ? (
+          <div className="mc-empty">
+            <p className="mc-empty-title">no memories yet</p>
+            <p className="mc-empty-sub">tap + to add one</p>
           </div>
+        ) : (
+          photos.map((p, i) => {
+            const pos = layout[i];
+            const finalLeftPx = (pos.leftPct / 100) * canvasW;
+            const finalTopPx  = pos.topPx;
+            const dx = origin.cx - finalLeftPx;
+            const dy = origin.cy - finalTopPx;
+            return (
+              <div
+                key={p.id}
+                className="mc-photo"
+                style={{
+                  left: `${pos.leftPct}%`,
+                  top:  `${pos.topPx}px`,
+                  width: `${pos.width}px`,
+                  zIndex: i + 1,
+                  ["--mc-dx"]:    `${dx}px`,
+                  ["--mc-dy"]:    `${dy}px`,
+                  ["--mc-rot"]:   `${pos.tilt}deg`,
+                  ["--mc-delay"]: `${i * 65}ms`,
+                  transform: `translate(-50%, -50%) rotate(${pos.tilt}deg)`,
+                }}
+                onClick={() => setZoomed(p)}
+              >
+                <div
+                  className="mc-photo-img"
+                  style={{ aspectRatio: p.width && p.height ? `${p.width} / ${p.height}` : "4 / 5" }}
+                >
+                  <Image
+                    src={getPhotoUrl(p.url, "medium")}
+                    alt={p.caption || ""}
+                    fill
+                    style={{ objectFit: "cover" }}
+                    sizes={`${Math.round(pos.width)}px`}
+                    loading={i < 4 ? "eager" : "lazy"}
+                  />
+                </div>
+                {p.caption && <div className="mc-photo-caption">{p.caption}</div>}
+              </div>
+            );
+          })
         )}
       </div>
 
-      <button
-        onClick={onClose}
-        style={{
-          position: "fixed", top: "1rem", right: "1.25rem",
-          background: "none", border: "none",
-          color: "rgba(255,255,255,0.55)", fontSize: "28px",
-          cursor: "pointer", zIndex: 201, lineHeight: 1,
-        }}
-      >×</button>
+      <div className="mc-dock" onClick={e => e.stopPropagation()}>
+        {editingBio ? (
+          <div style={{ flex: 1, maxWidth: 540 }}>
+            <textarea
+              className="mc-bio-edit"
+              rows={2}
+              value={draftBio}
+              autoFocus
+              onChange={e => setDraftBio(e.target.value)}
+            />
+            <div className="mc-bio-actions">
+              <button onClick={saveBio} disabled={savingBio}>
+                {savingBio ? "saving…" : "save"}
+              </button>
+              <button
+                type="button"
+                className="mc-cancel"
+                onClick={e => { e.stopPropagation(); setDraftBio(currentBio); setEditingBio(false); }}
+              >cancel</button>
+            </div>
+          </div>
+        ) : (
+          <p
+            className="mc-bio"
+            onClick={e => { e.stopPropagation(); setEditingBio(true); setDraftBio(currentBio); }}
+            title="tap to edit"
+          >
+            {currentBio || "tap to add a note…"}
+          </p>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span className="mc-count">
+            {photos.length === 0 ? "" : `${photos.length} photo${photos.length === 1 ? "" : "s"}`}
+          </span>
+          <UploadButton
+            ariaLabel={`Add a photo to ${member.displayName}`}
+            className="mc-add"
+            page="family"
+            folder={member.folder}
+            destLabel={`${member.displayName}'s memories`}
+            onUploaded={reloadPhotos}
+          >
+            <span className="mc-add-plus" aria-hidden="true" />
+          </UploadButton>
+        </div>
+      </div>
+
+      {zoomed && (
+        <div className="mc-zoom" onClick={() => setZoomed(null)}>
+          <div className="mc-zoom-img" onClick={e => e.stopPropagation()}>
+            <Image
+              src={getPhotoUrl(zoomed.url, "large")}
+              alt={zoomed.caption || ""}
+              fill
+              style={{ objectFit: "contain" }}
+              sizes="100vw"
+              priority
+            />
+            {zoomed.caption && <div className="mc-zoom-cap">{zoomed.caption}</div>}
+          </div>
+          <button
+            className="mc-icon-btn"
+            onClick={(e) => { e.stopPropagation(); setZoomed(null); }}
+            style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top, 0))", right: "max(16px, env(safe-area-inset-right, 0))" }}
+            aria-label="Close photo"
+          >×</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -494,7 +880,7 @@ function FamilyTree({ memberPhotos, openModal }) {
     return (
       <button
         key={folder}
-        onClick={() => openModal(member)}
+        onClick={(e) => openModal(member, e)}
         className="tree-node"
         style={{ width: NODE, height: NODE }}
         aria-label={member.displayName}
@@ -644,9 +1030,13 @@ function FamMemberCards() {
     });
   }, []);
 
-  const openModal = member => {
+  const openModal = (member, e) => {
     const photos = memberPhotos[member.folder] || [];
-    setModal({ member, photos });
+    const rect = e?.currentTarget?.getBoundingClientRect?.();
+    const originRect = rect
+      ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+      : null;
+    setModal({ member, photos, originRect });
   };
 
   const handleBioSaved = (folder, bio) => {
@@ -751,7 +1141,7 @@ function FamMemberCards() {
                 {/* image area — click opens modal */}
                 <div
                   style={{ position: "relative", width: "100%", height: "160px", cursor: "pointer" }}
-                  onClick={() => openModal(member)}
+                  onClick={(e) => openModal(member, e)}
                 >
                   {cover ? (
                     <Image
@@ -861,6 +1251,7 @@ function FamMemberCards() {
         <MemberModal
           member={modal.member}
           photos={modal.photos}
+          originRect={modal.originRect}
           onClose={() => setModal(null)}
           onBioSaved={handleBioSaved}
         />

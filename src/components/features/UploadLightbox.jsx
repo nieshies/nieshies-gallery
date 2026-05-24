@@ -8,8 +8,19 @@ export const SECTIONS = [
   { key: "family",            label: "family",      page: "family", folder: "" },
 ];
 
-export default function UploadLightbox({ defaultSection = "home", onClose }) {
-  const cfg = SECTIONS.find((s) => s.key === defaultSection) || SECTIONS[0];
+export default function UploadLightbox({
+  defaultSection = "home",
+  onClose,
+  page: pageOverride,
+  folder: folderOverride,
+  label: labelOverride,
+}) {
+  const base = SECTIONS.find((s) => s.key === defaultSection) || SECTIONS[0];
+  const cfg = {
+    label:  labelOverride  ?? base.label,
+    page:   pageOverride   ?? base.page,
+    folder: folderOverride ?? base.folder,
+  };
 
   const [files,     setFiles]     = useState([]);
   const [caption,   setCaption]   = useState("");
@@ -431,6 +442,10 @@ export function UploadButton({
   style = {},
   className = "",
   ariaLabel = "Add a photo",
+  page,
+  folder,
+  destLabel,
+  onUploaded,
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -443,7 +458,15 @@ export function UploadButton({
       >
         {children ?? label}
       </button>
-      {open && <UploadLightbox defaultSection={defaultSection} onClose={() => setOpen(false)} />}
+      {open && (
+        <UploadLightbox
+          defaultSection={defaultSection}
+          page={page}
+          folder={folder}
+          label={destLabel}
+          onClose={() => { setOpen(false); onUploaded?.(); }}
+        />
+      )}
     </>
   );
 }
