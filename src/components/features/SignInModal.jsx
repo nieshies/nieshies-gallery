@@ -155,8 +155,23 @@ export default function SignInModal({ mode = "signin", email, onClose }) {
         .si-close:hover { color: rgba(255,255,255,.95); border-color: rgba(255,255,255,.5); }
 
         @media (max-width: 480px) {
-          .si-card     { padding: 26px 24px 22px; border-radius: 20px; gap: 18px; }
-          .si-headline { font-size: 30px; }
+          .si-card     { padding: 24px 22px 20px; border-radius: 20px; gap: 16px; }
+          .si-headline { font-size: 28px; }
+          .si-body     { font-size: 12.5px; }
+          .si-google   { padding: 14px 18px; font-size: 13.5px; }
+          .si-tag      { font-size: 9.5px; letter-spacing: .38em; }
+        }
+        @media (max-width: 360px) {
+          .si-card     { padding: 22px 20px 18px; gap: 14px; }
+          .si-headline { font-size: 25px; }
+        }
+        /* Landscape phones — shrink so the card fits without scrolling */
+        @media (max-height: 600px) and (orientation: landscape) {
+          .si-card     { padding: 20px 22px 18px; gap: 12px; }
+          .si-headline { font-size: 24px; line-height: 1.1; }
+          .si-body     { font-size: 12px; line-height: 1.5; }
+          .si-google   { padding: 12px 18px; min-height: 42px; }
+          .si-foot     { font-size: 9.5px; }
         }
       `}</style>
 
@@ -166,7 +181,7 @@ export default function SignInModal({ mode = "signin", email, onClose }) {
         {isSignIn ? (
           <>
             <p className="si-tag">protected editor</p>
-            <h2 className="si-headline">Sign in to<br/>contribute.</h2>
+            <h2 className="si-headline">Sign in to contribute.</h2>
             <p className="si-body">
               Browsing the gallery is open to everyone. Adding, editing, or deleting memories needs you to sign in first — the owner will approve new editors.
             </p>
@@ -191,9 +206,7 @@ export default function SignInModal({ mode = "signin", email, onClose }) {
             <p className="si-tag">awaiting approval</p>
             <h2 className="si-headline">Almost in.</h2>
             <p className="si-body">
-              You're signed in as<br/>
-              <span className="si-email">{email}</span><br/>
-              The owner has been notified — once they approve your account you'll be able to add and edit memories. Refresh the page after they say yes.
+              You're signed in as <span className="si-email">{email}</span>. The owner has been notified — once they approve your account you'll be able to add and edit memories. Refresh the page after they say yes.
             </p>
             <button
               className="si-secondary"

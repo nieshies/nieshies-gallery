@@ -71,8 +71,8 @@ export default function OwnerPanel({ onClose }) {
         .op-card {
           position: relative;
           width: 100%;
-          max-width: 440px;
-          max-height: 80vh;
+          max-width: 460px;
+          max-height: 82vh;
           display: flex; flex-direction: column;
           gap: 18px;
           padding: 32px 24px 22px;
@@ -134,11 +134,24 @@ export default function OwnerPanel({ onClose }) {
         .op-list::-webkit-scrollbar-thumb { background: rgba(255,245,230,.12); border-radius: 2px; }
 
         .op-row {
-          display: flex; align-items: center; gap: 10px;
+          display: grid;
+          grid-template-columns: 32px 1fr auto;
+          grid-template-areas: "avatar meta actions";
+          align-items: center;
+          gap: 10px;
           padding: 10px 12px;
           border: 0.5px solid rgba(255,245,230,.1);
           border-radius: 14px;
           background: rgba(255,245,230,.02);
+        }
+        .op-row .op-avatar  { grid-area: avatar; }
+        .op-row .op-meta    { grid-area: meta; }
+        .op-row .op-status,
+        .op-row .op-actions { grid-area: actions; }
+        .op-actions-stack {
+          grid-area: actions;
+          display: flex; align-items: center; gap: 6px;
+          flex-wrap: nowrap;
         }
         .op-avatar {
           width: 32px; height: 32px;
@@ -176,6 +189,10 @@ export default function OwnerPanel({ onClose }) {
         .op-status.s-owner    { color: rgba(244,140,54,1);    background: rgba(244,140,54,.1); }
 
         .op-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .op-status-wrap {
+          display: inline-flex; align-items: center; gap: 6px;
+          flex-shrink: 0;
+        }
         .op-btn {
           background: transparent;
           border: 0.5px solid rgba(255,245,230,.18);
@@ -221,8 +238,37 @@ export default function OwnerPanel({ onClose }) {
           cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           font-size: 16px; line-height: 1;
+          touch-action: manipulation;
+          z-index: 1;
         }
         .op-close:hover { color: rgba(255,245,230,.9); border-color: rgba(255,245,230,.5); }
+
+        /* Mobile — stack status + action buttons under the name so wide
+           buttons don't push everything off-screen on narrow phones */
+        @media (max-width: 480px) {
+          .op-overlay { padding: 16px; }
+          .op-card    { padding: 26px 18px 18px; gap: 14px; max-height: 88vh; }
+          .op-title   { font-size: 28px; }
+          .op-row {
+            grid-template-columns: 32px 1fr;
+            grid-template-areas:
+              "avatar meta"
+              "actions actions";
+            row-gap: 8px;
+            padding: 10px 11px;
+          }
+          .op-actions-stack {
+            justify-content: flex-end;
+            flex-wrap: wrap;
+          }
+          .op-status, .op-status-wrap { margin-left: auto; }
+          .op-btn  { padding: 6px 10px; font-size: 9.5px; min-height: 30px; }
+          .op-chip { padding: 6px 11px; font-size: 9.5px; min-height: 30px; }
+        }
+        @media (max-width: 360px) {
+          .op-name  { font-size: 11.5px; }
+          .op-email { font-size: 9.5px; }
+        }
       `}</style>
 
       <button className="op-close" onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close">×</button>
@@ -263,31 +309,31 @@ export default function OwnerPanel({ onClose }) {
                   <div className="op-email">{r.email}</div>
                 </div>
                 {r.isOwner ? (
-                  <span className="op-status s-owner">owner</span>
+                  <div className="op-actions-stack">
+                    <span className="op-status s-owner">owner</span>
+                  </div>
                 ) : (
-                  <>
+                  <div className="op-actions-stack">
                     <span className={`op-status s-${r.status}`}>{STATUS_LABEL[r.status]}</span>
-                    <div className="op-actions">
-                      {r.status !== "approved" && (
-                        <button
-                          className="op-btn op-btn-approve"
-                          disabled={busy === r.email}
-                          onClick={() => update(r.email, "approved")}
-                        >
-                          allow
-                        </button>
-                      )}
-                      {r.status !== "denied" && (
-                        <button
-                          className="op-btn op-btn-deny"
-                          disabled={busy === r.email}
-                          onClick={() => update(r.email, "denied")}
-                        >
-                          deny
-                        </button>
-                      )}
-                    </div>
-                  </>
+                    {r.status !== "approved" && (
+                      <button
+                        className="op-btn op-btn-approve"
+                        disabled={busy === r.email}
+                        onClick={() => update(r.email, "approved")}
+                      >
+                        allow
+                      </button>
+                    )}
+                    {r.status !== "denied" && (
+                      <button
+                        className="op-btn op-btn-deny"
+                        disabled={busy === r.email}
+                        onClick={() => update(r.email, "denied")}
+                      >
+                        deny
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ))
