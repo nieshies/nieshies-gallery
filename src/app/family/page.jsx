@@ -150,35 +150,63 @@ function FamStrip({ photos }) {
 // ── 3. Member cards ───────────────────────────────────────────────────────────
 
 // scatter coordinates — deterministic per-index position for burst layout
+// Deterministic per-index scatter coordinates. Polaroid widths scale to the
+// canvas so small phones get smaller photos but the layout still breathes.
 function scatterPos(i, isMobile, canvasW) {
   const j1 = ((i * 9301  +  7) % 233) / 233;
   const j2 = ((i * 49297 + 13) % 233) / 233;
   const j3 = ((i * 7919  +  5) % 233) / 233;
 
   if (isMobile) {
-    // 2-col scattered with tighter overlap + smaller photos
+    // Tier the photo width to the viewport so very-small phones (iPhone SE)
+    // get smaller polaroids while bigger phones (iPhone Pro Max) get a richer
+    // layout. Same 2-col scatter, just better proportions.
     const cols  = 2;
     const cellW = 100 / cols;
-    const rowH  = 190;
-    const col   = i % cols;
-    const row   = Math.floor(i / cols);
+
+    // base width: a percentage of viewport, clamped to a sensible band
+    const base  = Math.max(120, Math.min(180, canvasW * 0.38));
+    const range = Math.max(36,  Math.min(60,  canvasW * 0.10));
+    const width = base + j3 * range;
+
+    const rowH = width * 1.25 + 28; // keep vertical spacing proportional
+
+    const col  = i % cols;
+    const row  = Math.floor(i / cols);
     return {
-      leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.55,
-      topPx:   row * rowH + rowH / 2 + 90 + (j2 - 0.5) * rowH * 0.35,
-      width:   130 + j3 * 50,        // 130-180 px
-      tilt:    (j1 - 0.5) * 22,      // wider tilt → more scattered feel
+      leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.42, // less overlap
+      topPx:   row * rowH + rowH / 2 + 80 + (j2 - 0.5) * rowH * 0.28,
+      width,
+      tilt:    (j1 - 0.5) * 16, // gentler tilt → easier to tap
     };
   }
 
+  // Tablet — 3 columns for the awkward 720–960px window
+  if (canvasW < 960) {
+    const cols  = 3;
+    const cellW = 100 / cols;
+    const width = 180 + j3 * 80;       // 180-260 px
+    const rowH  = 240;
+    const col   = i % cols;
+    const row   = Math.floor(i / cols);
+    return {
+      leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.42,
+      topPx:   row * rowH + rowH / 2 + 64 + (j2 - 0.5) * rowH * 0.32,
+      width,
+      tilt:    (j1 - 0.5) * 16,
+    };
+  }
+
+  // Desktop — 4 columns, wider photos
   const cols  = 4;
   const cellW = 100 / cols;
-  const rowH  = canvasW < 900 ? 220 : 280;
+  const rowH  = canvasW < 1200 ? 240 : 280;
   const col   = i % cols;
   const row   = Math.floor(i / cols);
   return {
     leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.45,
     topPx:   row * rowH + rowH / 2 + 60 + (j2 - 0.5) * rowH * 0.35,
-    width:   200 + j3 * 120,
+    width:   200 + j3 * 120, // 200-320 px
     tilt:    (j1 - 0.5) * 18,
   };
 }
@@ -449,9 +477,12 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   // ── scatter layout ────────────────────────────────────────────────────────
   const layout = photos.map((_, i) => scatterPos(i, isMobile, canvasW));
   const winH = typeof window !== "undefined" ? window.innerHeight : 800;
-  const canvasH = isMobile
-    ? Math.max(winH, 200 + Math.ceil(photos.length / 2) * 190)
-    : Math.max(winH, 220 + Math.ceil(photos.length / 4) * 280);
+  // Canvas height needs to fit the last row of scattered photos. Derive it
+  // from the actual layout so changes to scatterPos don't desync the height.
+  const lastRowBottom = layout.length
+    ? Math.max(...layout.map(p => p.topPx + p.width * 1.3))
+    : 0;
+  const canvasH = Math.max(winH, lastRowBottom + 140);
 
   // burst origin (clicked card)
   const origin = (() => {
