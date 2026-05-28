@@ -227,6 +227,9 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const [editingCaption,   setEditingCaption]   = useState(null); // photo url
   const [captionDraft,     setCaptionDraft]     = useState("");
   const [busy,             setBusy]             = useState(null); // photo url
+  // Brings a tapped polaroid to the front + un-tilts it so the caption /
+  // action buttons aren't hidden under overlapping photos. Second tap zooms.
+  const [focusedPhoto,     setFocusedPhoto]     = useState(null); // photo url
 
   const startCaptionEdit = (photo) => {
     if (!ensureEditor()) return;
@@ -312,8 +315,9 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   useEffect(() => {
     const onKey = e => {
       if (e.key === "Escape") {
-        if (zoomed) setZoomed(null);
-        else close();
+        if (zoomed)            setZoomed(null);
+        else if (focusedPhoto) setFocusedPhoto(null);
+        else                   close();
       }
     };
     document.body.style.overflow = "hidden";
@@ -590,6 +594,24 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
             0 2px 4px rgba(0, 0, 0, 0.45),
             0 24px 50px rgba(0, 0, 0, 0.65),
             0 50px 100px rgba(0, 0, 0, 0.45);
+        }
+        /* Tap-to-focus: brings the polaroid above its neighbours so the caption
+           and action buttons can't be hidden by overlapping photos. Outranks
+           hover so it stays put on desktop too. */
+        .mc-photo.is-focused {
+          z-index: 100 !important;
+          transform: translate(-50%, -50%) rotate(0deg) scale(1.14) !important;
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.5),
+            0 28px 60px rgba(0, 0, 0, 0.7),
+            0 60px 120px rgba(0, 0, 0, 0.5),
+            0 0 0 0.5px rgba(244, 140, 54, 0.4);
+        }
+        .mc-photo.is-focused .mc-photo-actions { opacity: 1; pointer-events: auto; }
+        @media (max-width: 720px) {
+          .mc-photo.is-focused {
+            transform: translate(-50%, -50%) rotate(0deg) scale(1.22) !important;
+          }
         }
         @keyframes mc-burst {
           0% {
@@ -931,7 +953,12 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
       <div
         className="mc-canvas"
         style={{ minHeight: canvasH }}
-        onClick={e => e.stopPropagation()}
+        onClick={e => {
+          e.stopPropagation();
+          // Tap on the empty canvas area unfocuses any currently-focused photo
+          // (only fires here when the photo's own onClick didn't stop propagation).
+          if (e.target === e.currentTarget && focusedPhoto) setFocusedPhoto(null);
+        }}
       >
         {photos.length === 0 ? (
           <div className="mc-empty">
@@ -948,7 +975,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
             return (
               <div
                 key={p.id}
-                className="mc-photo"
+                className={`mc-photo ${focusedPhoto === p.url || editingCaption === p.url ? "is-focused" : ""}`}
                 style={{
                   left: `${pos.leftPct}%`,
                   top:  `${pos.topPx}px`,
@@ -962,6 +989,12 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                 }}
                 onClick={() => {
                   if (confirmingDelete === p.url) return;
+                  // First tap → bring to front so caption + actions are reachable.
+                  // Second tap on an already-focused photo → open the fullscreen zoom.
+                  if (focusedPhoto !== p.url) {
+                    setFocusedPhoto(p.url);
+                    return;
+                  }
                   setZoomed(p);
                 }}
               >
