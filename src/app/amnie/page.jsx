@@ -206,7 +206,7 @@ function MilestonesTimeline() {
   const [photos, setPhotos] = useState([]);
   const [editingCaption, setEditingCaption] = useState(null);
   const [captionDraft,   setCaptionDraft]   = useState("");
-  const { ensureEditor } = useEditorGate();
+  const { ensureEditor, isEditor } = useEditorGate();
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=achievement")
@@ -440,13 +440,15 @@ function MilestonesTimeline() {
                           }}
                         />
                       ) : (
-                        <div
-                          className={`ml-caption ${p.caption ? "" : "ml-caption-empty"}`}
-                          onClick={() => startEdit(p)}
-                          title="tap to edit"
-                        >
-                          {p.caption || "+ add a caption"}
-                        </div>
+                        (p.caption || isEditor) && (
+                          <div
+                            className={`ml-caption ${p.caption ? "" : "ml-caption-empty"}`}
+                            onClick={() => { if (isEditor) startEdit(p); }}
+                            title={isEditor ? "tap to edit" : ""}
+                          >
+                            {p.caption || "+ add a caption"}
+                          </div>
+                        )
                       )}
                     </div>
                   </div>
@@ -469,7 +471,7 @@ function PolaroidSlides() {
   const [editingCaption, setEditingCaption] = useState(null);
   const [captionDraft,   setCaptionDraft]   = useState("");
   const touchX = useRef(null);
-  const { ensureEditor } = useEditorGate();
+  const { ensureEditor, isEditor } = useEditorGate();
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=album")
@@ -731,13 +733,15 @@ function PolaroidSlides() {
                       }}
                     />
                   ) : (
-                    <div
-                      className={`ps-caption ${cur.caption ? "" : "ps-caption-empty"}`}
-                      onClick={(e) => { e.stopPropagation(); startEdit(cur); }}
-                      title="tap to edit"
-                    >
-                      {cur.caption || "+ add a caption"}
-                    </div>
+                    (cur.caption || isEditor) && (
+                      <div
+                        className={`ps-caption ${cur.caption ? "" : "ps-caption-empty"}`}
+                        onClick={(e) => { e.stopPropagation(); if (isEditor) startEdit(cur); }}
+                        title={isEditor ? "tap to edit" : ""}
+                      >
+                        {cur.caption || "+ add a caption"}
+                      </div>
+                    )
                   )}
                 </div>
               </div>

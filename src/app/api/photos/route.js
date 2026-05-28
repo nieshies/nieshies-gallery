@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { saveUpload, validateFile } from "@/lib/upload";
 import { requireEditor } from "@/lib/requireEditor";
 
+// Captions/metadata can change on every edit — never cache at the CDN.
+// Without this, anonymous viewers see stale data while signed-in users
+// (who bypass the cache via cookie) see fresh data.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const BUCKET_MAP = {
   home:   "uploads",
   amnie:  "amnie",
@@ -65,7 +71,10 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ photos });
+    return NextResponse.json(
+      { photos },
+      { headers: { "Cache-Control": "no-store, must-revalidate" } },
+    );
   } catch (err) {
     console.error("Photos GET error:", err);
     return NextResponse.json({ photos: [] }, { status: 500 });

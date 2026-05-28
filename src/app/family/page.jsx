@@ -185,7 +185,7 @@ function scatterPos(i, isMobile, canvasW) {
 
 function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBioSaved }) {
   const song = MEMBER_SONGS[member.folder];
-  const { ensureEditor } = useEditorGate();
+  const { ensureEditor, isEditor } = useEditorGate();
 
   // photos managed locally so per-member uploads can refresh in place
   const [photos, setPhotos] = useState(initialPhotos || []);
@@ -995,13 +995,17 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                     }}
                   />
                 ) : (
-                  <div
-                    className={`mc-photo-caption ${p.caption ? "" : "mc-caption-empty"}`}
-                    onClick={(e) => { e.stopPropagation(); startCaptionEdit(p); }}
-                    title="tap to edit caption"
-                  >
-                    {p.caption || "+ add a caption"}
-                  </div>
+                  // Always show captions to everyone. Only show the "+ add a
+                  // caption" placeholder to editors (non-editors see nothing).
+                  (p.caption || isEditor) && (
+                    <div
+                      className={`mc-photo-caption ${p.caption ? "" : "mc-caption-empty"}`}
+                      onClick={(e) => { e.stopPropagation(); if (isEditor) startCaptionEdit(p); }}
+                      title={isEditor ? "tap to edit caption" : ""}
+                    >
+                      {p.caption || "+ add a caption"}
+                    </div>
+                  )
                 )}
 
                 {confirmingDelete === p.url ? (
