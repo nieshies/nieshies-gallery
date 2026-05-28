@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useEditorGate } from "@/lib/EditorGate";
 
 export const SECTIONS = [
   { key: "home",              label: "home",        page: "home",   folder: "" },
@@ -454,10 +455,11 @@ export function UploadButton({
   onUploaded,
 }) {
   const [open, setOpen] = useState(false);
+  const { ensureEditor } = useEditorGate();
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { if (ensureEditor()) setOpen(true); }}
         style={style}
         className={className}
         aria-label={ariaLabel}

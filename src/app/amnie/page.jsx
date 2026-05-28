@@ -6,6 +6,7 @@ import HeroSection from "@/components/sections/HeroSection";
 import ScatterSection from "@/components/sections/ScatterSection";
 import { getPhotoUrl } from "@/utils/photo";
 import { UploadButton } from "@/components/features/UploadLightbox";
+import { useEditorGate } from "@/lib/EditorGate";
 import AmnieMusicAmbient from "@/components/features/AmnieMusicAmbient";
 
 // ── constants ────────────────────────────────────────────────────────────────
@@ -205,6 +206,7 @@ function MilestonesTimeline() {
   const [photos, setPhotos] = useState([]);
   const [editingCaption, setEditingCaption] = useState(null);
   const [captionDraft,   setCaptionDraft]   = useState("");
+  const { ensureEditor } = useEditorGate();
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=achievement")
@@ -214,6 +216,7 @@ function MilestonesTimeline() {
   }, []);
 
   const startEdit = (p) => {
+    if (!ensureEditor()) return;
     setEditingCaption(p.url);
     setCaptionDraft(p.caption || "");
   };
@@ -466,6 +469,7 @@ function PolaroidSlides() {
   const [editingCaption, setEditingCaption] = useState(null);
   const [captionDraft,   setCaptionDraft]   = useState("");
   const touchX = useRef(null);
+  const { ensureEditor } = useEditorGate();
 
   useEffect(() => {
     fetch("/api/photos?page=amnie&folder=album")
@@ -475,6 +479,7 @@ function PolaroidSlides() {
   }, []);
 
   const startEdit = (p) => {
+    if (!ensureEditor()) return;
     setEditingCaption(p.url);
     setCaptionDraft(p.caption || "");
   };

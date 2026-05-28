@@ -10,10 +10,16 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Auth routes are called by next-auth's SessionProvider on a poll and during
+  // every OAuth round-trip. Rate-limiting them locks users out of sign-in.
+  if (pathname.startsWith("/api/auth/")) {
+    return NextResponse.next();
+  }
+
   const ip = request.ip ?? request.headers.get("x-forwarded-for") ?? "unknown";
   const now = Date.now();
   const windowMs = 60_000;
-  const max = 60;
+  const max = 120;
 
   const timestamps = rateMap.get(ip) ?? [];
   const recent = timestamps.filter((t) => now - t < windowMs);

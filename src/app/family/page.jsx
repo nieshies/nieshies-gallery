@@ -5,6 +5,7 @@ import Providers from "../providers";
 import HeroSection from "@/components/sections/HeroSection";
 import { getPhotoUrl } from "@/utils/photo";
 import { UploadButton } from "@/components/features/UploadLightbox";
+import { useEditorGate } from "@/lib/EditorGate";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -184,6 +185,7 @@ function scatterPos(i, isMobile, canvasW) {
 
 function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBioSaved }) {
   const song = MEMBER_SONGS[member.folder];
+  const { ensureEditor } = useEditorGate();
 
   // photos managed locally so per-member uploads can refresh in place
   const [photos, setPhotos] = useState(initialPhotos || []);
@@ -227,6 +229,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const [busy,             setBusy]             = useState(null); // photo url
 
   const startCaptionEdit = (photo) => {
+    if (!ensureEditor()) return;
     setEditingCaption(photo.url);
     setCaptionDraft(photo.caption || "");
   };
@@ -249,6 +252,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   };
 
   const togglePin = async (photo) => {
+    if (!ensureEditor()) return;
     if (busy === photo.url) return;
     setBusy(photo.url);
     const willPin = !photo.isCover;
@@ -277,6 +281,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   };
 
   const confirmDelete = async (photo) => {
+    if (!ensureEditor()) return;
     if (busy === photo.url) return;
     setBusy(photo.url);
     setConfirmingDelete(null);
@@ -421,6 +426,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
 
   const saveBio = async e => {
     e.stopPropagation();
+    if (!ensureEditor()) return;
     setSavingBio(true);
     try {
       const r = await fetch("/api/family/member-bio", {
@@ -1031,7 +1037,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                     <button
                       type="button"
                       className="mc-photo-action mc-photo-delete"
-                      onClick={(e) => { e.stopPropagation(); setConfirmingDelete(p.url); }}
+                      onClick={(e) => { e.stopPropagation(); if (!ensureEditor()) return; setConfirmingDelete(p.url); }}
                       aria-label="Delete photo"
                       title="Delete photo"
                     >×</button>
@@ -1067,7 +1073,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         ) : (
           <p
             className="mc-bio"
-            onClick={e => { e.stopPropagation(); setEditingBio(true); setDraftBio(currentBio); }}
+            onClick={e => { e.stopPropagation(); if (!ensureEditor()) return; setEditingBio(true); setDraftBio(currentBio); }}
             title="tap to edit"
           >
             {currentBio || "tap to add a note…"}
@@ -1293,6 +1299,7 @@ function FamMemberCards() {
   const [savingCard,   setSavingCard]   = useState(false);
   const [cardError,    setCardError]    = useState("");
   const cardDraftRef = useRef("");
+  const { ensureEditor } = useEditorGate();
 
   useEffect(() => {
     MEMBERS.forEach(m => {
@@ -1321,6 +1328,7 @@ function FamMemberCards() {
 
   const startCardEdit = (e, folder) => {
     e.stopPropagation();
+    if (!ensureEditor()) return;
     const initial = memberBios[folder] || MEMBERS.find(m => m.folder === folder)?.bio || "";
     cardDraftRef.current = initial;
     setCardDraft(initial);

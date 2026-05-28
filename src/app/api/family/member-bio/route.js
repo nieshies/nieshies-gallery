@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireEditor } from "@/lib/requireEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
+  const gate = await requireEditor();
+  if (gate.response) return gate.response;
   const { folder, bio } = await request.json();
   if (!folder) return NextResponse.json({ error: "folder required" }, { status: 400 });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireEditor } from "@/lib/requireEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export const dynamic = "force-dynamic";
 // Removes the cover tag from any other photo in the same member folder first
 // so only one photo holds the cover tag per member at a time.
 export async function PATCH(request) {
+  const gate = await requireEditor();
+  if (gate.response) return gate.response;
   try {
     const { folder, photoUrl } = await request.json();
     if (!folder || !photoUrl) {
@@ -46,6 +49,8 @@ export async function PATCH(request) {
 
 // Clear cover for a member (no specific photo pinned)
 export async function DELETE(request) {
+  const gate = await requireEditor();
+  if (gate.response) return gate.response;
   try {
     const { searchParams } = new URL(request.url);
     const folder = searchParams.get("folder");

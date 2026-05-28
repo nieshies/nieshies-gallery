@@ -127,3 +127,15 @@ model FamilyMember {
   bio       String   @default("")
   updatedAt DateTime @updatedAt
 }
+
+// Editor approval. Anyone who signs in gets a row here with status "pending".
+// Only the owner (OWNER_EMAILS env) can approve/deny via /api/access.
+model EditorAccess {
+  email       String    @id
+  status      String    @default("pending") // pending | approved | denied
+  name        String?
+  image       String?
+  requestedAt DateTime  @default(now())
+  decidedAt   DateTime?
+  decidedBy   String?
+}

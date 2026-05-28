@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { prisma } from "@/lib/prisma";
 import { saveUpload, validateFile } from "@/lib/upload";
+import { requireEditor } from "@/lib/requireEditor";
 
 const BUCKET_MAP = {
   home:   "uploads",
@@ -72,6 +73,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const gate = await requireEditor();
+  if (gate.response) return gate.response;
   try {
     const formData = await request.formData();
     const file    = formData.get("file");
