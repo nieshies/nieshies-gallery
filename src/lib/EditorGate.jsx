@@ -27,23 +27,39 @@ export function EditorGateProvider({ children }) {
   const isEditor = !!session?.user?.isEditor;
   const isOwner  = !!session?.user?.isOwner;
 
-  // Pull pending count from /api/auth/me whenever the owner signs in or the
-  // owner panel is closed (so a fresh approval updates the badge dot).
+  // Pull pending count from /api/auth/me whenever the owner signs in, on a
+  // 20-second poll, when the tab regains focus, and after the owner panel
+  // closes (so newly-requested or freshly-approved users show up live).
   const refreshPendingCount = useCallback(async () => {
     if (!isOwner) { setPendingCount(0); return; }
     try {
-      const r = await fetch("/api/auth/me");
+      const r = await fetch("/api/auth/me", { cache: "no-store" });
       const d = await r.json();
       setPendingCount(d.pendingCount || 0);
     } catch {}
   }, [isOwner]);
 
+  // Any signed-in user: hit /api/auth/me once on mount. That endpoint
+  // upserts a missing EditorAccess row defensively, guaranteeing they show
+  // in the owner's panel even if the NextAuth signIn callback failed silently.
   useEffect(() => {
-    if (isOwner && !polledRef.current) {
-      polledRef.current = true;
-      refreshPendingCount();
-    }
-    if (!isOwner) polledRef.current = false;
+    if (!signedIn) return;
+    fetch("/api/auth/me", { cache: "no-store" }).catch(() => {});
+  }, [signedIn]);
+
+  // Owner only: live-poll the pending count.
+  useEffect(() => {
+    if (!isOwner) { polledRef.current = false; return; }
+    refreshPendingCount();
+    polledRef.current = true;
+
+    const interval = setInterval(refreshPendingCount, 20_000);
+    const onFocus  = () => refreshPendingCount();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [isOwner, refreshPendingCount]);
 
   const openSignIn    = useCallback(() => setModal("signin"),     []);

@@ -147,7 +147,11 @@ export default function EditorBadge() {
             title="sign out"
             aria-label="Sign out"
           >
-            ↩
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6.5 3.5h-3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <path d="M10 5.5 13.5 8 10 10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6.5 8h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
           </button>
         )}
       </div>

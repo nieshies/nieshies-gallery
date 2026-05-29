@@ -13,10 +13,10 @@ export default function OwnerPanel({ onClose }) {
   const [busy,    setBusy]    = useState(null); // email currently mutating
   const [filter,  setFilter]  = useState("all"); // all | pending | approved | denied
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
-      const r = await fetch("/api/access");
+      const r = await fetch("/api/access", { cache: "no-store" });
       const d = await r.json();
       setRows(d.access || []);
     } catch {}
@@ -25,11 +25,15 @@ export default function OwnerPanel({ onClose }) {
 
   useEffect(() => {
     load();
+    // Poll every 10s while the panel is open so newly-signed-in users appear
+    // without forcing the owner to close + reopen the panel.
+    const interval = setInterval(() => load(false), 10_000);
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      clearInterval(interval);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
@@ -97,7 +101,20 @@ export default function OwnerPanel({ onClose }) {
           letter-spacing: .32em;
           text-transform: uppercase;
           color: rgba(255,245,230,.4);
+          display: inline-flex; align-items: center; gap: 8px;
+          justify-content: center;
         }
+        .op-refresh {
+          background: transparent; border: none; padding: 4px;
+          color: rgba(255,245,230,.4); cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 50%;
+          transition: color .2s ease, transform .4s ease;
+          touch-action: manipulation;
+        }
+        .op-refresh:hover { color: rgba(255,245,230,.95); }
+        .op-refresh:disabled { animation: op-spin 0.8s linear infinite; opacity: .6; }
+        @keyframes op-spin { to { transform: rotate(360deg); } }
 
         .op-filter {
           display: flex; gap: 6px; justify-content: center;
@@ -278,6 +295,19 @@ export default function OwnerPanel({ onClose }) {
           <h2 className="op-title">editor access</h2>
           <p className="op-sub">
             {pendingCount > 0 ? `${pendingCount} pending` : "no pending requests"}
+            <button
+              type="button"
+              className="op-refresh"
+              onClick={() => load(true)}
+              disabled={loading}
+              aria-label="Refresh list"
+              title="Refresh"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M14 8a6 6 0 1 1-1.76-4.24" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                <path d="M14 2v3.5h-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </p>
         </div>
 

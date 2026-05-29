@@ -4,6 +4,7 @@ import { requireOwner } from "@/lib/requireOwner";
 import { isOwnerEmail } from "@/lib/editorAccess";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Owner only: list every person who has signed in, with their status.
 export async function GET() {
@@ -14,7 +15,10 @@ export async function GET() {
       orderBy: [{ status: "asc" }, { requestedAt: "desc" }],
     });
     const annotated = rows.map(r => ({ ...r, isOwner: isOwnerEmail(r.email) }));
-    return NextResponse.json({ access: annotated });
+    return NextResponse.json(
+      { access: annotated },
+      { headers: { "Cache-Control": "no-store, must-revalidate" } },
+    );
   } catch (err) {
     return NextResponse.json({ access: [], error: err.message }, { status: 500 });
   }
