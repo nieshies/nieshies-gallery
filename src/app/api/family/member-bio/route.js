@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireEditor } from "@/lib/requireEditor";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -10,7 +11,10 @@ export async function GET(request) {
   if (!folder) return NextResponse.json({ bio: "" });
 
   const member = await prisma.familyMember.findUnique({ where: { folder } });
-  return NextResponse.json({ bio: member?.bio || "" });
+  return NextResponse.json(
+    { bio: member?.bio || "" },
+    { headers: { "Cache-Control": "no-store, must-revalidate" } },
+  );
 }
 
 export async function PATCH(request) {

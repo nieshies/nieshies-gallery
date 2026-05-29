@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -51,7 +52,10 @@ export async function GET(request) {
     // Pinned cover first → the family card uses photos[0] as its cover
     photos.sort((a, b) => (b.isCover ? 1 : 0) - (a.isCover ? 1 : 0));
 
-    return NextResponse.json({ photos });
+    return NextResponse.json(
+      { photos },
+      { headers: { "Cache-Control": "no-store, must-revalidate" } },
+    );
   } catch (err) {
     console.error(`family/member/${folder} GET:`, err);
     return NextResponse.json({ photos: [] }, { status: 500 });

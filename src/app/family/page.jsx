@@ -150,68 +150,54 @@ function FamStrip({ photos }) {
 // ── 3. Member cards ───────────────────────────────────────────────────────────
 
 // scatter coordinates — deterministic per-index position for burst layout
-// Deterministic per-index scatter coordinates. Photos are intentionally
-// SMALL with HEAVY overlap and dramatic tilt — like a pile of dropped
-// polaroids. Smaller on every device than the previous tuning so more
-// fit on one screen without scrolling, matching the scattered-collage
-// reference. Sizing scales to viewport.
-function scatterPos(i, isMobile, canvasW) {
+// Deterministic per-index scatter coordinates. Photos drift with heavy
+// overlap and dramatic tilt — like a pile of dropped polaroids.
+//
+// Column count adapts to BOTH viewport width AND total photo count, so
+// 5 photos on a wide desktop don't get strung out across one thin row —
+// they cluster in 2 rows of ~3. With many photos we go to 4 columns
+// for the dense scattered look from the reference collage.
+function scatterPos(i, isMobile, canvasW, total) {
   const h1 = ((i * 9301  +  7) % 233) / 233;
   const h2 = ((i * 49297 + 13) % 233) / 233;
   const h3 = ((i * 7919  +  5) % 233) / 233;
   const h4 = ((i * 12553 + 11) % 233) / 233;
 
-  if (isMobile) {
-    // Mobile: ~32% viewport — small enough that 3-4 polaroids fit per
-    // visual band without forcing a long scroll.
-    const base  = Math.max(110, Math.min(160, canvasW * 0.32));
-    const range = Math.max(24,  Math.min(40,  canvasW * 0.08));
-    const width = base + h3 * range;
+  // Pick column count: fewer cols when fewer photos so the canvas fills
+  // vertically too, more cols when many photos for the scatter density.
+  let cols;
+  if (isMobile)                     cols = 2;
+  else if (canvasW < 720)           cols = 2;
+  else if (canvasW < 1024)          cols = total < 6 ? 2 : 3;
+  else /* wide desktop */           cols = total < 5 ? 2 : total < 9 ? 3 : 4;
 
-    // Alternate left/right bias for balance, with cross-centre drift
-    const sideBias = (i % 2 === 0) ? 30 : 70;
-    const leftPct  = Math.max(16, Math.min(84, sideBias + (h1 - 0.5) * 42));
+  // Photo width = ~72% of its column's cell, clamped to a sensible band
+  // per device so cells don't blow up on very wide monitors.
+  const cellW       = canvasW / cols;
+  const widthCap    = isMobile ? 170 : canvasW < 1024 ? 230 : 280;
+  const baseWidth   = Math.min(widthCap, cellW * 0.78);
+  const widthJitter = (h3 - 0.5) * baseWidth * 0.22;
+  const width       = Math.max(isMobile ? 115 : 170, baseWidth + widthJitter);
 
-    // Tight vertical packing — each photo sits at half its width below
-    // the previous, so neighbours overlap by ~40-50%.
-    const rowH  = width * 0.48 + 18;
-    const topPx = 50 + i * rowH + (h2 - 0.5) * 60;
+  // Column position: centre of cell + drift inside the cell
+  const col      = i % cols;
+  const baseLeft = (col + 0.5) * (100 / cols);
+  const leftJit  = (h1 - 0.5) * (100 / cols) * 0.55;
+  const leftPct  = Math.max(8, Math.min(92, baseLeft + leftJit));
 
-    return {
-      leftPct,
-      topPx,
-      width,
-      tilt: (h1 - 0.5) * 30, // ±15° — dramatic drift
-    };
-  }
+  // Row spacing: tighter overlap when there are more photos, looser when
+  // few photos so a small gallery doesn't feel cramped.
+  const overlap  = total >= 10 ? 0.46 : total >= 6 ? 0.55 : 0.65;
+  const rowH     = width * overlap + 22;
+  const row      = Math.floor(i / cols);
+  const topJit   = (h2 - 0.5) * rowH * 0.6;
+  const topPx    = 60 + row * rowH + topJit;
 
-  // Tablet — 3 photos per band, smaller widths with tight overlap
-  if (canvasW < 960) {
-    const width = 160 + h3 * 60; // 160-220
-    const col3  = i % 3;
-    const baseX = col3 === 0 ? 22 : col3 === 1 ? 50 : 78;
-    const leftPct = Math.max(14, Math.min(86, baseX + (h1 - 0.5) * 28));
-    const rowH = width * 0.55 + 18;
-    return {
-      leftPct,
-      topPx: 50 + Math.floor(i / 3) * rowH + (h4 - 0.5) * 90,
-      width,
-      tilt:  (h1 - 0.5) * 30, // ±15°
-    };
-  }
-
-  // Desktop — 4 photos per band, ~180-260px (smaller than before so
-  // more fit on screen with heavy overlap, matching the scatter ref).
-  const width = 180 + h3 * 80; // 180-260
-  const col4  = i % 4;
-  const baseX = col4 === 0 ? 18 : col4 === 1 ? 40 : col4 === 2 ? 62 : 84;
-  const leftPct = Math.max(10, Math.min(90, baseX + (h1 - 0.5) * 26));
-  const rowH = width * 0.5 + 20;
   return {
     leftPct,
-    topPx: 50 + Math.floor(i / 4) * rowH + (h4 - 0.5) * 110,
+    topPx,
     width,
-    tilt:  (h1 - 0.5) * 32, // ±16°
+    tilt: (h1 - 0.5) * (isMobile ? 28 : 32), // ±14°-±16°
   };
 }
 
@@ -479,7 +465,11 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   };
 
   // ── scatter layout ────────────────────────────────────────────────────────
-  const layout = photos.map((_, i) => scatterPos(i, isMobile, canvasW));
+  // Constrain the scatter to a reasonable density box even on ultrawide
+  // monitors — without this, a 1900px+ canvas spreads 5 photos across
+  // an empty void. Floor at 720px so phones don't double-constrain.
+  const scatterW = Math.min(canvasW, 1280);
+  const layout = photos.map((_, i) => scatterPos(i, isMobile, scatterW, photos.length));
   const winH = typeof window !== "undefined" ? window.innerHeight : 800;
   // Canvas height needs to fit the last row of scattered photos. Derive it
   // from the actual layout so changes to scatterPos don't desync the height.
@@ -604,6 +594,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         .mc-canvas {
           position: relative;
           width: 100%;
+          max-width: 1280px;
           margin: 0 auto;
           padding: 0 0 140px;
         }
@@ -688,16 +679,20 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           object-fit: cover; display: block;
         }
         .mc-photo-caption {
-          margin: 6px 2px 0;
+          margin: 6px 4px 0;
           color: #5b4a37;
           font-size: 13px;
           font-family: "Caveat", "Bradley Hand", cursive;
           text-align: center;
-          line-height: 1.1;
+          line-height: 1.15;
           min-height: 14px;
+          /* Allow up to two lines so longer captions don't get truncated on */
+          /* the smaller mobile polaroids; same behaviour on desktop too. */
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
           overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          word-break: break-word;
           cursor: text;
         }
         .mc-photo-caption.mc-caption-empty {
