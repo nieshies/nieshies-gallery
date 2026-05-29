@@ -190,30 +190,33 @@ function scatterPos(i, isMobile, canvasW, total) {
   else if (canvasW < 1024)          cols = total < 6 ? 2 : 3;
   else /* wide desktop */           cols = total < 5 ? 2 : total < 9 ? 3 : 4;
 
-  // Photo width = larger fraction of cell so neighbours actually overlap.
-  // Capped per device so super-wide monitors don't blow them up.
+  // Photo width = a fraction of cell. Caps tuned per device so polaroids
+  // stay readable but never overflow neighbouring cells too much.
   const cellW       = canvasW / cols;
-  const widthCap    = isMobile ? 175 : canvasW < 1024 ? 240 : 290;
-  const baseWidth   = Math.min(widthCap, cellW * 0.92); // 92% → guaranteed neighbour overlap
-  const widthJitter = (h3 - 0.5) * baseWidth * 0.25;
-  const width       = Math.max(isMobile ? 120 : 175, baseWidth + widthJitter);
+  const widthCap    = isMobile ? 160 : canvasW < 1024 ? 210 : 240;
+  const baseWidth   = Math.min(widthCap, cellW * 0.82);
+  const widthJitter = (h3 - 0.5) * baseWidth * 0.22;
+  const width       = Math.max(isMobile ? 115 : 165, baseWidth + widthJitter);
 
-  // Column position: centre of cell + bigger drift so columns blur into
-  // each other. Per-row offset (h4) shifts whole rows sideways for chaos.
+  // Column position: centre of cell + drift inside the cell.
+  // Tighter drift range than before so photos don't drift INTO each other's
+  // cells too aggressively (which made overlap unreadable on desktop).
   const col       = i % cols;
   const row       = Math.floor(i / cols);
-  const rowShift  = (h4 - 0.5) * (100 / cols) * 0.3; // shared row drift
+  const rowShift  = (h4 - 0.5) * (100 / cols) * 0.18; // softer row drift
   const baseLeft  = (col + 0.5) * (100 / cols) + rowShift;
-  const leftJit   = (h1 - 0.5) * (100 / cols) * 0.55; // ±27% of cell width
-  // Half-width clamp so photo edges stay inside canvas
-  const halfPct   = (width / 2 / canvasW) * 100 + 1.5;
+  const leftJit   = (h1 - 0.5) * (100 / cols) * 0.38; // ±19% of cell width
+  // Half-width clamp + buffer (10px drift amplitude + 5px polaroid frame)
+  // so even with the RAF drift, photo edges NEVER cross the canvas edge.
+  const driftBuf  = (15 / canvasW) * 100;
+  const halfPct   = (width / 2 / canvasW) * 100 + driftBuf;
   const leftPct   = Math.max(halfPct, Math.min(100 - halfPct, baseLeft + leftJit));
 
-  // Heavier overlap across the board for the pile look from the reference.
-  // Tighter when there are many photos.
-  const overlap   = total >= 10 ? 0.38 : total >= 6 ? 0.45 : 0.55;
-  const rowH      = width * overlap + 18;
-  const topJit    = (h2 - 0.5) * rowH * 0.8; // bigger vertical drift
+  // Overlap that's noticeable but not unreadable. Smaller galleries get
+  // more breathing room so each photo is recognisable.
+  const overlap   = total >= 10 ? 0.5 : total >= 6 ? 0.6 : 0.72;
+  const rowH      = width * overlap + 22;
+  const topJit    = (h2 - 0.5) * rowH * 0.55;
   const topPx     = 60 + row * rowH + topJit;
 
   return {
@@ -268,6 +271,15 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const [editingCaption,   setEditingCaption]   = useState(null); // photo url
   const [captionDraft,     setCaptionDraft]     = useState("");
   const [busy,             setBusy]             = useState(null); // photo url
+  // Toast: { text, kind: "ok"|"err" } — auto-clears after a few seconds.
+  // Surfaces caption save success or the actual server error so the user
+  // is never left wondering whether their edit went through.
+  const [toast,            setToast]            = useState(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), toast.kind === "err" ? 5000 : 1800);
+    return () => clearTimeout(t);
+  }, [toast]);
   // Brings a tapped polaroid to the front + un-tilts it so the caption /
   // action buttons aren't hidden under overlapping photos. Second tap zooms.
   const [focusedPhoto,     setFocusedPhoto]     = useState(null); // photo url
@@ -285,6 +297,9 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const saveCaption = async (photo) => {
     if (!ensureEditor()) { setEditingCaption(null); return; }
     const draft = (captionDraft || "").slice(0, 140);
+    const previous = photo.caption || "";
+    // Skip if unchanged — no need to hit the server.
+    if (draft === previous) { setEditingCaption(null); return; }
     setEditingCaption(null);
     // Optimistic update so the user sees the change immediately.
     setPhotos(prev => prev.map(p => p.url === photo.url ? { ...p, caption: draft } : p));
@@ -296,13 +311,28 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         cache:   "no-store",
       });
       if (!r.ok) {
-        const detail = await r.text().catch(() => "");
-        console.error("caption save failed:", r.status, detail);
-        throw new Error(`HTTP ${r.status}`);
+        // Pull the real reason from the server response.
+        let detail = `HTTP ${r.status}`;
+        try {
+          const j = await r.json();
+          if (j?.error) detail = j.error;
+        } catch {}
+        console.error("caption save failed:", detail);
+        // Revert optimistic update
+        setPhotos(prev => prev.map(p => p.url === photo.url ? { ...p, caption: previous } : p));
+        setToast({ text: `couldn't save: ${detail}`, kind: "err" });
+        return;
       }
+      // Persist the server's confirmed caption (handles trimming etc.)
+      const data = await r.json().catch(() => null);
+      if (data?.caption !== undefined) {
+        setPhotos(prev => prev.map(p => p.url === photo.url ? { ...p, caption: data.caption } : p));
+      }
+      setToast({ text: "saved ✓", kind: "ok" });
     } catch (err) {
       console.error("caption save:", err);
-      reloadPhotos();
+      setPhotos(prev => prev.map(p => p.url === photo.url ? { ...p, caption: previous } : p));
+      setToast({ text: "network error — check connection", kind: "err" });
     }
   };
 
@@ -674,6 +704,38 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           border-color: rgba(255, 245, 230, 0.6);
           background: rgba(0, 0, 0, 0.7);
           transform: scale(1.05);
+        }
+
+        .mc-toast {
+          position: fixed;
+          left: 50%;
+          bottom: max(28px, calc(env(safe-area-inset-bottom) + 16px));
+          transform: translateX(-50%);
+          z-index: 10002;
+          padding: 10px 18px;
+          border-radius: 999px;
+          font-size: 12px;
+          letter-spacing: 0.04em;
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          animation: mc-toast-in 0.3s ease both;
+          pointer-events: none;
+          max-width: calc(100vw - 32px);
+          text-align: center;
+        }
+        .mc-toast-ok  {
+          background: rgba(40, 90, 50, 0.75);
+          color: rgba(220, 255, 230, 0.98);
+          border: 0.5px solid rgba(140, 220, 160, 0.4);
+        }
+        .mc-toast-err {
+          background: rgba(120, 30, 30, 0.78);
+          color: rgba(255, 220, 220, 0.98);
+          border: 0.5px solid rgba(220, 130, 130, 0.45);
+        }
+        @keyframes mc-toast-in {
+          from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .mc-music-pill {
           background: rgba(0, 0, 0, 0.35);
@@ -1109,6 +1171,12 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           onPointerDown={(e) => e.stopPropagation()}
           aria-label="Close"
         >×</button>,
+        document.body,
+      )}
+
+      {/* Caption save toast — same portal pattern so it never hides under photos. */}
+      {mounted && toast && createPortal(
+        <div className={`mc-toast mc-toast-${toast.kind}`}>{toast.text}</div>,
         document.body,
       )}
 
