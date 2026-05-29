@@ -1,29 +1,35 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteUpload } from "@/lib/upload";
+import { requireEditor } from "@/lib/requireEditor";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Update a photo's caption. Upserts a minimal GalleryPhoto row if one
 // doesn't exist yet (e.g. for legacy photos uploaded before captions).
 export async function PATCH(request) {
+  const gate = await requireEditor();
+  if (gate.response) return gate.response;
   try {
-    const { url, caption } = await request.json();
+    const body = await request.json();
+    const url = String(body?.url || "").trim();
     if (!url) {
       return NextResponse.json({ error: "url required" }, { status: 400 });
     }
-    const trimmed = String(caption ?? "").slice(0, 140);
+    const trimmed = String(body?.caption ?? "").slice(0, 140);
 
     const existing = await prisma.galleryPhoto.findFirst({ where: { url } });
+    let saved;
     if (existing) {
-      await prisma.galleryPhoto.update({
+      saved = await prisma.galleryPhoto.update({
         where: { id: existing.id },
         data:  { caption: trimmed },
+        select: { id: true, caption: true },
       });
     } else {
-      // Derive a name/filename from the URL path tail
       const filename = decodeURIComponent(url.split("/").pop() || "photo");
-      await prisma.galleryPhoto.create({
+      saved = await prisma.galleryPhoto.create({
         data: {
           name:     filename,
           filename,
@@ -32,12 +38,17 @@ export async function PATCH(request) {
           page:     "family",
           tags:     ["family"],
         },
+        select: { id: true, caption: true },
       });
     }
-    return NextResponse.json({ ok: true, caption: trimmed });
+    console.log(`[family/photo caption] saved id=${saved.id} url=${url.slice(-40)} → "${trimmed}"`);
+    return NextResponse.json(
+      { ok: true, caption: saved.caption },
+      { headers: { "Cache-Control": "no-store, must-revalidate" } },
+    );
   } catch (err) {
     console.error("family/member/photo PATCH error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err?.message || "save failed" }, { status: 500 });
   }
 }
 
@@ -45,29 +56,23 @@ export async function PATCH(request) {
 // 1. removes the storage object (family/<folder>/<filename>)
 // 2. removes the matching GalleryPhoto record (by URL)
 export async function DELETE(request) {
+  const gate = await requireEditor();
+  if (gate.response) return gate.response;
   try {
     const { url } = await request.json();
     if (!url) {
       return NextResponse.json({ error: "url required" }, { status: 400 });
     }
 
-    // Storage cleanup — non-fatal so DB row still gets cleared even if file is gone
-    try {
-      await deleteUpload(url, "family");
-    } catch (storageErr) {
-      console.warn("family photo storage delete failed:", storageErr.message);
-    }
+    try { await deleteUpload(url, "family"); }
+    catch (storageErr) { console.warn("family photo storage delete failed:", storageErr.message); }
 
-    // DB cleanup — match by URL
-    try {
-      await prisma.galleryPhoto.deleteMany({ where: { url } });
-    } catch (dbErr) {
-      console.warn("family photo DB delete failed:", dbErr.message);
-    }
+    try { await prisma.galleryPhoto.deleteMany({ where: { url } }); }
+    catch (dbErr) { console.warn("family photo DB delete failed:", dbErr.message); }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("family/member/photo DELETE error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err?.message || "delete failed" }, { status: 500 });
   }
 }

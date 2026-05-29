@@ -1,11 +1,30 @@
 "use client";
 import { useEffect, useRef, useState } from "react"; // useRef kept for scatter RAF
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Providers from "../providers";
 import HeroSection from "@/components/sections/HeroSection";
 import { getPhotoUrl } from "@/utils/photo";
 import { UploadButton } from "@/components/features/UploadLightbox";
 import { useEditorGate } from "@/lib/EditorGate";
+
+// Deterministic sine-wave drift parameters per photo index (same pattern
+// as the homepage ScatterSection — keeps photos gently floating).
+const DRIFT_PARAMS = [
+  { period: 3200, phase: 0.00, amp: 7 },
+  { period: 4500, phase: 1.30, amp: 6 },
+  { period: 3800, phase: 2.10, amp: 8 },
+  { period: 5000, phase: 0.70, amp: 5 },
+  { period: 3500, phase: 3.00, amp: 7 },
+  { period: 4200, phase: 1.80, amp: 8 },
+  { period: 3100, phase: 4.20, amp: 6 },
+  { period: 4800, phase: 2.50, amp: 7 },
+  { period: 3700, phase: 5.10, amp: 5 },
+  { period: 5000, phase: 0.30, amp: 8 },
+  { period: 3300, phase: 3.70, amp: 7 },
+  { period: 4100, phase: 1.10, amp: 6 },
+];
+const TAU = Math.PI * 2;
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -252,6 +271,10 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   // Brings a tapped polaroid to the front + un-tilts it so the caption /
   // action buttons aren't hidden under overlapping photos. Second tap zooms.
   const [focusedPhoto,     setFocusedPhoto]     = useState(null); // photo url
+  const driftRefs          = useRef([]);                          // per-photo DOM refs for RAF
+  const driftRafRef        = useRef(null);
+  const [mounted,          setMounted]          = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const startCaptionEdit = (photo) => {
     if (!ensureEditor()) return;
@@ -260,18 +283,25 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   };
 
   const saveCaption = async (photo) => {
+    if (!ensureEditor()) { setEditingCaption(null); return; }
     const draft = (captionDraft || "").slice(0, 140);
     setEditingCaption(null);
-    // Optimistic
+    // Optimistic update so the user sees the change immediately.
     setPhotos(prev => prev.map(p => p.url === photo.url ? { ...p, caption: draft } : p));
     try {
       const r = await fetch("/api/family/member/photo", {
-        method: "PATCH",
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: photo.url, caption: draft }),
+        body:    JSON.stringify({ url: photo.url, caption: draft }),
+        cache:   "no-store",
       });
-      if (!r.ok) throw new Error("caption save failed");
-    } catch {
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        console.error("caption save failed:", r.status, detail);
+        throw new Error(`HTTP ${r.status}`);
+      }
+    } catch (err) {
+      console.error("caption save:", err);
       reloadPhotos();
     }
   };
@@ -351,6 +381,43 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
       document.body.classList.remove("fam-collage-open");
     };
   }, [zoomed]);
+
+  // ── drift loop — gentle sine-wave float on each polaroid ─────────────────
+  // Matches the homepage ScatterSection feel. Starts AFTER the burst
+  // animation settles so it doesn't fight with the entrance. Focused and
+  // hovered photos use CSS !important transforms that override the drift.
+  useEffect(() => {
+    if (!photos.length) return;
+    const isMobileNow = canvasW < 720;
+    const driftAmp    = isMobileNow ? 4 : 6;
+    const driftRotAmp = isMobileNow ? 0.6 : 1.0;
+
+    const loop = (ts) => {
+      for (let i = 0; i < photos.length; i++) {
+        const el = driftRefs.current[i];
+        if (!el) continue;
+        // Only drift photos that have finished the burst entrance.
+        if (!el.classList.contains("mc-settled")) continue;
+        // Skip drift while the element is focused — the !important CSS rule
+        // wins anyway, but skipping avoids wasted style writes per frame.
+        if (el.classList.contains("is-focused")) continue;
+        const tilt = parseFloat(el.dataset.tilt || "0");
+        const { period, phase, amp } = DRIFT_PARAMS[i % DRIFT_PARAMS.length];
+        const ω = TAU / period;
+        const a = driftAmp * (amp / 7);
+        const x = a * Math.sin(ω * ts + phase);
+        const y = a * Math.cos(ω * ts * 0.73 + phase);
+        const r = tilt + driftRotAmp * Math.sin(ω * ts * 1.31 + phase);
+        el.style.transform =
+          `translate3d(calc(-50% + ${x.toFixed(2)}px), calc(-50% + ${y.toFixed(2)}px), 0) rotate(${r.toFixed(2)}deg)`;
+      }
+      driftRafRef.current = requestAnimationFrame(loop);
+    };
+    driftRafRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (driftRafRef.current) cancelAnimationFrame(driftRafRef.current);
+    };
+  }, [photos, canvasW]);
 
   // ── youtube player (no autoplay — pill tap triggers start for iOS compat) ─
   useEffect(() => {
@@ -654,9 +721,13 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
                       box-shadow 0.28s ease;
         }
-        /* Drop will-change after the entry animation finishes so we don't
-           keep 30+ GPU layers alive forever. The burst is 0.85s + max stagger. */
-        .mc-photo.mc-settled { will-change: auto; }
+        /* After burst completes, release the animation's filled transform so
+           the RAF drift loop's inline transform can take over. Without this,
+           the animation-fill-mode: both would keep overriding the inline. */
+        .mc-photo.mc-settled {
+          will-change: auto;
+          animation: none !important;
+        }
         .mc-photo:hover {
           transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(1.08) !important;
           z-index: 50;
@@ -1028,15 +1099,18 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         <div className="mc-header-right" />
       </div>
 
-      {/* Close button lives OUTSIDE the sticky header — pinned to the viewport
-          with a huge z-index so no photo (focused, hovered, or otherwise) can
-          ever cover or intercept clicks on it. Fixes desktop click failure. */}
-      <button
-        className="mc-close-fixed"
-        onClick={(e) => { e.stopPropagation(); close(); }}
-        onPointerDown={(e) => e.stopPropagation()}
-        aria-label="Close"
-      >×</button>
+      {/* Close button rendered to document.body via portal — escapes any
+          parent stacking context (mc-overlay's backdrop-filter, contain,
+          etc.) so it can NEVER be covered or intercepted. */}
+      {mounted && createPortal(
+        <button
+          className="mc-close-fixed"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); close(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label="Close"
+        >×</button>,
+        document.body,
+      )}
 
       <div
         className="mc-canvas"
@@ -1068,6 +1142,8 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
             return (
               <div
                 key={p.id}
+                ref={(el) => { driftRefs.current[i] = el; }}
+                data-tilt={pos.tilt}
                 className={`mc-photo ${isFocused ? "is-focused" : ""}`}
                 onAnimationEnd={(e) => {
                   // Drop will-change after the burst — keeps the layer cache lean.
