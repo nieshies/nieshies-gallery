@@ -150,10 +150,11 @@ function FamStrip({ photos }) {
 // ── 3. Member cards ───────────────────────────────────────────────────────────
 
 // scatter coordinates — deterministic per-index position for burst layout
-// Deterministic per-index scatter coordinates. Photos drift across the
-// canvas with heavy overlap — like a real scattered polaroid pile. Sizing
-// scales to viewport so small phones get smaller (but still substantial)
-// polaroids; large gallery counts stay performant via capped stagger.
+// Deterministic per-index scatter coordinates. Photos are intentionally
+// SMALL with HEAVY overlap and dramatic tilt — like a pile of dropped
+// polaroids. Smaller on every device than the previous tuning so more
+// fit on one screen without scrolling, matching the scattered-collage
+// reference. Sizing scales to viewport.
 function scatterPos(i, isMobile, canvasW) {
   const h1 = ((i * 9301  +  7) % 233) / 233;
   const h2 = ((i * 49297 + 13) % 233) / 233;
@@ -161,56 +162,56 @@ function scatterPos(i, isMobile, canvasW) {
   const h4 = ((i * 12553 + 11) % 233) / 233;
 
   if (isMobile) {
-    // Bigger polaroids feel like the scattered reference layout instead
-    // of tiny grid cells. ~46% viewport ± a bit of variance.
-    const base  = Math.max(150, Math.min(220, canvasW * 0.46));
-    const range = Math.max(30,  Math.min(50,  canvasW * 0.10));
+    // Mobile: ~32% viewport — small enough that 3-4 polaroids fit per
+    // visual band without forcing a long scroll.
+    const base  = Math.max(110, Math.min(160, canvasW * 0.32));
+    const range = Math.max(24,  Math.min(40,  canvasW * 0.08));
     const width = base + h3 * range;
 
-    // Alternate-side bias keeps the layout balanced even with few photos
-    // while still letting drift cross the centre line.
-    const sideBias = (i % 2 === 0) ? 28 : 72;     // % centre per side
-    const leftPct  = Math.max(18, Math.min(82, sideBias + (h1 - 0.5) * 38));
+    // Alternate left/right bias for balance, with cross-centre drift
+    const sideBias = (i % 2 === 0) ? 30 : 70;
+    const leftPct  = Math.max(16, Math.min(84, sideBias + (h1 - 0.5) * 42));
 
-    // Heavy overlap: each photo sits at ~0.55× its width below the previous
-    // so subsequent photos drift down + spread out.
-    const rowH = width * 0.55 + 30;
-    const topPx = 60 + i * rowH + (h2 - 0.5) * 70;
+    // Tight vertical packing — each photo sits at half its width below
+    // the previous, so neighbours overlap by ~40-50%.
+    const rowH  = width * 0.48 + 18;
+    const topPx = 50 + i * rowH + (h2 - 0.5) * 60;
 
     return {
       leftPct,
       topPx,
       width,
-      tilt: (h1 - 0.5) * 24,                       // ±12°
+      tilt: (h1 - 0.5) * 30, // ±15° — dramatic drift
     };
   }
 
-  // Tablet — 3-column-ish drift with overlap
+  // Tablet — 3 photos per band, smaller widths with tight overlap
   if (canvasW < 960) {
-    const width = 200 + h3 * 70;                   // 200-270 px
+    const width = 160 + h3 * 60; // 160-220
     const col3  = i % 3;
     const baseX = col3 === 0 ? 22 : col3 === 1 ? 50 : 78;
-    const leftPct = Math.max(15, Math.min(85, baseX + (h1 - 0.5) * 24));
-    const rowH = width * 0.7 + 24;
+    const leftPct = Math.max(14, Math.min(86, baseX + (h1 - 0.5) * 28));
+    const rowH = width * 0.55 + 18;
     return {
       leftPct,
-      topPx: 70 + Math.floor(i / 3) * rowH + (h4 - 0.5) * 90,
+      topPx: 50 + Math.floor(i / 3) * rowH + (h4 - 0.5) * 90,
       width,
-      tilt:  (h1 - 0.5) * 22,
+      tilt:  (h1 - 0.5) * 30, // ±15°
     };
   }
 
-  // Desktop — 4-column drift with wider photos
-  const width = 230 + h3 * 110;                    // 230-340 px
+  // Desktop — 4 photos per band, ~180-260px (smaller than before so
+  // more fit on screen with heavy overlap, matching the scatter ref).
+  const width = 180 + h3 * 80; // 180-260
   const col4  = i % 4;
   const baseX = col4 === 0 ? 18 : col4 === 1 ? 40 : col4 === 2 ? 62 : 84;
-  const leftPct = Math.max(12, Math.min(88, baseX + (h1 - 0.5) * 20));
-  const rowH = width * 0.6 + 24;
+  const leftPct = Math.max(10, Math.min(90, baseX + (h1 - 0.5) * 26));
+  const rowH = width * 0.5 + 20;
   return {
     leftPct,
-    topPx: 60 + Math.floor(i / 4) * rowH + (h4 - 0.5) * 100,
+    topPx: 50 + Math.floor(i / 4) * rowH + (h4 - 0.5) * 110,
     width,
-    tilt:  (h1 - 0.5) * 24,
+    tilt:  (h1 - 0.5) * 32, // ±16°
   };
 }
 
