@@ -150,64 +150,67 @@ function FamStrip({ photos }) {
 // ── 3. Member cards ───────────────────────────────────────────────────────────
 
 // scatter coordinates — deterministic per-index position for burst layout
-// Deterministic per-index scatter coordinates. Polaroid widths scale to the
-// canvas so small phones get smaller photos but the layout still breathes.
+// Deterministic per-index scatter coordinates. Photos drift across the
+// canvas with heavy overlap — like a real scattered polaroid pile. Sizing
+// scales to viewport so small phones get smaller (but still substantial)
+// polaroids; large gallery counts stay performant via capped stagger.
 function scatterPos(i, isMobile, canvasW) {
-  const j1 = ((i * 9301  +  7) % 233) / 233;
-  const j2 = ((i * 49297 + 13) % 233) / 233;
-  const j3 = ((i * 7919  +  5) % 233) / 233;
+  const h1 = ((i * 9301  +  7) % 233) / 233;
+  const h2 = ((i * 49297 + 13) % 233) / 233;
+  const h3 = ((i * 7919  +  5) % 233) / 233;
+  const h4 = ((i * 12553 + 11) % 233) / 233;
 
   if (isMobile) {
-    // Tier the photo width to the viewport so very-small phones (iPhone SE)
-    // get smaller polaroids while bigger phones (iPhone Pro Max) get a richer
-    // layout. Same 2-col scatter, just better proportions.
-    const cols  = 2;
-    const cellW = 100 / cols;
+    // Bigger polaroids feel like the scattered reference layout instead
+    // of tiny grid cells. ~46% viewport ± a bit of variance.
+    const base  = Math.max(150, Math.min(220, canvasW * 0.46));
+    const range = Math.max(30,  Math.min(50,  canvasW * 0.10));
+    const width = base + h3 * range;
 
-    // base width: a percentage of viewport, clamped to a sensible band
-    const base  = Math.max(120, Math.min(180, canvasW * 0.38));
-    const range = Math.max(36,  Math.min(60,  canvasW * 0.10));
-    const width = base + j3 * range;
+    // Alternate-side bias keeps the layout balanced even with few photos
+    // while still letting drift cross the centre line.
+    const sideBias = (i % 2 === 0) ? 28 : 72;     // % centre per side
+    const leftPct  = Math.max(18, Math.min(82, sideBias + (h1 - 0.5) * 38));
 
-    const rowH = width * 1.25 + 28; // keep vertical spacing proportional
+    // Heavy overlap: each photo sits at ~0.55× its width below the previous
+    // so subsequent photos drift down + spread out.
+    const rowH = width * 0.55 + 30;
+    const topPx = 60 + i * rowH + (h2 - 0.5) * 70;
 
-    const col  = i % cols;
-    const row  = Math.floor(i / cols);
     return {
-      leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.42, // less overlap
-      topPx:   row * rowH + rowH / 2 + 80 + (j2 - 0.5) * rowH * 0.28,
+      leftPct,
+      topPx,
       width,
-      tilt:    (j1 - 0.5) * 16, // gentler tilt → easier to tap
+      tilt: (h1 - 0.5) * 24,                       // ±12°
     };
   }
 
-  // Tablet — 3 columns for the awkward 720–960px window
+  // Tablet — 3-column-ish drift with overlap
   if (canvasW < 960) {
-    const cols  = 3;
-    const cellW = 100 / cols;
-    const width = 180 + j3 * 80;       // 180-260 px
-    const rowH  = 240;
-    const col   = i % cols;
-    const row   = Math.floor(i / cols);
+    const width = 200 + h3 * 70;                   // 200-270 px
+    const col3  = i % 3;
+    const baseX = col3 === 0 ? 22 : col3 === 1 ? 50 : 78;
+    const leftPct = Math.max(15, Math.min(85, baseX + (h1 - 0.5) * 24));
+    const rowH = width * 0.7 + 24;
     return {
-      leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.42,
-      topPx:   row * rowH + rowH / 2 + 64 + (j2 - 0.5) * rowH * 0.32,
+      leftPct,
+      topPx: 70 + Math.floor(i / 3) * rowH + (h4 - 0.5) * 90,
       width,
-      tilt:    (j1 - 0.5) * 16,
+      tilt:  (h1 - 0.5) * 22,
     };
   }
 
-  // Desktop — 4 columns, wider photos
-  const cols  = 4;
-  const cellW = 100 / cols;
-  const rowH  = canvasW < 1200 ? 240 : 280;
-  const col   = i % cols;
-  const row   = Math.floor(i / cols);
+  // Desktop — 4-column drift with wider photos
+  const width = 230 + h3 * 110;                    // 230-340 px
+  const col4  = i % 4;
+  const baseX = col4 === 0 ? 18 : col4 === 1 ? 40 : col4 === 2 ? 62 : 84;
+  const leftPct = Math.max(12, Math.min(88, baseX + (h1 - 0.5) * 20));
+  const rowH = width * 0.6 + 24;
   return {
-    leftPct: col * cellW + cellW / 2 + (j1 - 0.5) * cellW * 0.45,
-    topPx:   row * rowH + rowH / 2 + 60 + (j2 - 0.5) * rowH * 0.35,
-    width:   200 + j3 * 120, // 200-320 px
-    tilt:    (j1 - 0.5) * 18,
+    leftPct,
+    topPx: 60 + Math.floor(i / 4) * rowH + (h4 - 0.5) * 100,
+    width,
+    tilt:  (h1 - 0.5) * 24,
   };
 }
 
@@ -607,52 +610,68 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
           position: absolute;
           transform-origin: center;
           cursor: pointer;
-          will-change: transform, opacity;
-          animation: mc-burst 0.95s cubic-bezier(0.22, 1.4, 0.38, 1) both;
+          /* CSS containment isolates each polaroid's repaint/layout work — */
+          /* big galleries stay smooth because changes don't cascade. */
+          contain: layout style paint;
+          /* GPU layer via translate3d below; hint helps Safari composite cleanly. */
+          will-change: transform;
+          animation: mc-burst 0.85s cubic-bezier(0.22, 1.2, 0.36, 1) both;
           animation-delay: var(--mc-delay);
           padding: 8px 8px 22px;
           background: linear-gradient(180deg, #f7eedd 0%, #ecdfc8 100%);
+          /* Simpler shadow — one ambient + one drop. Heavy multi-layer shadows */
+          /* compound when 30+ polaroids are on screen and tank scroll perf. */
           box-shadow:
-            0 1px 1px rgba(0, 0, 0, 0.45),
-            0 12px 26px rgba(0, 0, 0, 0.55),
-            0 24px 55px rgba(0, 0, 0, 0.42);
-          transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s, z-index 0.05s;
+            0 1px 2px rgba(0, 0, 0, 0.5),
+            0 18px 36px rgba(0, 0, 0, 0.55);
+          transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                      box-shadow 0.28s ease;
         }
+        /* Drop will-change after the entry animation finishes so we don't
+           keep 30+ GPU layers alive forever. The burst is 0.85s + max stagger. */
+        .mc-photo.mc-settled { will-change: auto; }
         .mc-photo:hover {
-          transform: translate(-50%, -50%) rotate(0deg) scale(1.06) !important;
+          transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(1.05) !important;
           z-index: 50;
           box-shadow:
-            0 2px 4px rgba(0, 0, 0, 0.45),
-            0 24px 50px rgba(0, 0, 0, 0.65),
-            0 50px 100px rgba(0, 0, 0, 0.45);
+            0 2px 6px rgba(0, 0, 0, 0.5),
+            0 28px 60px rgba(0, 0, 0, 0.65);
         }
-        /* Tap-to-focus: brings the polaroid above its neighbours so the caption
-           and action buttons can't be hidden by overlapping photos. Outranks
-           hover so it stays put on desktop too. */
+        /* Tap-to-focus: pops above neighbours so the caption + actions are reachable. */
         .mc-photo.is-focused {
           z-index: 100 !important;
-          transform: translate(-50%, -50%) rotate(0deg) scale(1.14) !important;
+          transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(1.14) !important;
+          will-change: transform;
           box-shadow:
-            0 2px 4px rgba(0, 0, 0, 0.5),
-            0 28px 60px rgba(0, 0, 0, 0.7),
-            0 60px 120px rgba(0, 0, 0, 0.5),
-            0 0 0 0.5px rgba(244, 140, 54, 0.4);
+            0 2px 6px rgba(0, 0, 0, 0.55),
+            0 32px 72px rgba(0, 0, 0, 0.72),
+            0 0 0 0.5px rgba(244, 140, 54, 0.45);
         }
         .mc-photo.is-focused .mc-photo-actions { opacity: 1; pointer-events: auto; }
         @media (max-width: 720px) {
           .mc-photo.is-focused {
-            transform: translate(-50%, -50%) rotate(0deg) scale(1.22) !important;
+            transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(1.18) !important;
+          }
+        }
+        /* Honour reduced-motion preference — no burst, just a fade in. */
+        @media (prefers-reduced-motion: reduce) {
+          .mc-photo {
+            animation: mc-fade-only 0.2s ease both;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+          @keyframes mc-fade-only {
+            from { opacity: 0; } to { opacity: 1; }
           }
         }
         @keyframes mc-burst {
           0% {
-            transform: translate(calc(-50% + var(--mc-dx)), calc(-50% + var(--mc-dy)))
-                       rotate(0deg) scale(0.18);
+            transform: translate3d(calc(-50% + var(--mc-dx)), calc(-50% + var(--mc-dy)), 0)
+                       rotate(0deg) scale(0.22);
             opacity: 0;
           }
-          55% { opacity: 1; }
+          50% { opacity: 1; }
           100% {
-            transform: translate(-50%, -50%) rotate(var(--mc-rot)) scale(1);
+            transform: translate3d(-50%, -50%, 0) rotate(var(--mc-rot)) scale(1);
             opacity: 1;
           }
         }
@@ -1003,10 +1022,21 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
             const finalTopPx  = pos.topPx;
             const dx = origin.cx - finalLeftPx;
             const dy = origin.cy - finalTopPx;
+            // Cap stagger so a 30-photo gallery still finishes bursting in
+            // under 1.5s instead of ~2s. After index 12 every photo shares
+            // the same delay so the tail doesn't drag.
+            const staggerMs = Math.min(i, 12) * 55;
+            const isFocused = focusedPhoto === p.url || editingCaption === p.url;
             return (
               <div
                 key={p.id}
-                className={`mc-photo ${focusedPhoto === p.url || editingCaption === p.url ? "is-focused" : ""}`}
+                className={`mc-photo ${isFocused ? "is-focused" : ""}`}
+                onAnimationEnd={(e) => {
+                  // Drop will-change after the burst — keeps the layer cache lean.
+                  if (e.animationName === "mc-burst") {
+                    e.currentTarget.classList.add("mc-settled");
+                  }
+                }}
                 style={{
                   left: `${pos.leftPct}%`,
                   top:  `${pos.topPx}px`,
@@ -1015,8 +1045,8 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
                   ["--mc-dx"]:    `${dx}px`,
                   ["--mc-dy"]:    `${dy}px`,
                   ["--mc-rot"]:   `${pos.tilt}deg`,
-                  ["--mc-delay"]: `${i * 65}ms`,
-                  transform: `translate(-50%, -50%) rotate(${pos.tilt}deg)`,
+                  ["--mc-delay"]: `${staggerMs}ms`,
+                  transform: `translate3d(-50%, -50%, 0) rotate(${pos.tilt}deg)`,
                 }}
                 onClick={() => {
                   if (confirmingDelete === p.url) return;
