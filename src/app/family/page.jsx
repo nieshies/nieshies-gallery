@@ -179,11 +179,16 @@ function scatterPos(i, isMobile, canvasW, total) {
   const widthJitter = (h3 - 0.5) * baseWidth * 0.22;
   const width       = Math.max(isMobile ? 115 : 170, baseWidth + widthJitter);
 
-  // Column position: centre of cell + drift inside the cell
+  // Column position: centre of cell + drift inside the cell.
+  // The width-aware clamp keeps every polaroid fully inside the canvas
+  // regardless of its width, so nothing spills past the edge.
   const col      = i % cols;
   const baseLeft = (col + 0.5) * (100 / cols);
-  const leftJit  = (h1 - 0.5) * (100 / cols) * 0.55;
-  const leftPct  = Math.max(8, Math.min(92, baseLeft + leftJit));
+  const leftJit  = (h1 - 0.5) * (100 / cols) * 0.4;
+  // Half-width as a percentage — used to clamp so the photo's *edge*
+  // (not its centre) stays inside the canvas.
+  const halfPct  = (width / 2 / canvasW) * 100 + 2;
+  const leftPct  = Math.max(halfPct, Math.min(100 - halfPct, baseLeft + leftJit));
 
   // Row spacing: tighter overlap when there are more photos, looser when
   // few photos so a small gallery doesn't feel cramped.
@@ -456,11 +461,14 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ folder: member.folder, bio: draftBio }),
       });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
       setCurrentBio(d.bio);
       setEditingBio(false);
       onBioSaved?.(member.folder, d.bio);
-    } catch {}
+    } catch (err) {
+      console.error("bio save (modal):", err);
+    }
     setSavingBio(false);
   };
 
@@ -519,7 +527,9 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         .mc-header {
           position: sticky;
           top: 0;
-          z-index: 5;
+          /* High z-index so focused photos (z-index 100) can never cover the
+             close × button or the music pill. */
+          z-index: 200;
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
@@ -623,11 +633,14 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
            keep 30+ GPU layers alive forever. The burst is 0.85s + max stagger. */
         .mc-photo.mc-settled { will-change: auto; }
         .mc-photo:hover {
-          transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(1.05) !important;
+          transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(1.08) !important;
           z-index: 50;
           box-shadow:
-            0 2px 6px rgba(0, 0, 0, 0.5),
-            0 28px 60px rgba(0, 0, 0, 0.65);
+            0 4px 10px rgba(0, 0, 0, 0.5),
+            0 32px 72px rgba(0, 0, 0, 0.7);
+        }
+        .mc-photo:hover .mc-photo-actions {
+          opacity: 1; pointer-events: auto;
         }
         /* Tap-to-focus: pops above neighbours so the caption + actions are reachable. */
         .mc-photo.is-focused {
@@ -1433,7 +1446,14 @@ function FamMemberCards() {
   const saveCardBio = async (e, folder) => {
     if (e && e.stopPropagation) e.stopPropagation();
     if (e && e.preventDefault)  e.preventDefault();
-    const bio = cardDraftRef.current;
+    // If the user isn't an editor any more (session expired, denied since
+    // they opened the form), bail BEFORE writing so they get a sign-in
+    // modal instead of a confusing "save failed" message.
+    if (!ensureEditor()) {
+      setEditingCard(null);
+      return;
+    }
+    const bio = String(cardDraftRef.current ?? "").slice(0, 280);
     const previous = memberBios[folder];
 
     // optimistic: update card immediately, exit edit mode, then sync to DB
@@ -1444,16 +1464,21 @@ function FamMemberCards() {
 
     try {
       const r = await fetch("/api/family/member-bio", {
-        method: "PATCH",
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder, bio }),
+        body:    JSON.stringify({ folder, bio }),
       });
       if (!r.ok) {
-        const err = await r.text();
-        console.error("member-bio PATCH error:", err);
-        // revert + surface failure
+        // Pull the real reason from the server JSON so the user sees
+        // something useful instead of a generic "save failed".
+        let detail = `HTTP ${r.status}`;
+        try {
+          const j = await r.json();
+          if (j?.error) detail = j.error;
+        } catch {}
+        console.error("member-bio PATCH error:", detail);
         setMemberBios(prev => ({ ...prev, [folder]: previous ?? "" }));
-        setCardError(`save failed for ${folder} — try again`);
+        setCardError(`couldn't save ${folder}: ${detail}`);
         setEditingCard(folder);
         cardDraftRef.current = bio;
         setCardDraft(bio);
@@ -1464,7 +1489,7 @@ function FamMemberCards() {
     } catch (err) {
       console.error("member-bio PATCH:", err);
       setMemberBios(prev => ({ ...prev, [folder]: previous ?? "" }));
-      setCardError(`network error for ${folder} — try again`);
+      setCardError(`network error — check connection`);
       setEditingCard(folder);
       cardDraftRef.current = bio;
       setCardDraft(bio);
