@@ -12,6 +12,7 @@ export default function OwnerPanel({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [busy,    setBusy]    = useState(null); // email currently mutating
   const [filter,  setFilter]  = useState("all"); // all | pending | approved | denied
+  const [confirmingRemove, setConfirmingRemove] = useState(null); // email pending a remove confirm
 
   const load = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -22,6 +23,13 @@ export default function OwnerPanel({ onClose }) {
     } catch {}
     setLoading(false);
   };
+
+  // Auto-clear the remove-confirm state after 3s if the owner walks away.
+  useEffect(() => {
+    if (!confirmingRemove) return;
+    const t = setTimeout(() => setConfirmingRemove(null), 3000);
+    return () => clearTimeout(t);
+  }, [confirmingRemove]);
 
   useEffect(() => {
     load();
@@ -47,6 +55,26 @@ export default function OwnerPanel({ onClose }) {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ email, status }),
+      });
+    } catch {
+      load();
+    }
+    setBusy(null);
+  };
+
+  // Delete the row entirely. The user keeps their existing JWT cookie but
+  // loses editor status (DB row gone → isEditor returns false). Next time
+  // they visit, /api/auth/me re-creates them as "pending" so they re-appear
+  // here and can be approved again if needed.
+  const remove = async (email) => {
+    setBusy(email);
+    setConfirmingRemove(null);
+    setRows(prev => prev.filter(r => r.email !== email));
+    try {
+      await fetch("/api/access", {
+        method:  "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email }),
       });
     } catch {
       load();
@@ -234,6 +262,28 @@ export default function OwnerPanel({ onClose }) {
           border-color: rgba(220,110,110,.5);
           background: rgba(220,110,110,.06);
         }
+        .op-btn-remove {
+          width: 28px; height: 28px;
+          padding: 0;
+          display: inline-flex; align-items: center; justify-content: center;
+          color: rgba(255,245,230,.4);
+        }
+        .op-btn-remove:hover:not(:disabled) {
+          color: rgba(220,110,110,1);
+          border-color: rgba(220,110,110,.5);
+          background: rgba(220,110,110,.06);
+        }
+        .op-btn-remove.is-confirming {
+          color: rgba(220,110,110,1);
+          border-color: rgba(220,110,110,.7);
+          background: rgba(220,110,110,.12);
+          width: auto; padding: 0 9px;
+          font-size: 9.5px; letter-spacing: .22em;
+        }
+        @keyframes op-row-leave {
+          to { opacity: 0; transform: translateX(-12px); }
+        }
+        .op-row.is-leaving { animation: op-row-leave .25s ease forwards; }
 
         .op-empty {
           text-align: center;
@@ -361,6 +411,28 @@ export default function OwnerPanel({ onClose }) {
                         onClick={() => update(r.email, "denied")}
                       >
                         deny
+                      </button>
+                    )}
+                    {confirmingRemove === r.email ? (
+                      <button
+                        className="op-btn op-btn-remove is-confirming"
+                        disabled={busy === r.email}
+                        onClick={() => remove(r.email)}
+                        title="Tap again to confirm"
+                      >
+                        confirm
+                      </button>
+                    ) : (
+                      <button
+                        className="op-btn op-btn-remove"
+                        disabled={busy === r.email}
+                        onClick={() => setConfirmingRemove(r.email)}
+                        aria-label="Remove from list"
+                        title="Remove from list — user will be pending again if they sign in"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                        </svg>
                       </button>
                     )}
                   </div>
