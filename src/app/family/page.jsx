@@ -171,38 +171,37 @@ function scatterPos(i, isMobile, canvasW, total) {
   else if (canvasW < 1024)          cols = total < 6 ? 2 : 3;
   else /* wide desktop */           cols = total < 5 ? 2 : total < 9 ? 3 : 4;
 
-  // Photo width = ~72% of its column's cell, clamped to a sensible band
-  // per device so cells don't blow up on very wide monitors.
+  // Photo width = larger fraction of cell so neighbours actually overlap.
+  // Capped per device so super-wide monitors don't blow them up.
   const cellW       = canvasW / cols;
-  const widthCap    = isMobile ? 170 : canvasW < 1024 ? 230 : 280;
-  const baseWidth   = Math.min(widthCap, cellW * 0.78);
-  const widthJitter = (h3 - 0.5) * baseWidth * 0.22;
-  const width       = Math.max(isMobile ? 115 : 170, baseWidth + widthJitter);
+  const widthCap    = isMobile ? 175 : canvasW < 1024 ? 240 : 290;
+  const baseWidth   = Math.min(widthCap, cellW * 0.92); // 92% → guaranteed neighbour overlap
+  const widthJitter = (h3 - 0.5) * baseWidth * 0.25;
+  const width       = Math.max(isMobile ? 120 : 175, baseWidth + widthJitter);
 
-  // Column position: centre of cell + drift inside the cell.
-  // The width-aware clamp keeps every polaroid fully inside the canvas
-  // regardless of its width, so nothing spills past the edge.
-  const col      = i % cols;
-  const baseLeft = (col + 0.5) * (100 / cols);
-  const leftJit  = (h1 - 0.5) * (100 / cols) * 0.4;
-  // Half-width as a percentage — used to clamp so the photo's *edge*
-  // (not its centre) stays inside the canvas.
-  const halfPct  = (width / 2 / canvasW) * 100 + 2;
-  const leftPct  = Math.max(halfPct, Math.min(100 - halfPct, baseLeft + leftJit));
+  // Column position: centre of cell + bigger drift so columns blur into
+  // each other. Per-row offset (h4) shifts whole rows sideways for chaos.
+  const col       = i % cols;
+  const row       = Math.floor(i / cols);
+  const rowShift  = (h4 - 0.5) * (100 / cols) * 0.3; // shared row drift
+  const baseLeft  = (col + 0.5) * (100 / cols) + rowShift;
+  const leftJit   = (h1 - 0.5) * (100 / cols) * 0.55; // ±27% of cell width
+  // Half-width clamp so photo edges stay inside canvas
+  const halfPct   = (width / 2 / canvasW) * 100 + 1.5;
+  const leftPct   = Math.max(halfPct, Math.min(100 - halfPct, baseLeft + leftJit));
 
-  // Row spacing: tighter overlap when there are more photos, looser when
-  // few photos so a small gallery doesn't feel cramped.
-  const overlap  = total >= 10 ? 0.46 : total >= 6 ? 0.55 : 0.65;
-  const rowH     = width * overlap + 22;
-  const row      = Math.floor(i / cols);
-  const topJit   = (h2 - 0.5) * rowH * 0.6;
-  const topPx    = 60 + row * rowH + topJit;
+  // Heavier overlap across the board for the pile look from the reference.
+  // Tighter when there are many photos.
+  const overlap   = total >= 10 ? 0.38 : total >= 6 ? 0.45 : 0.55;
+  const rowH      = width * overlap + 18;
+  const topJit    = (h2 - 0.5) * rowH * 0.8; // bigger vertical drift
+  const topPx     = 60 + row * rowH + topJit;
 
   return {
     leftPct,
     topPx,
     width,
-    tilt: (h1 - 0.5) * (isMobile ? 28 : 32), // ±14°-±16°
+    tilt: (h1 - 0.5) * (isMobile ? 32 : 38), // ±16°-±19° more dramatic
   };
 }
 
@@ -582,6 +581,32 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
         .mc-icon-btn:hover {
           color: rgba(255, 245, 230, 0.95);
           border-color: rgba(255, 245, 230, 0.5);
+        }
+        /* Fixed close button — sits above everything in the modal, immune
+           to z-index battles with focused/hovered photos. */
+        .mc-close-fixed {
+          position: fixed;
+          top:   max(20px, env(safe-area-inset-top, 0));
+          right: max(20px, env(safe-area-inset-right, 0));
+          z-index: 10001;
+          width: 38px; height: 38px;
+          border-radius: 50%;
+          border: 0.5px solid rgba(255, 245, 230, 0.28);
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          color: rgba(255, 245, 230, 0.75);
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 18px; line-height: 1; padding: 0;
+          transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
+          touch-action: manipulation;
+        }
+        .mc-close-fixed:hover {
+          color: #fff;
+          border-color: rgba(255, 245, 230, 0.6);
+          background: rgba(0, 0, 0, 0.7);
+          transform: scale(1.05);
         }
         .mc-music-pill {
           background: rgba(0, 0, 0, 0.35);
@@ -1000,14 +1025,18 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
             </button>
           )}
         </div>
-        <div className="mc-header-right">
-          <button
-            className="mc-icon-btn"
-            onClick={(e) => { e.stopPropagation(); close(); }}
-            aria-label="Close"
-          >×</button>
-        </div>
+        <div className="mc-header-right" />
       </div>
+
+      {/* Close button lives OUTSIDE the sticky header — pinned to the viewport
+          with a huge z-index so no photo (focused, hovered, or otherwise) can
+          ever cover or intercept clicks on it. Fixes desktop click failure. */}
+      <button
+        className="mc-close-fixed"
+        onClick={(e) => { e.stopPropagation(); close(); }}
+        onPointerDown={(e) => e.stopPropagation()}
+        aria-label="Close"
+      >×</button>
 
       <div
         className="mc-canvas"
@@ -1401,12 +1430,6 @@ function FamMemberCards() {
   const [memberPhotos, setMemberPhotos] = useState({});
   const [memberBios,   setMemberBios]   = useState({});
   const [modal,        setModal]        = useState(null);
-  const [editingCard,  setEditingCard]  = useState(null); // folder key
-  const [cardDraft,    setCardDraft]    = useState("");
-  const [savingCard,   setSavingCard]   = useState(false);
-  const [cardError,    setCardError]    = useState("");
-  const cardDraftRef = useRef("");
-  const { ensureEditor } = useEditorGate();
 
   useEffect(() => {
     MEMBERS.forEach(m => {
@@ -1429,72 +1452,10 @@ function FamMemberCards() {
     setModal({ member, photos, originRect });
   };
 
+  // Bio updates flow back from the modal so the outer card stays in sync
+  // without a refetch.
   const handleBioSaved = (folder, bio) => {
     setMemberBios(prev => ({ ...prev, [folder]: bio }));
-  };
-
-  const startCardEdit = (e, folder) => {
-    e.stopPropagation();
-    if (!ensureEditor()) return;
-    const initial = memberBios[folder] || MEMBERS.find(m => m.folder === folder)?.bio || "";
-    cardDraftRef.current = initial;
-    setCardDraft(initial);
-    setCardError("");
-    setEditingCard(folder);
-  };
-
-  const saveCardBio = async (e, folder) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    if (e && e.preventDefault)  e.preventDefault();
-    // If the user isn't an editor any more (session expired, denied since
-    // they opened the form), bail BEFORE writing so they get a sign-in
-    // modal instead of a confusing "save failed" message.
-    if (!ensureEditor()) {
-      setEditingCard(null);
-      return;
-    }
-    const bio = String(cardDraftRef.current ?? "").slice(0, 280);
-    const previous = memberBios[folder];
-
-    // optimistic: update card immediately, exit edit mode, then sync to DB
-    setMemberBios(prev => ({ ...prev, [folder]: bio }));
-    setEditingCard(null);
-    setCardError("");
-    setSavingCard(true);
-
-    try {
-      const r = await fetch("/api/family/member-bio", {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ folder, bio }),
-      });
-      if (!r.ok) {
-        // Pull the real reason from the server JSON so the user sees
-        // something useful instead of a generic "save failed".
-        let detail = `HTTP ${r.status}`;
-        try {
-          const j = await r.json();
-          if (j?.error) detail = j.error;
-        } catch {}
-        console.error("member-bio PATCH error:", detail);
-        setMemberBios(prev => ({ ...prev, [folder]: previous ?? "" }));
-        setCardError(`couldn't save ${folder}: ${detail}`);
-        setEditingCard(folder);
-        cardDraftRef.current = bio;
-        setCardDraft(bio);
-      } else {
-        const d = await r.json();
-        setMemberBios(prev => ({ ...prev, [folder]: d.bio ?? bio }));
-      }
-    } catch (err) {
-      console.error("member-bio PATCH:", err);
-      setMemberBios(prev => ({ ...prev, [folder]: previous ?? "" }));
-      setCardError(`network error — check connection`);
-      setEditingCard(folder);
-      cardDraftRef.current = bio;
-      setCardDraft(bio);
-    }
-    setSavingCard(false);
   };
 
   return (
@@ -1565,84 +1526,23 @@ function FamMemberCards() {
                   </div>
                 </div>
 
-                {/* text area — bio is editable inline */}
-                <div style={{ padding: "0.55rem 0.7rem 0.65rem" }} onClick={e => e.stopPropagation()}>
+                {/* Text area — name + bio. Bio is READ-ONLY here. Editing
+                    happens inside the member modal (click the card to open). */}
+                <div
+                  style={{ padding: "0.55rem 0.7rem 0.65rem", cursor: "pointer" }}
+                  onClick={(e) => openModal(member, e)}
+                >
                   <p style={{ margin: 0, color: TEXT, fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.03em", textTransform: "capitalize" }}>
                     {member.displayName}
                   </p>
-                  {editingCard === member.folder ? (
-                    <form
-                      onSubmit={e => saveCardBio(e, member.folder)}
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <input
-                        value={cardDraft}
-                        onChange={e => {
-                          cardDraftRef.current = e.target.value;
-                          setCardDraft(e.target.value);
-                        }}
-                        onKeyDown={e => {
-                          if (e.key === "Escape") { e.preventDefault(); setEditingCard(null); }
-                        }}
-                        autoFocus
-                        style={{
-                          width: "100%", boxSizing: "border-box",
-                          background: "rgba(0,0,0,0.3)",
-                          border: "1px solid rgba(200,133,74,0.3)",
-                          borderRadius: "4px",
-                          color: "#fff",
-                          fontSize: "0.7rem", fontStyle: "italic",
-                          padding: "5px 7px", fontFamily: "inherit", outline: "none",
-                        }}
-                      />
-                      {cardError && (
-                        <p style={{ margin: "3px 0 0", color: "#e07878", fontSize: "0.6rem" }}>
-                          {cardError}
-                        </p>
-                      )}
-                      <div style={{ display: "flex", gap: "0.3rem", marginTop: "0.35rem" }}>
-                        <button
-                          type="submit"
-                          disabled={savingCard}
-                          onMouseDown={e => e.preventDefault()}
-                          style={{
-                            background: "rgba(200,133,74,0.2)",
-                            border: "1px solid rgba(200,133,74,0.45)",
-                            borderRadius: "4px", padding: "3px 12px",
-                            color: "#c8854a", fontSize: "0.6rem", fontWeight: 600,
-                            letterSpacing: "0.08em", textTransform: "uppercase",
-                            cursor: "pointer", fontFamily: "inherit",
-                            minHeight: "26px", touchAction: "manipulation",
-                          }}
-                        >{savingCard ? "…" : "save"}</button>
-                        <button
-                          type="button"
-                          onMouseDown={e => e.preventDefault()}
-                          onClick={e => { e.stopPropagation(); setEditingCard(null); setCardError(""); }}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            borderRadius: "4px", padding: "3px 12px",
-                            color: "rgba(255,255,255,0.4)", fontSize: "0.6rem",
-                            cursor: "pointer", fontFamily: "inherit",
-                            minHeight: "26px", touchAction: "manipulation",
-                          }}
-                        >cancel</button>
-                      </div>
-                    </form>
-                  ) : (
-                    <p
-                      onClick={e => startCardEdit(e, member.folder)}
-                      title="tap to edit"
-                      style={{
-                        margin: 0, color: "rgba(255,255,255,0.3)",
-                        fontSize: "0.64rem", fontStyle: "italic", lineHeight: 1.4,
-                        cursor: "text", borderBottom: "1px dashed rgba(255,255,255,0.07)",
-                      }}
-                    >
-                      {displayBio}
-                    </p>
-                  )}
+                  <p
+                    style={{
+                      margin: 0, color: "rgba(255,255,255,0.3)",
+                      fontSize: "0.64rem", fontStyle: "italic", lineHeight: 1.4,
+                    }}
+                  >
+                    {displayBio}
+                  </p>
                 </div>
               </div>
             );
