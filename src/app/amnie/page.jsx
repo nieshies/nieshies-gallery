@@ -209,7 +209,7 @@ function MilestonesTimeline() {
   const { ensureEditor, isEditor } = useEditorGate();
 
   useEffect(() => {
-    fetch("/api/photos?page=amnie&folder=achievement")
+    fetch("/api/photos?page=amnie&folder=achievement", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setPhotos(d.photos || []))
       .catch(() => {});
@@ -474,7 +474,7 @@ function PolaroidSlides() {
   const { ensureEditor, isEditor } = useEditorGate();
 
   useEffect(() => {
-    fetch("/api/photos?page=amnie&folder=album")
+    fetch("/api/photos?page=amnie&folder=album", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setPhotos(d.photos || []))
       .catch(() => {});
@@ -790,7 +790,7 @@ function AmnScatter() {
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
-    fetch("/api/photos?page=amnie&folder=moments")
+    fetch("/api/photos?page=amnie&folder=moments", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setPhotos(d.photos || []))
       .catch(() => {});

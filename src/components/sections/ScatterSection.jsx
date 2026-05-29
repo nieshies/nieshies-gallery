@@ -55,7 +55,7 @@ export default function ScatterSection({ page = "home", photos: propPhotos }) {
 
   useEffect(() => {
     if (propPhotos !== undefined) return;
-    fetch(`/api/photos?page=${page}`)
+    fetch(`/api/photos?page=${page}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setFetched((d.photos || []).slice(0, 12)))
       .catch(() => {});

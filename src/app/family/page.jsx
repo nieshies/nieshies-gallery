@@ -103,9 +103,13 @@ function shuffle(arr) {
   return a;
 }
 
+// All photo/bio fetches force cache:no-store so changes made on any device
+// appear everywhere on the next page load (no browser HTTP cache, no edge
+// cache, no Vercel cache). Combined with server-side Cache-Control: no-store
+// this makes captions + bios truly real-time across devices.
 async function fetchPhotos(url) {
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { cache: "no-store" });
     const d = await r.json();
     return d.photos || [];
   } catch { return []; }
@@ -236,7 +240,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   useEffect(() => setPhotos(initialPhotos || []), [initialPhotos]);
 
   const reloadPhotos = () => {
-    fetch(`/api/family/member?folder=${member.folder}`)
+    fetch(`/api/family/member?folder=${member.folder}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setPhotos(d.photos || []))
       .catch(() => {});
@@ -541,7 +545,7 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   const [savingBio,   setSavingBio]   = useState(false);
 
   useEffect(() => {
-    fetch(`/api/family/member-bio?folder=${member.folder}`)
+    fetch(`/api/family/member-bio?folder=${member.folder}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => { if (d.bio) { setCurrentBio(d.bio); setDraftBio(d.bio); } })
       .catch(() => {});
@@ -1580,7 +1584,7 @@ function FamMemberCards() {
       fetchPhotos(`/api/family/member?folder=${m.folder}`).then(photos => {
         if (photos.length) setMemberPhotos(prev => ({ ...prev, [m.folder]: photos }));
       });
-      fetch(`/api/family/member-bio?folder=${m.folder}`)
+      fetch(`/api/family/member-bio?folder=${m.folder}`, { cache: "no-store" })
         .then(r => r.json())
         .then(d => { setMemberBios(prev => ({ ...prev, [m.folder]: d.bio || "" })); })
         .catch(() => {});

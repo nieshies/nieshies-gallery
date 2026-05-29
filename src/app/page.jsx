@@ -42,7 +42,7 @@ export default function Page() {
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
-    fetch("/api/photos?page=home")
+    fetch("/api/photos?page=home", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setPhotos(shuffle(d.photos || [])))
       .catch(() => {});

@@ -12,7 +12,7 @@ export default function EndCard({ photos: propPhotos }) {
 
   useEffect(() => {
     if (propPhotos !== undefined) return;
-    fetch("/api/photos?page=home")
+    fetch("/api/photos?page=home", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setFetched(d.photos || []))
       .catch(() => {});
