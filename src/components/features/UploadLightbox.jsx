@@ -72,40 +72,81 @@ export default function UploadLightbox({
   const removeFile = (i) =>
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
 
+  // Upload one file with one automatic retry on transient failures (network
+  // blip, db cold start, pool hiccup). Returns { ok: true } or { ok: false, error }.
+  const uploadOne = async (file, attempt = 1) => {
+    try {
+      const fd = new FormData();
+      fd.append("file",    file);
+      fd.append("caption", caption);
+      fd.append("page",    cfg.page);
+      fd.append("folder",  cfg.folder);
+      const res = await fetch("/api/photos", { method: "POST", body: fd });
+      if (res.ok) return { ok: true };
+      // Read the actual error so the user sees what's wrong, not just "failed"
+      let detail = `HTTP ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data?.error) detail = data.error;
+      } catch {}
+      // Retry once on 5xx — those are usually transient (cold start, pool blip)
+      if (res.status >= 500 && attempt === 1) {
+        await new Promise(r => setTimeout(r, 600));
+        return uploadOne(file, 2);
+      }
+      return { ok: false, error: detail };
+    } catch (err) {
+      // Network error → also worth one retry
+      if (attempt === 1) {
+        await new Promise(r => setTimeout(r, 600));
+        return uploadOne(file, 2);
+      }
+      return { ok: false, error: err?.message || "network error" };
+    }
+  };
+
   const handleUpload = async () => {
     if (!files.length || uploading) return;
     setUploading(true);
+    setStatus(`saving ${files.length} photo${files.length === 1 ? "" : "s"}…`);
+
+    // Parallel uploads with concurrency cap of 3 — fast enough for 10+ photos,
+    // gentle enough that we don't overwhelm Vercel functions or the DB pool.
+    const CONCURRENCY = 3;
     let done = 0;
     const errors = [];
-    for (const file of files) {
-      setStatus(`saving ${done + 1} of ${files.length}`);
-      try {
-        const fd = new FormData();
-        fd.append("file",    file);
-        fd.append("caption", caption);
-        fd.append("page",    cfg.page);
-        fd.append("folder",  cfg.folder);
-        const res = await fetch("/api/photos", { method: "POST", body: fd });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          errors.push(`${file.name}: ${data.error || "failed"}`);
-        } else done += 1;
-      } catch (err) {
-        errors.push(`${file.name}: ${err.message}`);
-      }
-    }
+    const queue = [...files];
+    let running = 0;
+
+    await new Promise((resolve) => {
+      const next = () => {
+        if (queue.length === 0 && running === 0) return resolve();
+        while (running < CONCURRENCY && queue.length > 0) {
+          const file = queue.shift();
+          running += 1;
+          uploadOne(file).then((res) => {
+            if (res.ok) done += 1;
+            else errors.push(`${file.name}: ${res.error}`);
+            running -= 1;
+            setStatus(`${done} of ${files.length} saved${errors.length ? ` · ${errors.length} failed` : ""}`);
+            next();
+          });
+        }
+      };
+      next();
+    });
+
     if (done === 0 && errors.length) {
-      // total failure — keep modal open so user can retry
+      // Total failure — keep modal open with the first error so user can read + retry
       setStatus(errors[0]);
       setUploading(false);
     } else if (errors.length) {
-      // partial success — flash a summary then close so the user can see the
-      // photos appear (they did actually save)
-      setStatus(`${done} saved · ${errors.length} failed`);
-      setTimeout(close, 1200);
+      // Partial success — show summary with first failed name so user knows what to retry
+      setStatus(`${done} saved · failed: ${errors[0]}`);
+      setTimeout(close, 2400);
     } else {
       setStatus(done === 1 ? "saved" : `${done} saved`);
-      setTimeout(close, 750);
+      setTimeout(close, 700);
     }
   };
 

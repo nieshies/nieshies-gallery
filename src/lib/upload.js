@@ -1,10 +1,14 @@
 import { supabase } from "./supabase";
 import sharp from "sharp";
 
+// Vercel's default sharp build does NOT include libheif — HEIC/HEIF uploads
+// would crash with a confusing native error. We reject them up front so the
+// user gets a helpful message instead. They can convert via iPhone Settings
+// → Camera → Formats → "Most Compatible" (then takes JPEG by default).
 const ALLOWED_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
-  "image/heic", "image/heif",
 ]);
+const REJECTED_HEIC = new Set(["image/heic", "image/heif"]);
 
 const EXT_MAP = {
   jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
@@ -15,8 +19,11 @@ const EXT_MAP = {
 export function validateFile(file) {
   if (!file) return "No file provided";
   const mime = file.type || EXT_MAP[file.name?.split(".").pop()?.toLowerCase()] || "";
-  if (!ALLOWED_TYPES.has(mime)) return "Unsupported file type";
-  if (file.size > 10 * 1024 * 1024) return "File too large (max 10MB)";
+  if (REJECTED_HEIC.has(mime)) {
+    return "HEIC not supported — on iPhone: Settings → Camera → Formats → Most Compatible";
+  }
+  if (!ALLOWED_TYPES.has(mime)) return `Unsupported file type: ${mime || "unknown"}`;
+  if (file.size > 10 * 1024 * 1024) return `Too large: ${(file.size / 1024 / 1024).toFixed(1)}MB (max 10MB)`;
   return null;
 }
 
