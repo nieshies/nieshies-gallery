@@ -50,7 +50,14 @@ export default function UploadLightbox({
   }, []);
 
   const addFiles = (list) => {
-    const selected = Array.from(list || []).filter((f) => f.type?.startsWith("image/"));
+    // Accept anything image-like + HEIC/HEIF (sometimes mime is missing in
+    // browsers — fall back to the file extension). HEIC files get auto-
+    // converted to JPEG client-side just before upload.
+    const selected = Array.from(list || []).filter((f) => {
+      if (f.type?.startsWith("image/")) return true;
+      const name = (f.name || "").toLowerCase();
+      return /\.(heic|heif|jpe?g|png|webp|gif|avif)$/.test(name);
+    });
     if (selected.length) setFiles((prev) => [...prev, ...selected]);
   };
 
@@ -72,9 +79,31 @@ export default function UploadLightbox({
   const removeFile = (i) =>
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
 
+  // Convert iPhone HEIC/HEIF photos to JPEG in the browser before upload.
+  // Server's sharp build has no libheif, so we do the decode here using the
+  // heic-to library (dynamic import — only loaded when actually needed).
+  // The user picks any photo from their iPhone; we just hand the server
+  // JPEG so it always works.
+  const maybeConvertHeic = async (file) => {
+    const lowerName = (file.name || "").toLowerCase();
+    const isHeic = file.type === "image/heic" || file.type === "image/heif"
+      || lowerName.endsWith(".heic") || lowerName.endsWith(".heif");
+    if (!isHeic) return file;
+    const { heicTo } = await import("heic-to");
+    const blob = await heicTo({ blob: file, type: "image/jpeg", quality: 0.88 });
+    const jpegName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
+    return new File([blob], jpegName, { type: "image/jpeg" });
+  };
+
   // Upload one file with one automatic retry on transient failures (network
   // blip, db cold start, pool hiccup). Returns { ok: true } or { ok: false, error }.
-  const uploadOne = async (file, attempt = 1) => {
+  const uploadOne = async (rawFile, attempt = 1) => {
+    let file;
+    try {
+      file = await maybeConvertHeic(rawFile);
+    } catch (err) {
+      return { ok: false, error: `${rawFile.name}: HEIC conversion failed — ${err?.message || "unknown"}` };
+    }
     try {
       const fd = new FormData();
       fd.append("file",    file);
@@ -92,14 +121,14 @@ export default function UploadLightbox({
       // Retry once on 5xx — those are usually transient (cold start, pool blip)
       if (res.status >= 500 && attempt === 1) {
         await new Promise(r => setTimeout(r, 600));
-        return uploadOne(file, 2);
+        return uploadOne(rawFile, 2);
       }
       return { ok: false, error: detail };
     } catch (err) {
       // Network error → also worth one retry
       if (attempt === 1) {
         await new Promise(r => setTimeout(r, 600));
-        return uploadOne(file, 2);
+        return uploadOne(rawFile, 2);
       }
       return { ok: false, error: err?.message || "network error" };
     }
@@ -108,7 +137,16 @@ export default function UploadLightbox({
   const handleUpload = async () => {
     if (!files.length || uploading) return;
     setUploading(true);
-    setStatus(`saving ${files.length} photo${files.length === 1 ? "" : "s"}…`);
+    const hasHeic = files.some((f) => {
+      const name = (f.name || "").toLowerCase();
+      return f.type === "image/heic" || f.type === "image/heif"
+        || name.endsWith(".heic") || name.endsWith(".heif");
+    });
+    setStatus(
+      hasHeic
+        ? `converting iphone photos…`
+        : `saving ${files.length} photo${files.length === 1 ? "" : "s"}…`,
+    );
 
     // Parallel uploads with concurrency cap of 3 — fast enough for 10+ photos,
     // gentle enough that we don't overwhelm Vercel functions or the DB pool.
@@ -447,7 +485,7 @@ export default function UploadLightbox({
           )}
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             multiple
             onChange={handleFile}
             style={{ display: "none" }}
