@@ -134,12 +134,17 @@ export async function POST(request) {
           uploadedAt: Date.now(),
         };
 
+    console.log(`[upload] ok ${file.name} → ${result.filename} (${(result.sizeBytes/1024).toFixed(1)}KB)${dbError ? ` [db warn: ${dbError}]` : ""}`);
     return NextResponse.json(
       { ok: true, photo: photoOut, ...(dbError ? { metadataWarning: dbError } : {}) },
       { status: 201 }
     );
   } catch (err) {
-    console.error("Photo upload error:", err);
-    return NextResponse.json({ error: err.message || "Failed to upload image" }, { status: 400 });
+    // Print the FULL error to Vercel logs so we can diagnose remotely.
+    console.error("[upload] FAILED:", err?.stack || err?.message || err);
+    return NextResponse.json(
+      { error: err?.message || "Failed to upload image" },
+      { status: 500 },
+    );
   }
 }

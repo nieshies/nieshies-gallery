@@ -552,22 +552,38 @@ function MemberModal({ member, photos: initialPhotos, originRect, onClose, onBio
   }, [member.folder]);
 
   const saveBio = async e => {
-    e.stopPropagation();
+    e?.stopPropagation();
     if (!ensureEditor()) return;
     setSavingBio(true);
     try {
       const r = await fetch("/api/family/member-bio", {
-        method: "PATCH",
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder: member.folder, bio: draftBio }),
+        body:    JSON.stringify({ folder: member.folder, bio: draftBio }),
+        cache:   "no-store",
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {
+        // Surface the real reason from the server JSON so we never fail silently.
+        let detail = `HTTP ${r.status}`;
+        try {
+          const j = await r.json();
+          if (j?.error) detail = j.error;
+        } catch {}
+        throw new Error(detail);
+      }
       const d = await r.json();
+      // Use the server-confirmed bio (handles trimming etc.) and propagate
+      // to the parent card so the outer family-card display updates without
+      // a refresh.
       setCurrentBio(d.bio);
+      setDraftBio(d.bio);
       setEditingBio(false);
       onBioSaved?.(member.folder, d.bio);
+      setToast({ text: "bio saved ✓", kind: "ok" });
     } catch (err) {
       console.error("bio save (modal):", err);
+      // Leave the edit form open so the user can retry without losing their text.
+      setToast({ text: `bio save failed: ${err.message}`, kind: "err" });
     }
     setSavingBio(false);
   };
