@@ -3,8 +3,16 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Runtime uses Supabase's pgbouncer transaction-mode pooler (port 6543)
+  // so serverless function instances don't hit the 15-connection session
+  // mode limit. Prisma needs `pgbouncer=true` to skip features pgbouncer
+  // doesn't support (prepared statements).
+  url       = env("DATABASE_URL")
+  // Migrations + introspection need a direct connection (port 5432 session
+  // mode) since pgbouncer doesn't support DDL. Used by `prisma migrate`
+  // and `prisma db push` only — never at runtime.
+  directUrl = env("DIRECT_URL")
 }
 
 model Profile {
