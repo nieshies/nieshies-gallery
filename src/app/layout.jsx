@@ -4,8 +4,23 @@ import AuthProvider from "@/components/AuthProvider";
 import EditorBadge from "@/components/EditorBadge";
 
 export const metadata = {
-  title: "nieshies gallery",
-  description: "A warm gallery of moments — curated, real, and alive",
+  metadataBase: new URL("https://nieshies-gallery.vercel.app"),
+  title: {
+    default: "nieshies' dump",
+    template: "%s · nieshies' dump",
+  },
+  description: "moments · memories · real",
+  openGraph: {
+    title: "nieshies' dump",
+    description: "moments · memories · real",
+    type: "website",
+    siteName: "nieshies' dump",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "nieshies' dump",
+    description: "moments · memories · real",
+  },
 };
 
 export const viewport = {
